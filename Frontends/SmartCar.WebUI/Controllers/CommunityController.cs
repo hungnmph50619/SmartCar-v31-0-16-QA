@@ -57,14 +57,8 @@ public sealed class CommunityController : Controller
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var model = new CommunityPostFormViewModel { Categories = Categories.ToList() };
-        try
-        {
-            var response = await _clients.CreateClient().GetAsync("api/community/completed-trips");
-            if (response.IsSuccessStatusCode)
-                model.Trips = await response.Content.ReadFromJsonAsync<List<CommunityTripViewModel>>(JsonOptions) ?? [];
-        }
-        catch (HttpRequestException) { }
+        var model = new CommunityPostFormViewModel();
+        await PopulateFormOptions(model);
         return View(model);
     }
 
@@ -74,7 +68,7 @@ public sealed class CommunityController : Controller
     [RequestSizeLimit(6 * 1024 * 1024)]
     public async Task<IActionResult> Create(CommunityPostFormViewModel model)
     {
-        model.Categories = Categories.ToList();
+        await PopulateFormOptions(model);
         if (!ModelState.IsValid) return View(model);
         string? imageUrl = null;
         if (model.CoverImage is { Length: > 0 })
@@ -103,6 +97,81 @@ public sealed class CommunityController : Controller
         return result?.CommunityPostID > 0 && result.Status == "Đã xuất bản"
             ? RedirectToAction(nameof(Details), new { id = result.CommunityPostID })
             : RedirectToAction(nameof(Mine));
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id)
+    {
+        var response = await _clients.CreateClient().GetAsync($"api/community/posts/{id}/mine");
+        if (!response.IsSuccessStatusCode) return RedirectToAction(nameof(Mine));
+        var source = await response.Content.ReadFromJsonAsync<CommunityPostDetailViewModel>(JsonOptions);
+        if (source is null) return RedirectToAction(nameof(Mine));
+        var model = new CommunityPostEditViewModel
+        {
+            CommunityPostID = source.CommunityPostID,
+            Title = source.Title, Content = source.Content, Category = source.Category,
+            LocationName = source.LocationName, ReservationID = source.ReservationID,
+            IsOfficial = source.IsOfficial, ExistingCoverImageUrl = source.CoverImageUrl,
+            Status = source.Status, ModerationReason = source.ModerationReason
+        };
+        await PopulateFormOptions(model);
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<IActionResult> Edit(int id, CommunityPostEditViewModel model)
+    {
+        if (id != model.CommunityPostID) return BadRequest();
+        await PopulateFormOptions(model);
+        if (!ModelState.IsValid) return View(model);
+        var imageUrl = model.ExistingCoverImageUrl;
+        if (model.CoverImage is { Length: > 0 })
+        {
+            var upload = await SaveCommunityImage(model.CoverImage);
+            if (!upload.Success)
+            {
+                ModelState.AddModelError(nameof(model.CoverImage), upload.Error!);
+                return View(model);
+            }
+            imageUrl = upload.Url;
+        }
+        var response = await _clients.CreateClient().PutAsJsonAsync($"api/community/posts/{id}", new
+        {
+            model.Title, model.Content, model.Category, CoverImageUrl = imageUrl,
+            model.LocationName, model.ReservationID, model.Submit, model.IsOfficial
+        });
+        if (!response.IsSuccessStatusCode)
+        {
+            ModelState.AddModelError(string.Empty, await ReadMessage(response));
+            return View(model);
+        }
+        TempData["CommunitySuccess"] = model.Submit ? "Đã cập nhật và gửi bài viết." : "Đã cập nhật bản nháp.";
+        return RedirectToAction(nameof(Mine));
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var response = await _clients.CreateClient().DeleteAsync($"api/community/posts/{id}");
+        TempData[response.IsSuccessStatusCode ? "CommunitySuccess" : "CommunityError"] =
+            response.IsSuccessStatusCode ? "Bài viết đã được ẩn khỏi cộng đồng." : await ReadMessage(response);
+        return RedirectToAction(nameof(Mine));
+    }
+
+    [Authorize(Roles = "Admin,Staff")]
+    [HttpGet]
+    public async Task<IActionResult> Review(int id)
+    {
+        var response = await _clients.CreateClient().GetAsync($"api/community/posts/{id}/review");
+        if (!response.IsSuccessStatusCode) return RedirectToAction(nameof(Moderation));
+        var model = await response.Content.ReadFromJsonAsync<CommunityPostDetailViewModel>(JsonOptions);
+        return model is null ? RedirectToAction(nameof(Moderation)) : View(model);
     }
 
     [Authorize]
@@ -179,6 +248,18 @@ public sealed class CommunityController : Controller
         TempData[response.IsSuccessStatusCode ? "CommunitySuccess" : "CommunityError"] =
             response.IsSuccessStatusCode ? $"Đã thực hiện: {action}." : await ReadMessage(response);
         return RedirectToAction(nameof(Moderation));
+    }
+
+    private async Task PopulateFormOptions(CommunityPostFormViewModel model)
+    {
+        model.Categories = Categories.ToList();
+        try
+        {
+            var response = await _clients.CreateClient().GetAsync("api/community/completed-trips");
+            if (response.IsSuccessStatusCode)
+                model.Trips = await response.Content.ReadFromJsonAsync<List<CommunityTripViewModel>>(JsonOptions) ?? [];
+        }
+        catch (HttpRequestException) { }
     }
 
     private async Task<(bool Success, string? Url, string? Error)> SaveCommunityImage(IFormFile file)
