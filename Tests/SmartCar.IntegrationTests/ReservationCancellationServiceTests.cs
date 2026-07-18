@@ -41,15 +41,15 @@ public class ReservationCancellationServiceTests
         var second = await service.CancelAsync(100, 10, false, "Gửi lại yêu cầu");
 
         Assert.True(first.CanCancel);
-        Assert.Equal(10m, first.FeeRate);
-        Assert.Equal(100_000m, first.CancellationFee);
-        Assert.Equal(900_000m, first.RefundAmount);
+        Assert.Equal(30m, first.FeeRate);
+Assert.Equal(300_000m, first.CancellationFee);
+Assert.Equal(700_000m, first.RefundAmount);
         Assert.False(second.CanCancel);
         Assert.Equal(409, second.StatusCode);
 
         var reservation = await db.Reservations.SingleAsync(x => x.ReservationID == 100);
         Assert.Equal("Đã hủy", reservation.Status);
-        Assert.Equal(100_000m, reservation.CancellationFeeAmount);
+        Assert.Equal(300_000m, reservation.CancellationFeeAmount);
         Assert.Single(await db.Payments.Where(x => x.IdempotencyKey == "reservation-cancel-refund:100").ToListAsync());
         Assert.Single(await db.ReservationStatusHistories.Where(x => x.ReservationID == 100).ToListAsync());
         Assert.Single(await db.DataChangeHistories.Where(x => x.EntityID == "100" && x.Action == "Cancel").ToListAsync());
