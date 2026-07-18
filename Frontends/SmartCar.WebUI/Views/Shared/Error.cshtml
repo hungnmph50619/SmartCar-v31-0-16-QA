@@ -1,0 +1,11 @@
+@model ErrorViewModel
+@{
+    ViewData["Title"] = "Có lỗi xảy ra";
+}
+<div class="card border-0 shadow-sm mx-auto" style="max-width:720px"><div class="card-body p-4 p-md-5 text-center">
+    <div class="display-4 text-danger mb-3" aria-hidden="true">!</div>
+    <h1 class="h3">SmartCar chưa thể xử lý yêu cầu</h1>
+    <p class="text-muted">Vui lòng quay lại trang trước và thử lại. Nếu lỗi tiếp tục xảy ra, hãy ghi lại thời điểm và mã yêu cầu để bộ phận kỹ thuật kiểm tra.</p>
+    @if(Model.ShowRequestId){<p class="small"><strong>Mã yêu cầu:</strong> <code>@Model.RequestId</code></p>}
+    <div class="d-flex flex-wrap justify-content-center"><a href="javascript:history.back()" class="btn btn-outline-secondary mr-2 mb-2">Quay lại</a><a href="/Default/Index" class="btn btn-primary mb-2">Về trang chủ</a></div>
+</div></div>

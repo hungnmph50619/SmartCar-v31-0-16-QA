@@ -1,0 +1,51 @@
+@model List<ResultServiceDto>
+
+<section class="ftco-section">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-md-7 text-center heading-section ftco-animate">
+                <span class="subheading">Dịch vụ</span>
+                <h2 class="mb-3">Dịch vụ dành cho bạn</h2>
+            </div>
+        </div>
+        <div class="row">
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="col-12">
+                    <div class="alert alert-info text-center">Chưa có dữ liệu dịch vụ.</div>
+                </div>
+            }
+            else
+            {
+                foreach (var item in Model)
+                {
+                    var iconClass = item.IconUrl?.Trim() ?? string.Empty;
+                    if (string.Equals(iconClass, "flaticon-select", StringComparison.OrdinalIgnoreCase))
+                    {
+                        iconClass = "flaticon-suv";
+                    }
+                    else if (string.Equals(iconClass, "flaticon-review", StringComparison.OrdinalIgnoreCase))
+                    {
+                        iconClass = "flaticon-handshake";
+                    }
+                    else if (string.IsNullOrWhiteSpace(iconClass))
+                    {
+                        iconClass = "flaticon-car";
+                    }
+
+                    <div class="col-md-3">
+                        <div class="services services-2 w-100 text-center">
+                            <div class="icon d-flex align-items-center justify-content-center">
+                                <span class="@iconClass"></span>
+                            </div>
+                            <div class="text w-100">
+                                <h3 class="heading mb-2">@item.Title</h3>
+                                <p>@item.Description</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>

@@ -1,0 +1,9 @@
+@model List<SmartCar.Dto.TagCloudDtos.GetByBlogIdTagCloudDto>
+<div class="tag-widget post-tag-container mb-5 mt-5">
+    <div class="tagcloud">
+        @foreach(var item in Model)
+        {
+        <span class="tag-cloud-link">@item.Title</span>
+        }
+    </div>
+</div>

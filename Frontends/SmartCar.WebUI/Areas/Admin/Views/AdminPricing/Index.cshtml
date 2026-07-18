@@ -1,0 +1,53 @@
+﻿@model List<ResultPricingDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Khu vực loại thanh toán</h4>
+                        <p class="card-subtitle mb-4">
+                            Đây là trang quản lý các kỳ thuê xe như theo ngày, tuần hoặc tháng. Bạn có thể thêm, xóa hoặc cập nhật kỳ thuê.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tên kỳ</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <td>@count</td>
+                                            <td>@item.Name</td>
+                                            <td><form method="post" action="/Admin/AdminPricing/RemovePricing/@item.PricingID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminPricing/UpdatePricing/@item.PricingID" class="btn btn-outline-success">Cập nhật</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminPricing/CreatePricing" class="btn btn-outline-primary">Thêm loại thanh toán mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

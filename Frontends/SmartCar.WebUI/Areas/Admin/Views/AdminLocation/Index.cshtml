@@ -1,0 +1,34 @@
+@using System.Globalization
+@model List<ResultLocationDto>
+@{
+    ViewData["Title"] = "Quản lý địa điểm";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+<div class="page-content"><div class="container-fluid"><div class="row"><div class="col-xl-12"><div class="card"><div class="card-body">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h4 class="card-title">Điểm giao nhận và tọa độ bản đồ</h4><p class="card-subtitle mb-0">Địa điểm chi tiết được dùng ở trang chủ, kết quả tìm xe và form đặt xe.</p></div>
+        <a href="/Admin/AdminLocation/CreateLocation" class="btn btn-primary">Thêm địa điểm mới</a>
+    </div>
+    @if (TempData["LocationSuccess"] != null){<div class="alert alert-success">@TempData["LocationSuccess"]</div>}
+    @if (TempData["LocationError"] != null){<div class="alert alert-danger">@TempData["LocationError"]</div>}
+    <div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>#</th><th>Điểm giao nhận</th><th>Địa chỉ hành chính</th><th>Tọa độ</th><th>Bán kính</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody>
+    @foreach (var item in Model)
+    {
+        count++;
+        <tr>
+            <td>@count</td>
+            <td><strong>@item.Name</strong><br/><small class="text-muted">@item.AddressDetail</small></td>
+            <td>@item.AdministrativeAddress</td>
+            <td>@if(item.HasCoordinates){<span>@item.Latitude?.ToString("0.0000000",CultureInfo.InvariantCulture), @item.Longitude?.ToString("0.0000000",CultureInfo.InvariantCulture)</span>}else{<span class="text-warning">Chưa khai báo</span>}</td>
+            <td>@item.SearchRadiusKm km</td>
+            <td><span class="badge @(item.IsActive ? "badge-success" : "badge-secondary")">@(item.IsActive ? "Hoạt động" : "Tạm ngừng")</span></td>
+            <td class="text-nowrap">
+                @if(item.HasCoordinates){<a target="_blank" href="https://www.openstreetmap.org/?mlat=@item.Latitude?.ToString(CultureInfo.InvariantCulture)&mlon=@item.Longitude?.ToString(CultureInfo.InvariantCulture)#map=15/@item.Latitude?.ToString(CultureInfo.InvariantCulture)/@item.Longitude?.ToString(CultureInfo.InvariantCulture)" class="btn btn-sm btn-outline-info">Bản đồ</a>}
+                <a href="/Admin/AdminLocation/UpdateLocation/@item.LocationID" class="btn btn-sm btn-outline-success">Cập nhật</a>
+                <form method="post" action="/Admin/AdminLocation/RemoveLocation/@item.LocationID" class="d-inline" onsubmit="return confirm('Chỉ xóa khi địa điểm chưa được dùng trong xe hoặc đơn thuê. Tiếp tục?');">@Html.AntiForgeryToken()<button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button></form>
+            </td>
+        </tr>
+    }
+    </tbody></table></div>
+</div></div></div></div></div></div>

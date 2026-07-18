@@ -1,0 +1,104 @@
+@using SmartCar.Dto.AdminAccountDtos
+@model AdminAccountDetailDto
+@{
+    ViewData["Title"] = "Chi tiết hồ sơ tài khoản";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    var v = Model.Verification;
+    string DateText(DateTime? d) => d.HasValue ? d.Value.ToString("dd/MM/yyyy") : "Chưa có";
+    string DateTimeText(DateTime? d) => d.HasValue ? VietnamTime.FromUtc(d.Value).ToString("dd/MM/yyyy HH:mm") : "Chưa có";
+    string Safe(string? s) => string.IsNullOrWhiteSpace(s) ? "Chưa có" : s!;
+    var accountLockedNow = Model.Account.LockoutEnd.HasValue && Model.Account.LockoutEnd.Value > DateTime.UtcNow;
+}
+<div class="page-content"><div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap mb-4"><div><h2>Chi tiết hồ sơ: @Model.Account.FullName</h2><p class="text-muted">Admin chỉ xem, giám sát và yêu cầu xác minh lại; không sửa trực tiếp dữ liệu định danh khách.</p></div><a href="/Admin/AdminAccounts/Index?type=@Model.Account.AccountType" class="btn btn-light border">Quay lại danh sách</a></div>
+    @if(TempData["AccountSuccess"] is string ok){<div class="alert alert-success">@ok</div>}@if(TempData["AccountError"] is string err){<div class="alert alert-danger">@err</div>}
+
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card mb-3"><div class="card-body">
+                <h5>Thông tin tài khoản</h5><hr />
+                <p><strong>Username:</strong> <code>@Model.Account.Username</code></p>
+                <p><strong>Email:</strong> @Model.Account.Email</p>
+                <p><strong>Số điện thoại:</strong> @Safe(Model.Account.Phone)</p>
+                <p><strong>Vai trò:</strong> @Model.Account.AccountType</p>
+                <p><strong>Hồ sơ:</strong> <span class="badge badge-info">@Model.Account.VerificationStatus</span></p>
+                <p><strong>Khu vực:</strong> @Safe(Model.Account.Province) - @Safe(Model.Account.Ward)</p>
+                <p><strong>Tuổi/Giới tính:</strong> @(Model.Account.Age.HasValue?$"{Model.Account.Age} tuổi":"Chưa có") / @Safe(Model.Account.Gender)</p>
+                <p><strong>Trạng thái:</strong> @if(Model.Account.IsActive && !accountLockedNow){<span class="badge badge-success">Đang hoạt động</span>}else{<span class="badge badge-danger">@(Model.Account.LockType??"Bị khóa")</span>}</p>
+                @if(!Model.Account.IsActive || accountLockedNow){<p><strong>Lý do khóa:</strong> @Safe(Model.Account.LockReason)</p><p><strong>Khóa đến:</strong> @DateTimeText(Model.Account.LockoutEnd)</p>}
+            </div></div>
+
+            <div class="card mb-3"><div class="card-body">
+                <h5>Yêu cầu xác minh lại</h5>
+                <p class="text-muted small">Dùng khi Admin phát hiện nhân viên đã duyệt hồ sơ nhưng hồ sơ chưa đáp ứng yêu cầu. Hệ thống sẽ chuyển hồ sơ sang <strong>Cần xác minh lại</strong>, thông báo cho khách và ghi audit log.</p>
+                @if(v != null && v.Status == "Đã xác minh"){
+                    <form asp-action="RequestReverification" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Account.AppUserID" />
+                        <div class="form-group"><label>Lý do thu hồi duyệt</label><select class="form-control" name="reason" required>
+                            <option value="">-- Chọn lý do --</option>
+                            <option>CCCD không rõ nhưng vẫn được duyệt</option>
+                            <option>Họ tên không khớp CCCD</option>
+                            <option>GPLX hết hạn</option>
+                            <option>Địa chỉ không đầy đủ</option>
+                            <option>Ảnh chân dung không đạt</option>
+                            <option>Nhân viên duyệt thiếu kiểm tra</option>
+                            <option>Lý do khác</option>
+                        </select></div>
+                        <div class="form-group"><label>Mức độ lỗi nghiệp vụ</label><select class="form-control" name="severity"><option>Nhẹ</option><option selected>Trung bình</option><option>Nghiêm trọng</option></select></div>
+                        <div class="form-check mb-3"><input type="hidden" name="restrictBooking" value="false"/><input class="form-check-input" type="checkbox" name="restrictBooking" value="true" checked id="restrictBooking"/><label class="form-check-label" for="restrictBooking">Tạm hạn chế đặt xe mới</label></div>
+                        <button class="btn btn-warning btn-block" onclick="return confirm('Chuyển hồ sơ sang Cần xác minh lại và thông báo cho khách?')">Yêu cầu xác minh lại</button>
+                    </form>
+                } else {
+                    <div class="alert alert-light border mb-0">Chỉ áp dụng khi hồ sơ đang ở trạng thái <strong>Đã xác minh</strong>.</div>
+                }
+            </div></div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card mb-3"><div class="card-body">
+                <h5>Hồ sơ xác minh khách thuê</h5><hr />
+                @if(v == null){<div class="alert alert-warning">Khách chưa có hồ sơ xác minh.</div>}else{
+                    <div class="row">
+                        <div class="col-md-6"><p><strong>Trạng thái:</strong> <span class="badge badge-info">@v.Status</span></p></div>
+                        <div class="col-md-6"><p><strong>Nhân viên duyệt gần nhất:</strong> @Safe(v.ReviewedByName)</p></div>
+                        <div class="col-md-6"><p><strong>Họ tên pháp lý:</strong> @Safe(v.LegalFullName)</p></div>
+                        <div class="col-md-3"><p><strong>Giới tính:</strong> @Safe(v.Gender)</p></div>
+                        <div class="col-md-3"><p><strong>Tuổi:</strong> @(v.Age.HasValue?$"{v.Age} tuổi":"Chưa có")</p></div>
+                        <div class="col-md-4"><p><strong>Ngày sinh:</strong> @DateText(v.DateOfBirth)</p></div>
+                        <div class="col-md-4"><p><strong>CCCD:</strong> @Safe(v.CitizenIdMasked)</p></div>
+                        <div class="col-md-4"><p><strong>Hiệu lực CCCD:</strong> @DateText(v.CitizenIdIssuedDate) - @DateText(v.CitizenIdExpiryDate)</p></div>
+                        <div class="col-md-12"><p><strong>Địa chỉ theo giấy tờ:</strong> @Safe(v.CitizenIdAddress)</p></div>
+                        <div class="col-md-12"><p><strong>Thường trú hiện hành:</strong> @Safe(v.PermanentAddress)</p></div>
+                        <div class="col-md-12"><p><strong>Địa chỉ hiện tại:</strong> @Safe(v.CurrentAddress)</p></div>
+                        <div class="col-md-4"><p><strong>Số GPLX:</strong> @Safe(v.DriverLicenseNumber)</p></div>
+                        <div class="col-md-4"><p><strong>Hạng GPLX:</strong> @Safe(v.DriverLicenseClass)</p></div>
+                        <div class="col-md-4"><p><strong>Hiệu lực GPLX:</strong> @DateText(v.DriverLicenseIssuedDate) - @DateText(v.DriverLicenseExpiry)</p></div>
+                        <div class="col-md-6"><p><strong>Gửi hồ sơ:</strong> @DateTimeText(v.CreatedDate)</p></div>
+                        <div class="col-md-6"><p><strong>Duyệt/cập nhật:</strong> @DateTimeText(v.ReviewedDate)</p></div>
+                        @if(!string.IsNullOrWhiteSpace(v.RejectionReason)){<div class="col-md-12"><div class="alert alert-warning"><strong>Lý do/yêu cầu hiện tại:</strong> @v.RejectionReason</div></div>}
+                    </div>
+                    <h6>Ảnh giấy tờ</h6>
+                    <div class="row">
+                        <div class="col-md-3 mb-2"><a class="btn btn-sm btn-outline-primary btn-block" href="@v.CitizenIdFrontUrl" target="_blank">CCCD trước</a></div>
+                        <div class="col-md-3 mb-2"><a class="btn btn-sm btn-outline-primary btn-block" href="@v.CitizenIdBackUrl" target="_blank">CCCD sau</a></div>
+                        <div class="col-md-3 mb-2"><a class="btn btn-sm btn-outline-primary btn-block" href="@v.DriverLicenseUrl" target="_blank">Bằng lái</a></div>
+                        <div class="col-md-3 mb-2"><a class="btn btn-sm btn-outline-primary btn-block" href="@v.PortraitUrl" target="_blank">Chân dung</a></div>
+                    </div>
+                }
+            </div></div>
+
+            <div class="card mb-3"><div class="card-body"><h5>Đơn thuê gần đây</h5><hr />
+                @if(Model.Reservations.Count==0){<p class="text-muted mb-0">Chưa có đơn thuê.</p>}else{<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Mã</th><th>Xe</th><th>Trạng thái</th><th>Thời gian</th><th>Tổng tiền</th></tr></thead><tbody>@foreach(var r in Model.Reservations){<tr><td>#@r.ReservationID</td><td>@r.CarName</td><td>@r.Status</td><td>@r.PickUpDate.ToString("dd/MM") - @r.DropOffDate.ToString("dd/MM/yyyy")</td><td>@r.TotalPrice.ToString("#,0", CultureInfo.InvariantCulture)</td></tr>}</tbody></table></div>}
+            </div></div>
+
+            <div class="card mb-3"><div class="card-body"><h5>Lỗi nghiệp vụ nhân viên liên quan</h5><hr />
+                @if(Model.StaffIssues.Count==0){<p class="text-muted mb-0">Chưa có lỗi nghiệp vụ được ghi nhận.</p>}else{<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Nhân viên</th><th>Mức độ</th><th>Lý do</th><th>Ngày</th></tr></thead><tbody>@foreach(var i in Model.StaffIssues){<tr><td>@i.StaffName</td><td>@i.Severity</td><td>@i.Reason</td><td>@DateTimeText(i.CreatedDate)</td></tr>}</tbody></table></div>}
+            </div></div>
+
+            <div class="card mb-3"><div class="card-body"><h5>Audit log tài khoản/hồ sơ</h5><hr />
+                @if(Model.AuditLogs.Count==0){<p class="text-muted mb-0">Chưa có lịch sử thao tác.</p>}else{<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Hành động</th><th>Đối tượng</th><th>Ghi chú</th></tr></thead><tbody>@foreach(var l in Model.AuditLogs){<tr><td>@DateTimeText(l.CreatedDate)</td><td>@l.ActorName</td><td>@l.Action</td><td>@l.EntityName #@l.EntityID</td><td>@l.Note</td></tr>}</tbody></table></div>}
+            </div></div>
+        </div>
+    </div>
+</div></div>

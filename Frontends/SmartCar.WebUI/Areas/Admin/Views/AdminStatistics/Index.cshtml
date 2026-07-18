@@ -1,0 +1,191 @@
+@using System.Globalization
+@using Newtonsoft.Json
+@using SmartCar.Dto.AdminDashboardDtos
+@model AdminDashboardSummaryDto
+@{
+    ViewData["Title"] = "Báo cáo doanh thu";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    var years = ViewBag.AvailableYears as List<int> ?? new List<int> { VietnamTime.Now.Year };
+}
+@functions {
+    public string Money(decimal value) => value.ToString("N0", CultureInfo.GetCultureInfo("en-US")) + " đ";
+}
+
+<div class="page-content statistics-report-page">
+    <div class="container-fluid">
+        <div class="report-heading">
+            <div>
+                <p class="report-eyebrow">BÁO CÁO TÀI CHÍNH</p>
+                <h2>Doanh thu và hoa hồng năm @Model.SelectedYear</h2>
+                <p class="text-muted mb-0">Số liệu được tổng hợp từ các đơn đã hoàn thành và giao dịch hoa hồng phát sinh.</p>
+            </div>
+            <form method="get" class="report-filter">
+                <label for="year">Chọn năm</label>
+                <select id="year" name="year" class="form-control" onchange="this.form.submit()">
+                    @foreach (var year in years)
+                    {
+                        if (year == Model.SelectedYear)
+                        {
+                            <option value="@year" selected>@year</option>
+                        }
+                        else
+                        {
+                            <option value="@year">@year</option>
+                        }
+                    }
+                </select>
+            </form>
+        </div>
+
+        @if (ViewBag.StatisticsError is string error)
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+
+        <div class="row report-summary-row">
+            <div class="col-xl-3 col-md-6"><div class="report-summary"><span>Tổng tiền thuê</span><strong>@Money(Model.GrossRevenueInYear)</strong><small>Giá trị các giao dịch hoàn thành</small></div></div>
+            <div class="col-xl-3 col-md-6"><div class="report-summary"><span>Hoa hồng Smart Car</span><strong>@Money(Model.PlatformRevenueInYear)</strong><small>Doanh thu thực tế của nền tảng</small></div></div>
+            <div class="col-xl-3 col-md-6"><div class="report-summary"><span>Chủ xe được nhận</span><strong>@Money(Model.PartnerNetRevenueInYear)</strong><small>Sau khi trừ phí dịch vụ</small></div></div>
+            <div class="col-xl-3 col-md-6"><div class="report-summary"><span>Đang chờ thanh toán</span><strong>@Money(Model.PendingSettlementAmount)</strong><small>Khoản phải trả cho đối tác</small></div></div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-8">
+                <div class="report-panel">
+                    <div class="report-panel-heading">
+                        <div><h4>Biến động doanh thu 12 tháng</h4><p>So sánh tổng tiền thuê, hoa hồng nền tảng và thu nhập ròng của đối tác.</p></div>
+                    </div>
+                    <div class="report-chart"><canvas id="fullRevenueChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="report-panel report-highlight-panel">
+                    <div class="report-panel-heading"><div><h4>Tóm tắt năm @Model.SelectedYear</h4><p>Các chỉ số giúp đánh giá hiệu quả vận hành.</p></div></div>
+                    <div class="report-highlight"><span>Tháng hoa hồng cao nhất</span><strong>@Model.HighestRevenueMonthName</strong><small>@Money(Model.HighestRevenueAmount)</small></div>
+                    <div class="report-highlight"><span>Đơn hoàn thành</span><strong>@Model.CompletedReservationsInYear</strong><small>trên @Model.TotalReservationsInYear đơn phát sinh</small></div>
+                    <div class="report-highlight"><span>Tỷ lệ hủy đơn</span><strong>@Model.CancellationRate.ToString("0.#")%</strong><small>Cần theo dõi nguyên nhân hủy nếu tăng cao</small></div>
+                    <div class="report-highlight"><span>Đối tác doanh thu cao nhất</span><strong>@Model.TopPartnerName</strong><small>@Money(Model.TopPartnerNetRevenue)</small></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-7">
+                <div class="report-panel">
+                    <div class="report-panel-heading"><div><h4>Bảng doanh thu theo tháng</h4><p>Định dạng tiền có dấu phân cách hàng nghìn để dễ đối chiếu.</p></div></div>
+                    <div class="table-responsive">
+                        <table class="table report-table mb-0">
+                            <thead><tr><th>Tháng</th><th>Đơn hoàn thành</th><th>Tổng tiền thuê</th><th>Hoa hồng Smart Car</th><th>Chủ xe nhận</th></tr></thead>
+                            <tbody>
+                            @foreach (var month in Model.MonthlyRevenue)
+                            {
+                                var isHighest = month.Month == Model.HighestRevenueMonth && month.PlatformRevenue > 0;
+                                <tr class="@(isHighest ? "highest-month-row" : "")">
+                                    <td>
+                                        <strong>@month.MonthName</strong>
+                                        @if (isHighest)
+                                        {
+                                            <span class="highest-label">Cao nhất</span>
+                                        }
+                                    </td>
+                                    <td>@month.CompletedReservations</td>
+                                    <td>@Money(month.GrossRevenue)</td>
+                                    <td class="platform-money">@Money(month.PlatformRevenue)</td>
+                                    <td>@Money(month.PartnerNetRevenue)</td>
+                                </tr>
+                            }
+                            </tbody>
+                            <tfoot><tr><th>Tổng năm</th><th>@Model.CompletedReservationsInYear</th><th>@Money(Model.GrossRevenueInYear)</th><th>@Money(Model.PlatformRevenueInYear)</th><th>@Money(Model.PartnerNetRevenueInYear)</th></tr></tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="report-panel">
+                    <div class="report-panel-heading"><div><h4>Số đơn hoàn thành theo tháng</h4><p>Giúp nhận biết mùa cao điểm và thấp điểm.</p></div></div>
+                    <div class="report-chart compact"><canvas id="completedOrdersChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="report-note">
+            <i class="mdi mdi-information-outline"></i>
+            <div><strong>Cách đọc báo cáo</strong><p>“Tổng tiền thuê” là giá trị giao dịch của khách hàng; “Hoa hồng Smart Car” là doanh thu của nền tảng; “Chủ xe nhận” là phần doanh thu còn lại của đối tác sau khi trừ phí dịch vụ.</p></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .statistics-report-page { background:#f4f7fb; min-height:calc(100vh - 70px); }
+    .report-heading { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:24px; }
+    .report-heading h2 { margin:0 0 6px; color:#1e2d3c; font-size:28px; font-weight:700; }
+    .report-eyebrow { margin:0 0 6px; color:#20a464; font-size:12px; font-weight:800; letter-spacing:1.4px; }
+    .report-filter { display:flex; align-items:center; gap:10px; background:#fff; padding:10px 12px; border:1px solid #e5eaf0; border-radius:12px; }
+    .report-filter label { margin:0; color:#6e7e8e; white-space:nowrap; }
+    .report-filter select { min-width:100px; border:0; font-weight:700; }
+    .report-summary-row > div { margin-bottom:22px; }
+    .report-summary { height:100%; min-height:132px; display:flex; flex-direction:column; justify-content:center; padding:22px; background:#fff; border:1px solid #e7edf3; border-left:4px solid #168cf2; border-radius:14px; box-shadow:0 7px 21px rgba(24,39,75,.05); }
+    .report-summary-row > div:nth-child(2) .report-summary { border-left-color:#20a464; }
+    .report-summary-row > div:nth-child(3) .report-summary { border-left-color:#7655d6; }
+    .report-summary-row > div:nth-child(4) .report-summary { border-left-color:#e68a1f; }
+    .report-summary span { color:#7a8998; font-size:13px; }
+    .report-summary strong { color:#1d2c3b; font-size:24px; margin:8px 0; white-space:nowrap; }
+    .report-summary small { color:#8c99a6; }
+    .report-panel { background:#fff; border:1px solid #e7edf3; border-radius:16px; box-shadow:0 8px 24px rgba(24,39,75,.05); margin-bottom:24px; overflow:hidden; }
+    .report-panel-heading { padding:20px 22px; border-bottom:1px solid #edf1f5; }
+    .report-panel-heading h4 { margin:0 0 5px; color:#213141; font-size:17px; font-weight:700; }
+    .report-panel-heading p { margin:0; color:#8492a1; font-size:13px; }
+    .report-chart { height:390px; padding:20px 22px 24px; position:relative; }
+    .report-chart.compact { height:420px; }
+    .report-highlight { display:flex; flex-direction:column; padding:17px 22px; border-bottom:1px solid #edf1f5; }
+    .report-highlight:last-child { border-bottom:0; }
+    .report-highlight span { color:#8492a1; font-size:12px; }
+    .report-highlight strong { color:#233443; font-size:20px; margin:4px 0; }
+    .report-highlight small { color:#617182; }
+    .report-table thead th { background:#f8fafc; color:#6f7f8f; font-size:12px; text-transform:uppercase; border-top:0; border-bottom:1px solid #e7edf3; padding:13px 15px; white-space:nowrap; }
+    .report-table td, .report-table tfoot th { padding:13px 15px; vertical-align:middle; border-color:#edf1f5; white-space:nowrap; }
+    .report-table tfoot th { background:#f8fafc; color:#263746; }
+    .highest-month-row { background:#f0fff7; }
+    .highest-label { margin-left:8px; padding:3px 7px; border-radius:999px; background:#20a464; color:#fff; font-size:10px; }
+    .platform-money { color:#168cf2; font-weight:700; }
+    .report-note { display:flex; gap:14px; align-items:flex-start; padding:18px 20px; background:#eaf5ff; border:1px solid #d7eafd; border-radius:14px; color:#39566f; margin-bottom:24px; }
+    .report-note i { color:#168cf2; font-size:24px; }
+    .report-note strong { display:block; margin-bottom:3px; color:#23415d; }
+    .report-note p { margin:0; line-height:1.6; }
+    @@media (max-width:991px) { .report-heading { flex-direction:column; align-items:flex-start; } .report-filter { width:100%; justify-content:space-between; } .report-chart { height:330px; } }
+    @@media (max-width:575px) { .report-summary strong { font-size:20px; white-space:normal; } }
+</style>
+
+<script src="~/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const labels = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.MonthName)));
+        const gross = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.GrossRevenue)));
+        const platform = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.PlatformRevenue)));
+        const partner = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.PartnerNetRevenue)));
+        const completed = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.CompletedReservations)));
+        const money = value => Number(value || 0).toLocaleString('en-US') + ' đ';
+
+        const fullRevenue = document.getElementById('fullRevenueChart');
+        if (fullRevenue) {
+            new Chart(fullRevenue.getContext('2d'), {
+                type: 'line',
+                data: { labels: labels, datasets: [
+                    { label:'Tổng tiền thuê', data:gross, borderColor:'#168cf2', backgroundColor:'rgba(22,140,242,.08)', fill:true, tension:.3, pointRadius:3 },
+                    { label:'Hoa hồng Smart Car', data:platform, borderColor:'#20a464', backgroundColor:'rgba(32,164,100,.08)', fill:true, tension:.3, pointRadius:3 },
+                    { label:'Chủ xe nhận', data:partner, borderColor:'#7655d6', backgroundColor:'rgba(118,85,214,.05)', fill:false, tension:.3, pointRadius:3 }
+                ]},
+                options: { responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false}, plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+money(ctx.raw)}}}, scales:{y:{beginAtZero:true,ticks:{callback:value=>Number(value).toLocaleString('en-US')}},x:{grid:{display:false}}} }
+            });
+        }
+
+        const orders = document.getElementById('completedOrdersChart');
+        if (orders) {
+            new Chart(orders.getContext('2d'), {
+                type:'bar',
+                data:{labels:labels,datasets:[{label:'Đơn hoàn thành',data:completed,backgroundColor:'#168cf2',borderRadius:6}]},
+                options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}}}
+            });
+        }
+    });
+</script>

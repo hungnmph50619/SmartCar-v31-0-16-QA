@@ -1,0 +1,2 @@
+using System.ComponentModel.DataAnnotations;
+namespace SmartCar.Domain.Entities { public class DisputeMessage { public int DisputeMessageID {get;set;} public int DisputeID {get;set;} public Dispute Dispute {get;set;}=null!; public int SenderAppUserID {get;set;} [MaxLength(2000)] public string Message {get;set;}=string.Empty; [MaxLength(4000)] public string? EvidenceUrls {get;set;} public DateTime CreatedDate {get;set;}=DateTime.UtcNow; } }

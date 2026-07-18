@@ -1,0 +1,54 @@
+﻿@model List<ResultCategoryDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Danh sách danh mục bài viết</h4>
+                        <p class="card-subtitle mb-4">
+                           Đây là trang quản lý danh mục bài viết. Vui lòng nhập đầy đủ thông tin khi thêm danh mục.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tên danh mục</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                        <th>Bài viết thuộc danh mục</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <td>@count</td>
+                                            <td>@item.Name</td>
+                                            <td><form method="post" action="/Admin/AdminCategory/RemoveCategory/@item.CategoryId" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminCategory/UpdateCategory/@item.CategoryId" class="btn btn-outline-success">Cập nhật</a></td>
+                                            <td><a href="/Admin/AdminCategory/#/@item.CategoryId" class="btn btn-outline-dark">Bài viết thuộc danh mục</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminCategory/CreateCategory" class="btn btn-outline-primary">Thêm danh mục mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+﻿@model List<ResultFeatureDto>
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Danh sách tính năng xe</h4>
+                        <p class="card-subtitle mb-4">
+                            Tại đây, bạn có thể thêm, sửa hoặc xóa các tính năng của xe như điều hòa, Bluetooth, âm thanh và điện. Để giao diện hiển thị cân đối, vui lòng nhập số lượng tính năng là bội số của 3.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tính năng</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <th scope="row">@count</th>
+                                            <td>@item.Name</td>
+                                            <td><form method="post" action="/AdminFeature/RemoveFeature/@item.FeatureID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/AdminFeature/UpdateFeature/@item.FeatureID" class="btn btn-outline-success">Cập nhật</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/AdminFeature/CreateFeature/" class="btn btn-outline-primary">Thêm tính năng mới</a>
+                        </div>
+
+                    </div>
+                    <!-- end card-body-->
+                </div>
+                <!-- end card -->
+
+            </div>
+            <!-- end col -->
+
+        </div>
+        <!-- end page title -->
+
+    </div> <!-- container-fluid -->
+</div>
+

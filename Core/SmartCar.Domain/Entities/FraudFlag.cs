@@ -1,0 +1,2 @@
+using System.ComponentModel.DataAnnotations;
+namespace SmartCar.Domain.Entities { public class FraudFlag { public int FraudFlagID {get;set;} public int? AppUserID {get;set;} public int? ReservationID {get;set;} [MaxLength(80)] public string RuleCode {get;set;}=string.Empty; [MaxLength(1000)] public string Description {get;set;}=string.Empty; public int RiskScore {get;set;} [MaxLength(30)] public string Status {get;set;}="Mới"; public DateTime CreatedDate {get;set;}=DateTime.UtcNow; public int? ReviewedByAppUserID {get;set;} public DateTime? ReviewedDate {get;set;} } }

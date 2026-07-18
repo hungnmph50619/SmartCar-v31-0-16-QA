@@ -1,0 +1,75 @@
+@using System.Security.Claims
+@{
+    var isStaff = User.IsInRole("Staff");
+    var isAdmin = User.IsInRole("Admin");
+    var isCustomer = User.IsInRole("Customer");
+    var isVehiclePartner = string.Equals(User.FindFirstValue("IsVehiclePartner"), "true", StringComparison.OrdinalIgnoreCase);
+    var displayName = User.FindFirstValue(ClaimTypes.Name) ?? "Tài khoản";
+    var shortName = displayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? displayName;
+    var roleNavbar = isStaff || isAdmin || isVehiclePartner;
+    var homeUrl = isStaff ? "/StaffDashboard/Index" : isAdmin ? "/Admin/AdminDashboard/Index" : isVehiclePartner ? "/VehiclePartner/Dashboard" : "/Default/Index/";
+}
+<nav class="navbar navbar-expand-xl navbar-dark ftco_navbar ftco-navbar-light @(roleNavbar ? "smart-role-navbar" : "bg-dark")" id="ftco-navbar">
+    <div class="container smart-navbar-container">
+        <a class="navbar-brand" href="@homeUrl">Smart<span>Car</span></a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#ftco-nav" aria-controls="ftco-nav" aria-expanded="false" aria-label="Mở hoặc đóng menu điều hướng"><span class="oi oi-menu" aria-hidden="true"></span> Menu</button>
+        <div class="collapse navbar-collapse" id="ftco-nav">
+            <ul class="navbar-nav ml-auto">
+            @if (isStaff)
+            {
+                <li class="nav-item"><a href="/StaffDashboard/Index" class="nav-link">Tổng quan</a></li>
+                <li class="nav-item"><a href="/Admin/AdminReservation/Index" class="nav-link">Đơn thuê</a></li>
+                <li class="nav-item"><a href="/Admin/AdminMarketplace/Index" class="nav-link">Đối soát</a></li>
+                <li class="nav-item"><a href="/Account/Profile" class="nav-link">Hồ sơ</a></li>
+            }
+            else if (isAdmin)
+            {
+                <li class="nav-item"><a href="/Admin/AdminDashboard/Index" class="nav-link">Quản trị</a></li>
+                <li class="nav-item"><a href="/Admin/AdminVehiclePartner/Index" class="nav-link">Duyệt xe</a></li>
+                <li class="nav-item"><a href="/Admin/AdminMarketplace/Index" class="nav-link">Hoa hồng</a></li>
+                <li class="nav-item"><a href="/Account/Profile" class="nav-link">Hồ sơ</a></li>
+                <li class="nav-item"><a href="/Default/Index" class="nav-link">Xem trang web</a></li>
+            }
+            else if (isVehiclePartner)
+            {
+                <li class="nav-item"><a href="/VehiclePartner/Dashboard#owner-orders" class="nav-link">Đơn của tôi</a></li>
+                <li class="nav-item"><a href="/VehiclePartner/Register" class="nav-link">Đăng xe</a></li>
+                <li class="nav-item"><a href="/Account/Profile" class="nav-link">Hồ sơ</a></li>
+            }
+            else
+            {
+                <li class="nav-item"><a href="/Default/Index/" class="nav-link">Trang chủ</a></li>
+                <li class="nav-item"><a href="/About/Index/" class="nav-link">Giới thiệu</a></li>
+                <li class="nav-item"><a href="/CarPricing/Index/" class="nav-link">Bảng giá</a></li>
+                <li class="nav-item"><a href="/Blog/Index/" class="nav-link">Bài viết</a></li>
+                <li class="nav-item"><a href="/VehiclePartner/BecomeOwner" class="nav-link partner-link">Trở thành chủ xe</a></li>
+                @if (isCustomer)
+                {
+                    <li class="nav-item"><a href="/ReservationLookup/Index" class="nav-link">Đơn của tôi</a></li>
+                    <li class="nav-item"><a href="/Account/Profile" class="nav-link">Hồ sơ</a></li>
+                }
+            }
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <li class="nav-item smart-notification-nav">@await Component.InvokeAsync("NotificationBell", new { theme = "public" })</li>
+                <li class="nav-item smart-greeting"><span class="nav-link">Xin chào, @shortName</span></li>
+                <li class="nav-item">
+                    <form asp-area="" asp-controller="Login" asp-action="LogOut" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="nav-link btn btn-link border-0">Đăng xuất</button>
+                    </form>
+                </li>
+            }
+            else
+            {
+                <li class="nav-item"><a href="/Login/Index/" class="nav-link">Đăng nhập</a></li>
+                <li class="nav-item"><a href="/Register/CreateAppUser" class="nav-link">Đăng ký</a></li>
+            }
+            </ul>
+        </div>
+    </div>
+</nav>
+<style>
+.smart-navbar-container{max-width:1420px!important}.navbar-nav{align-items:center;flex-wrap:nowrap;gap:3px}.navbar-nav .nav-item{flex-shrink:0}.navbar-nav .nav-link{white-space:nowrap!important;word-break:keep-all!important;padding:10px 9px!important;font-size:14px}.smart-role-navbar{position:relative!important;background:linear-gradient(135deg,#102a43,#168cf2)!important;padding:12px 0!important}.smart-role-navbar .nav-link,.smart-role-navbar .navbar-brand{color:#fff!important}.smart-greeting .nav-link{font-size:12px!important;background:rgba(255,255,255,.15);border-radius:20px;padding:7px 11px!important}.partner-link{font-weight:700!important;color:#01d28e!important}
+@@media (max-width:1199px){.navbar-nav{align-items:stretch;flex-wrap:wrap;width:100%;padding-top:10px}.navbar-nav .nav-item{width:100%}.navbar-nav .nav-link{padding:11px 8px!important;min-height:44px;display:flex;align-items:center}.smart-greeting .nav-link{background:transparent}.smart-notification-nav{padding:6px 0}}
+</style>

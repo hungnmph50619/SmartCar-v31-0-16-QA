@@ -1,0 +1,30 @@
+﻿@model CreatePricingDto
+
+@{
+    ViewData["Title"] = "CreatePricing";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Thêm kỳ thanh toán mới</h4>
+                        <p class="card-subtitle mb-4">Thanh toán periyodu vào khu vực việc nhập dữ liệu từ bảng bên dưới bạn có thể thực hiện.</p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label for="exampleInputName">Tên kỳ thanh toán</label>
+                                <input type="text" class="form-control" id="exampleInputName" asp-for="Name" placeholder="Nhập kỳ thanh toán (Theo ngày, Theo tuần, Theo tháng...)">
+                            </div>   
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Lưu kỳ thanh toán</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

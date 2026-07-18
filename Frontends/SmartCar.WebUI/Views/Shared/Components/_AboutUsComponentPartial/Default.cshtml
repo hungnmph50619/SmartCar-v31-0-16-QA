@@ -1,0 +1,132 @@
+@model List<SmartCar.Dto.AboutDtos.ResultAboutDto>
+
+<style>
+    .smart-about-section {
+        padding: 90px 0;
+        background: linear-gradient(180deg, #ffffff 0%, #f7faf9 100%);
+    }
+
+    .smart-about-shell {
+        overflow: hidden;
+        border-radius: 24px;
+        background: #fff;
+        box-shadow: 0 18px 55px rgba(18, 38, 63, .10);
+    }
+
+    .smart-about-image {
+        min-height: 470px;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .smart-about-content {
+        position: relative;
+        display: flex;
+        min-height: 470px;
+        align-items: center;
+        padding: 55px 58px;
+    }
+
+    .smart-about-content::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 55px;
+        width: 5px;
+        height: 90px;
+        border-radius: 0 8px 8px 0;
+        background: #01d28e;
+    }
+
+    .smart-about-badge {
+        display: inline-block;
+        margin-bottom: 14px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: #e9fbf5;
+        color: #009c6a;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .08em;
+    }
+
+    .smart-about-content h2 {
+        color: #172b3a;
+        font-size: 40px;
+        line-height: 1.25;
+        font-weight: 700;
+    }
+
+    .smart-about-content p {
+        color: #66757f;
+        font-size: 17px;
+        line-height: 1.85;
+    }
+
+    .smart-about-points {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px 20px;
+        margin: 24px 0 28px;
+        color: #273b49;
+    }
+
+    .smart-about-points span::before {
+        content: "✓";
+        margin-right: 8px;
+        color: #01d28e;
+        font-weight: 800;
+    }
+
+    @@media (max-width: 991.98px) {
+        .smart-about-image { min-height: 360px; }
+        .smart-about-content { min-height: auto; padding: 42px 34px; }
+        .smart-about-content h2 { font-size: 34px; }
+    }
+
+    @@media (max-width: 575.98px) {
+        .smart-about-section { padding: 55px 0; }
+        .smart-about-points { grid-template-columns: 1fr; }
+    }
+</style>
+
+@if (Model == null || Model.Count == 0)
+{
+    <section class="smart-about-section">
+        <div class="container">
+            <div class="alert alert-info">Thông tin giới thiệu đang được cập nhật.</div>
+        </div>
+    </section>
+}
+else
+{
+    for (var index = 0; index < 1; index++)
+    {
+        var item = Model[index];
+        <section class="smart-about-section">
+            <div class="container">
+                <div class="smart-about-shell">
+                    <div class="row no-gutters">
+                        <div class="col-lg-6 smart-about-image" style="background-image: url('@item.imageUrl');"></div>
+                        <div class="col-lg-6 smart-about-content">
+                            <div>
+                                <span class="smart-about-badge">GIỚI THIỆU SMART CAR</span>
+                                <h2 class="mb-4">@item.title</h2>
+                                <p>@item.description</p>
+
+                                <div class="smart-about-points">
+                                    <span>Nhiều dòng xe</span>
+                                    <span>Giá minh bạch</span>
+                                    <span>Đặt xe trực tuyến</span>
+                                    <span>Hỗ trợ khách hàng</span>
+                                </div>
+
+                                <a href="/Default/Index#rent-search" class="btn btn-primary py-3 px-4">Tìm xe phù hợp</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+}

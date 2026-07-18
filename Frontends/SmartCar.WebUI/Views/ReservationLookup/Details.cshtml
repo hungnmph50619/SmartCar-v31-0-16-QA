@@ -1,0 +1,456 @@
+@model ReservationDetailDto
+@{
+    ViewData["Title"] = $"Đơn #{Model.Reservation.ReservationID}";
+    var isCustomer = ViewBag.IsCustomer == true;
+    var isOwner = ViewBag.IsOwner == true;
+    var isStaff = ViewBag.IsStaff == true;
+    var isAdmin = ViewBag.IsAdmin == true;
+    Layout = isStaff || isAdmin ? "~/Views/AdminLayout/Index.cshtml" : isOwner ? "~/Views/UILayout/Partner.cshtml" : "~/Views/UILayout/Index.cshtml";
+    var canManage = isOwner || isStaff || isAdmin;
+    var deliveryReport = Model.Handovers.Where(x => !x.IsSuperseded && x.ReportType == "Giao xe").OrderByDescending(x => x.CreatedDate).FirstOrDefault();
+    var returnReport = Model.Handovers.Where(x => !x.IsSuperseded && x.ReportType == "Trả xe").OrderByDescending(x => x.CreatedDate).FirstOrDefault();
+    var isLegacyDeposit = Model.Price.ReservationDepositAmount <= 0 && Model.Price.SecurityDepositAmount <= 0 && Model.Price.DepositAmount > 0;
+    var holdPaymentType = Model.Price.ReservationDepositAmount > 0 ? "Cọc giữ chỗ" : isLegacyDeposit ? "Tiền cọc" : "Tiền thuê";
+    var holdPaymentAmount = Model.Price.ReservationDepositAmount > 0 ? Model.Price.ReservationDepositAmount : isLegacyDeposit ? Model.Price.DepositAmount : Model.Price.TotalRental;
+    var transferContent = $"SC{Model.Reservation.ReservationID:D6}";
+    var holdTransferContent = holdPaymentType == "Tiền thuê" ? $"{transferContent}-RENT" : $"{transferContent}-BOOK";
+    var paymentConfigured = ViewBag.PaymentConfigured == true;
+    var paymentBankName = ViewBag.PaymentBankName as string ?? string.Empty;
+    var paymentAccountNumber = ViewBag.PaymentAccountNumber as string ?? string.Empty;
+    var paymentAccountHolder = ViewBag.PaymentAccountHolder as string ?? string.Empty;
+    var paymentQrImagePath = ViewBag.PaymentQrImagePath as string ?? string.Empty;
+    var paymentIsDemoQr = ViewBag.PaymentIsDemoQr == true;
+    var cancellationPreview = ViewBag.CancellationPreview as CancellationPreviewDto;
+    string Badge(string status) => status switch { "Hoàn thành" or "Thành công" or "Đã xác nhận" or "Đã chấp nhận" => "success", "Đã hủy" or "Đang tranh chấp" or "Bị từ chối" => "danger", "Chờ xác nhận" or "Mới tiếp nhận" => "warning", _ => "info" };
+}
+<style>
+.detail-shell{max-width:1220px;margin:auto}.detail-card{border:0;border-radius:14px}.timeline{display:flex;overflow-x:auto;padding:12px 0 22px}.timeline-item{min-width:145px;position:relative;text-align:center;padding:0 8px}.timeline-item:before{content:"";position:absolute;top:18px;left:-50%;width:100%;height:3px;background:#dee2e6}.timeline-item:first-child:before{display:none}.timeline-dot{position:relative;z-index:2;width:38px;height:38px;border-radius:50%;margin:auto;display:flex;align-items:center;justify-content:center;background:#e9ecef;color:#6c757d;font-weight:700}.timeline-item.completed .timeline-dot,.timeline-item.completed:before{background:#28a745;color:#fff}.timeline-item.current .timeline-dot{background:#1089ff;color:#fff;box-shadow:0 0 0 6px rgba(16,137,255,.14)}.timeline-item.current:before{background:#28a745}.timeline-item.cancelled .timeline-dot{background:#dc3545;color:#fff}.timeline-label{font-size:.86rem;margin-top:9px;font-weight:600}.finance-row{display:flex;justify-content:space-between;padding:.45rem 0;gap:12px}.finance-total{border-top:1px solid #dee2e6;padding-top:.85rem;margin-top:.35rem;font-weight:700}.action-box{border:1px solid #e2e8ef;border-radius:12px;padding:18px;background:#fff}.handover-card{border-left:4px solid #1089ff}.comparison-table th{background:#f5f8fb}.comparison-mobile{display:none}.evidence-grid{display:flex;gap:8px;overflow-x:auto}.evidence-grid img,.evidence-grid video{width:115px;height:90px;object-fit:cover;border-radius:8px}.countdown{font-size:1.55rem;font-weight:800;color:#dc3545}.payment-qr{max-width:270px;width:100%;border:1px solid #dbe4ed;border-radius:14px;padding:10px;background:#fff}.payment-value{font-size:1.05rem;font-weight:700;word-break:break-all}.copy-btn{padding:.15rem .45rem;font-size:.78rem}.manual-payment-box{background:#f7fbff;border:1px solid #cfe6ff;border-radius:14px;padding:18px}.section-anchor{scroll-margin-top:20px}.mobile-summary{display:none}@@media(max-width:767px){.timeline-item{min-width:120px}.desktop-table{display:none}.mobile-summary,.comparison-mobile{display:block}.comparison-desktop{display:none}.action-box{padding:14px}.detail-card .card-body{padding:1rem}.countdown{font-size:1.25rem}}
+</style>
+<section class="ftco-section bg-light py-5">
+<div class="container detail-shell">
+    @if (TempData["ReservationSuccess"] != null){<div class="alert alert-success">@TempData["ReservationSuccess"]</div>}
+    @if (TempData["OperationSuccess"] != null){<div class="alert alert-success">@TempData["OperationSuccess"]</div>}
+    @if (TempData["OperationError"] != null){<div class="alert alert-danger">@TempData["OperationError"]</div>}
+
+    <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start">
+            <div><div class="text-muted">Mã đơn #@Model.Reservation.ReservationID · tạo @Model.Reservation.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div><h2 class="mb-1">@Model.Reservation.CarName</h2><div>@Model.Reservation.PickUpLocation → @Model.Reservation.DropOffLocation</div></div>
+            <span class="badge badge-@Badge(Model.Reservation.Status) p-3 mt-2">@Model.Reservation.Status</span>
+        </div>
+        <div class="timeline mt-4">
+            @for(var i=0;i<Model.Timeline.Count;i++)
+            {
+                var item=Model.Timeline[i];
+                <div class="timeline-item @item.State"><div class="timeline-dot">@(item.State=="completed"?"✓":(i+1).ToString())</div><div class="timeline-label">@item.Label</div>@if(item.ChangedDate.HasValue){<small class="text-muted">@item.ChangedDate.Value.ToString("dd/MM HH:mm")</small>}</div>
+            }
+        </div>
+    </div></div>
+
+
+            @if (Model.Reservation.Status == "Hết hạn thanh toán" && Model.Payments.Any(x => x.Status == "Chờ xác nhận"))
+            {
+                <div class="alert alert-danger">
+                    Đơn đã bị tác vụ cũ đánh dấu hết hạn dù có giao dịch chờ đối chiếu. Nhân viên hãy mở mục <strong>Thanh toán</strong> và xác nhận; hệ thống sẽ khôi phục đơn nếu giao dịch được gửi trước hạn.
+                </div>
+            }
+
+    <div class="row">
+        <div class="col-lg-8">
+            @if (Model.CanOwnerDecide && isOwner)
+            {
+                <div class="card detail-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
+                    <h4>Yêu cầu mới cần phản hồi</h4><p>Kiểm tra thời gian, địa điểm, hồ sơ xác minh và giá đã chốt trước khi quyết định.</p>
+                    <div class="alert alert-info">Sau khi chấp nhận, xe được giữ <strong>15 phút</strong> để khách thanh toán giữ chỗ. Yêu cầu hiện tại chưa khóa lịch.</div>
+                    <form asp-controller="VehiclePartner" asp-action="DecideReservation" method="post" id="ownerDecisionForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                        <input type="hidden" name="decision" id="ownerDecisionValue" value="Chấp nhận"/>
+                        <div class="form-group"><label>Ghi chú cho khách</label><textarea name="note" class="form-control" rows="3" maxlength="1000" placeholder="Thời gian giao xe, điểm hẹn hoặc lý do từ chối..."></textarea></div>
+                        <button type="submit" class="btn btn-success" onclick="document.getElementById('ownerDecisionValue').value='Chấp nhận';">Chấp nhận và giữ xe</button>
+                        <button type="submit" class="btn btn-outline-danger" onclick="document.getElementById('ownerDecisionValue').value='Từ chối'; return confirm('Bạn chắc chắn từ chối yêu cầu này?');">Từ chối</button>
+                    </form>
+                </div></div>
+            }
+
+            @if (Model.Reservation.Status is "Chờ thanh toán" or "Chờ khách đặt cọc" or "Chờ khách thanh toán giữ chỗ")
+            {
+                <div class="card detail-card shadow-sm mb-4 section-anchor" id="deposit"><div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start">
+                        <div><h4>Thanh toán chuyển khoản thủ công</h4><p class="text-muted mb-2">Không dùng cổng thanh toán mất phí. Khách chuyển khoản vào tài khoản SmartCar, sau đó nhân viên đối chiếu thủ công.</p></div>
+                        <div class="text-md-right"><div class="text-muted">Thời gian giữ xe còn lại</div><div id="countdown" class="countdown">--:--</div></div>
+                    </div>
+                    @if (!paymentConfigured)
+                    {
+                        <div class="alert alert-danger mt-3">
+                            Chưa cấu hình tài khoản nhận thanh toán. Quản trị viên cần tạo
+                            <code>Frontends/SmartCar.WebUI/appsettings.Local.json</code> từ file mẫu trước khi nhận chuyển khoản.
+                        </div>
+                    }
+                    else
+                    {
+                    <div class="manual-payment-box mt-3">
+                        <div class="row align-items-center">
+                            @if (!string.IsNullOrWhiteSpace(paymentQrImagePath))
+                            {
+                                <div class="col-md-5 text-center mb-3 mb-md-0">
+                                    <img src="@paymentQrImagePath" alt="QR thanh toán SmartCar" class="payment-qr"/>
+                                    @if (paymentIsDemoQr)
+                                    {
+                                        <div class="small text-warning mt-2"><strong>QR demo:</strong> dùng để trình diễn đồ án. Trước khi dùng thật phải thay bằng QR ngân hàng chính thức đúng tài khoản.</div>
+                                    }
+                                </div>
+                            }
+                            <div class="@(string.IsNullOrWhiteSpace(paymentQrImagePath) ? "col-md-12" : "col-md-7")">
+                                <div class="finance-row"><span>Ngân hàng</span><strong>@paymentBankName</strong></div>
+                                <div class="finance-row"><span>Số tài khoản</span><span class="payment-value">@paymentAccountNumber <button type="button" class="btn btn-outline-secondary copy-btn ml-1" onclick="copyPaymentText('@paymentAccountNumber')">Sao chép</button></span></div>
+                                <div class="finance-row"><span>Chủ tài khoản</span><strong>@paymentAccountHolder</strong></div>
+                                <div class="finance-row"><span>Khoản cần chuyển</span><strong class="text-danger">@holdPaymentAmount.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture) đồng</strong></div>
+                                <div class="finance-row"><span>Nội dung bắt buộc</span><span class="payment-value"><code>@holdTransferContent</code> <button type="button" class="btn btn-outline-secondary copy-btn ml-1" onclick="copyPaymentText('@holdTransferContent')">Sao chép</button></span></div>
+                                <div class="alert alert-warning mt-3 mb-0">
+                                    Chỉ bấm <strong>Tôi đã chuyển khoản</strong> sau khi ứng dụng ngân hàng báo thành công. Hệ thống không tự xác nhận bằng ảnh hoặc lời khai của khách; nhân viên phải kiểm tra sao kê.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    }
+                    @if (paymentConfigured && isCustomer && Model.CanSubmitDepositProof)
+                    {
+                        <form asp-action="SubmitPaymentProof" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                            <input type="hidden" name="paymentType" value="@holdPaymentType"/>
+                            <button class="btn btn-primary btn-lg" onclick="return confirm('Bạn xác nhận đã chuyển đúng số tiền và nội dung @holdTransferContent?');">Tôi đã chuyển khoản</button>
+                            <small class="d-block text-muted mt-2">Không cần nhập mã giao dịch và không cần tải ảnh chuyển khoản.</small>
+                        </form>
+                    }
+                    else if (paymentConfigured && isCustomer)
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">Thời gian giữ xe đã hết hoặc đơn không còn đủ điều kiện báo thanh toán.</div>
+                    }
+                    @if (isAdmin)
+                    {
+                        <form asp-action="SimulatePayment" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                            <button class="btn btn-outline-dark" onclick="return confirm('Tạo giao dịch giả lập thành công cho đơn này? Không có tiền thật được chuyển.');">Giả lập giao dịch thành công</button>
+                        </form>
+                    }
+                </div></div>
+            }
+
+
+            @if (Model.Reservation.Status is "Chờ nhân viên xác nhận cọc" or "Chờ nhân viên xác nhận thanh toán")
+            {
+                <div class="card detail-card shadow-sm mb-4 section-anchor" id="deposit-review"><div class="card-body p-4">
+                    <h4>SmartCar đang đối chiếu thanh toán giữ chỗ</h4>
+                    <div class="alert alert-warning mb-0">
+                        Khách đã bấm báo chuyển khoản đúng thời hạn. Đơn được giữ lại để nhân viên kiểm tra sao kê; <strong>khách không cần nhập mã giao dịch hoặc gửi lại lần nữa</strong>.
+                        Sau khi xác nhận đủ tiền, lịch xe được khóa chính thức và trạng thái tự chuyển sang <strong>Chờ giao xe</strong>.
+                    </div>
+                    @if (isAdmin)
+                    {
+                        <form asp-action="SimulatePayment" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                            <button class="btn btn-outline-dark" onclick="return confirm('Thay giao dịch đang chờ bằng giao dịch giả lập thành công? Không phát sinh tiền thật.');">Giả lập xác nhận ngân hàng</button>
+                        </form>
+                    }
+                </div></div>
+            }
+
+            <div class="card detail-card shadow-sm mb-4 section-anchor" id="schedule"><div class="card-body p-4">
+                <h4 class="mb-3">Thông tin chuyến thuê</h4>
+                <div class="row"><div class="col-md-6 mb-3"><strong>Nhận xe</strong><br/>@Model.Reservation.PickUpDate.ToString("dd/MM/yyyy") lúc @Model.Reservation.PickUpTime.ToString(@"hh\:mm")<br/><span class="text-muted">@Model.Reservation.PickUpLocation</span></div><div class="col-md-6 mb-3"><strong>Trả xe</strong><br/>@Model.Reservation.DropOffDate.ToString("dd/MM/yyyy") lúc @Model.Reservation.DropOffTime.ToString(@"hh\:mm")<br/><span class="text-muted">@Model.Reservation.DropOffLocation</span></div></div>
+                <div class="alert alert-light border"><strong>Hình thức:</strong> @Model.Reservation.RentalMode · @Model.Reservation.DeliveryMethod</div>
+                <div class="row"><div class="col-md-6"><strong>Khách thuê</strong><br/>@Model.Reservation.CustomerName · @Model.Reservation.Phone<br/><span class="badge badge-@Badge(Model.VerificationStatus)">@Model.VerificationStatus</span> @if(Model.DriverLicenseExpiry.HasValue){<small>Bằng lái đến @Model.DriverLicenseExpiry.Value.ToString("dd/MM/yyyy")</small>}</div><div class="col-md-6"><strong>Chủ xe</strong><br/>@Model.Reservation.OwnerName @if(!string.IsNullOrWhiteSpace(Model.Reservation.OwnerPhone)){<span>· @Model.Reservation.OwnerPhone</span>}</div></div>
+                @if(!string.IsNullOrWhiteSpace(Model.Reservation.Description)){<div class="alert alert-light border mt-3 mb-0"><strong>Ghi chú khách:</strong> @Model.Reservation.Description</div>}
+                @if(!string.IsNullOrWhiteSpace(Model.Reservation.OwnerNote)){<div class="alert alert-light border mt-3 mb-0"><strong>Phản hồi chủ xe:</strong> @Model.Reservation.OwnerNote</div>}
+            </div></div>
+
+            <div class="card detail-card shadow-sm mb-4 section-anchor" id="handover"><div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center"><h4>Biên bản giao – trả xe</h4><span class="text-muted">Xác nhận hai bên bằng OTP</span></div>
+                @if(Model.Handovers.Count==0){<div class="alert alert-light border">Chưa có biên bản.</div>}
+                @foreach(var report in Model.Handovers.Where(x=>!x.IsSuperseded))
+                {
+                    var evidence=(report.PhotoUrls??"").Split(',',StringSplitOptions.RemoveEmptyEntries);
+                    <div class="action-box handover-card mb-3">
+                        <div class="d-flex justify-content-between"><h5>@report.ReportType</h5><span class="badge badge-@(report.IsLocked?"success":"warning")">@(report.IsLocked?"Đã khóa xác nhận":"Chờ khách nhập OTP")</span></div>
+                        <div class="row"><div class="col-6 col-md-3"><small>Kilomet</small><div><strong>@report.OdometerKm.ToString("#,0", CultureInfo.InvariantCulture) km</strong></div></div><div class="col-6 col-md-3"><small>Nhiên liệu/pin</small><div><strong>@report.FuelPercent%</strong></div></div><div class="col-md-3"><small>Địa điểm</small><div>@report.LocationText</div></div><div class="col-md-3"><small>Thời gian</small><div>@report.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div></div></div>
+                        <div class="mt-2"><strong>Vết xước/tình trạng:</strong> @(string.IsNullOrWhiteSpace(report.ExistingDamage)?"Không ghi nhận":report.ExistingDamage)</div><div><strong>Phụ kiện:</strong> @(string.IsNullOrWhiteSpace(report.Accessories)?"Không ghi nhận":report.Accessories)</div>
+                        @if(evidence.Length>0){<div class="evidence-grid mt-3">@foreach(var url in evidence){if(url.EndsWith(".mp4",StringComparison.OrdinalIgnoreCase)||url.EndsWith(".mov",StringComparison.OrdinalIgnoreCase)){<video src="@url" controls></video>}else{<a href="@url" target="_blank"><img src="@url" alt="Ảnh biên bản"/></a>}}</div>}
+                        @if(isCustomer && !report.IsLocked)
+                        {
+                            <form asp-action="ConfirmOtp" method="post" class="mt-3">
+                                @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="reportId" value="@report.HandoverReportID"/>
+                                <div class="input-group"><input name="otp" class="form-control" inputmode="numeric" maxlength="6" required placeholder="Nhập OTP 6 số gửi qua email"/><div class="input-group-append"><button class="btn btn-primary">Xác nhận đúng biên bản</button></div></div>
+                            </form>
+                            <form asp-action="ResendOtp" method="post" class="mt-2">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="reportId" value="@report.HandoverReportID"/><button class="btn btn-link p-0">Gửi lại OTP</button> · <a href="#dispute">Thông tin biên bản không đúng</a></form>
+                        }
+                    </div>
+                }
+                @if (deliveryReport != null && returnReport != null)
+                {
+                    var kmDifference = returnReport.OdometerKm - deliveryReport.OdometerKm;
+                    var fuelDifference = returnReport.FuelPercent - deliveryReport.FuelPercent;
+                    var deliveryDamage = string.IsNullOrWhiteSpace(deliveryReport.ExistingDamage) ? "Không" : deliveryReport.ExistingDamage;
+                    var returnDamage = string.IsNullOrWhiteSpace(returnReport.ExistingDamage) ? "Không" : returnReport.ExistingDamage;
+                    var accessoryChanged = !string.Equals((deliveryReport.Accessories ?? string.Empty).Trim(), (returnReport.Accessories ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase);
+                    <div class="mt-4">
+                        <h5>So sánh trực tiếp khi giao và khi trả</h5>
+                        <div class="table-responsive comparison-desktop">
+                            <table class="table table-bordered comparison-table mb-0">
+                                <thead><tr><th>Nội dung</th><th>Khi giao</th><th>Khi trả</th><th>Chênh lệch/nhận xét</th></tr></thead>
+                                <tbody>
+                                    <tr><td>Kilomet</td><td>@deliveryReport.OdometerKm.ToString("#,0", CultureInfo.InvariantCulture) km</td><td>@returnReport.OdometerKm.ToString("#,0", CultureInfo.InvariantCulture) km</td><td><strong>@kmDifference.ToString("#,0", CultureInfo.InvariantCulture) km</strong></td></tr>
+                                    <tr><td>Nhiên liệu/pin</td><td>@deliveryReport.FuelPercent%</td><td>@returnReport.FuelPercent%</td><td class="@(fuelDifference < 0 ? "text-danger" : "text-success")"><strong>@(fuelDifference > 0 ? "+" : "")@fuelDifference%</strong></td></tr>
+                                    <tr><td>Vết xước/tình trạng</td><td>@deliveryDamage</td><td>@returnDamage</td><td>@(string.Equals(deliveryDamage, returnDamage, StringComparison.OrdinalIgnoreCase) ? "Không thay đổi" : "Có thay đổi, cần kiểm tra chứng cứ")</td></tr>
+                                    <tr><td>Phụ kiện/giấy tờ</td><td>@(string.IsNullOrWhiteSpace(deliveryReport.Accessories) ? "Không ghi nhận" : deliveryReport.Accessories)</td><td>@(string.IsNullOrWhiteSpace(returnReport.Accessories) ? "Không ghi nhận" : returnReport.Accessories)</td><td>@(accessoryChanged ? "Có khác biệt, cần đối chiếu" : "Không thay đổi")</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="comparison-mobile">
+                            <div class="action-box mb-2"><strong>Kilomet</strong><div>Giao: @deliveryReport.OdometerKm.ToString("#,0", CultureInfo.InvariantCulture) km · Trả: @returnReport.OdometerKm.ToString("#,0", CultureInfo.InvariantCulture) km</div><span class="text-primary">Chênh lệch @kmDifference.ToString("#,0", CultureInfo.InvariantCulture) km</span></div>
+                            <div class="action-box mb-2"><strong>Nhiên liệu/pin</strong><div>Giao: @deliveryReport.FuelPercent% · Trả: @returnReport.FuelPercent%</div><span class="@(fuelDifference < 0 ? "text-danger" : "text-success")">Chênh lệch @(fuelDifference > 0 ? "+" : "")@fuelDifference%</span></div>
+                            <div class="action-box mb-2"><strong>Vết xước/tình trạng</strong><div>Giao: @deliveryDamage</div><div>Trả: @returnDamage</div></div>
+                            <div class="action-box"><strong>Phụ kiện/giấy tờ</strong><div>Giao: @(string.IsNullOrWhiteSpace(deliveryReport.Accessories) ? "Không ghi nhận" : deliveryReport.Accessories)</div><div>Trả: @(string.IsNullOrWhiteSpace(returnReport.Accessories) ? "Không ghi nhận" : returnReport.Accessories)</div></div>
+                        </div>
+                    </div>
+                }
+                @if (canManage && (Model.CanCreateDeliveryReport || Model.CanCreateReturnReport))
+                {
+                    var reportType=Model.CanCreateDeliveryReport?"Giao xe":"Trả xe";
+                    <form asp-action="CreateHandover" method="post" enctype="multipart/form-data" class="action-box">
+                        @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="reportType" value="@reportType"/>
+                        <h5>Lập biên bản @reportType.ToLowerInvariant()</h5><div class="alert alert-info">Không thể hoàn tất nếu thiếu kilomet, nhiên liệu, địa điểm và ảnh hiện trạng. Sau khi khách xác nhận OTP, dữ liệu bị khóa.</div>
+                        <div class="row"><div class="col-md-4 form-group"><label>Số kilomet</label><input name="odometerKm" type="number" min="0" class="form-control" required/></div><div class="col-md-4 form-group"><label>Nhiên liệu/pin (%)</label><input name="fuelPercent" type="number" min="0" max="100" class="form-control" required/></div><div class="col-md-4 form-group"><label>Địa điểm</label><input name="locationText" class="form-control" required/></div></div>
+                        <div class="row"><div class="col-md-6 form-group"><label>Vết xước/tình trạng</label><textarea name="existingDamage" class="form-control" rows="3" placeholder="Ghi Không có nếu không phát hiện"></textarea></div><div class="col-md-6 form-group"><label>Phụ kiện và giấy tờ bàn giao</label><textarea name="accessories" class="form-control" rows="3" placeholder="Camera, lốp dự phòng, giấy đăng ký..."></textarea></div></div>
+                        <div class="form-group"><label>Ảnh bốn phía, nội thất, đồng hồ kilomet</label><input name="photos" type="file" multiple accept="image/*" class="form-control-file" required/><small class="text-muted">Chọn nhiều ảnh, tối đa 10 tệp.</small></div><button class="btn btn-primary">Lưu biên bản và gửi OTP</button>
+                    </form>
+                }
+            </div></div>
+
+            <div class="card detail-card shadow-sm mb-4 section-anchor" id="incident"><div class="card-body p-4">
+                <h4>Sự cố và hỗ trợ</h4>
+                @foreach(var item in Model.Incidents){<div class="action-box mb-2"><div class="d-flex justify-content-between"><strong>@item.Type</strong><span class="badge badge-@Badge(item.Status)">@item.Status</span></div><p class="mb-1">@item.Description</p><small>@VietnamTime.FromUtc(item.OccurredAt).ToString("dd/MM/yyyy HH:mm") · @item.LocationText @if(item.VehicleImmobilized){<strong class="text-danger">· Xe không thể di chuyển</strong>}</small>
+                    @if((isStaff||isAdmin) && item.Status!="Đã xử lý"){<form asp-action="ResolveIncident" method="post" class="mt-2">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="incidentId" value="@item.IncidentID"/><div class="row"><div class="col-md-4"><input name="customerLiability" type="number" min="0" class="form-control" placeholder="Trách nhiệm khách"/></div><div class="col-md-5"><input name="note" class="form-control" required placeholder="Kết quả kiểm tra"/></div><div class="col-md-3"><label><input type="checkbox" name="openDispute" value="true"/> Mở tranh chấp</label><button class="btn btn-sm btn-primary">Lưu</button></div></div></form>}
+                </div>}
+                @if(Model.CanReportIncident)
+                {
+                    <form asp-action="ReportIncident" method="post" enctype="multipart/form-data" class="action-box mt-3">
+                        @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                        <div class="row"><div class="col-md-4 form-group"><label>Loại sự cố</label><select name="type" class="form-control"><option>Tai nạn</option><option>Hỏng xe</option><option>Mất tài sản/phụ kiện</option><option>Vi phạm giao thông</option><option>Khác</option></select></div><div class="col-md-4 form-group"><label>Thời điểm</label><input name="occurredAt" type="datetime-local" value="@VietnamTime.Now.ToString("yyyy-MM-ddTHH:mm")" class="form-control" required/></div><div class="col-md-4 form-group"><label>Vị trí</label><input name="locationText" class="form-control"/></div></div>
+                        <div class="form-group"><label>Mô tả</label><textarea name="description" class="form-control" rows="3" required></textarea></div><div class="form-group"><label>Ảnh/video</label><input name="evidence" type="file" multiple accept="image/*,video/mp4,video/quicktime" class="form-control-file"/></div>
+                        <div class="row"><div class="col-md-3"><label><input type="checkbox" name="vehicleImmobilized" value="true"/> Xe không thể đi</label></div><div class="col-md-3"><label><input type="checkbox" name="policeInvolved" value="true"/> Đã báo công an</label></div><div class="col-md-3"><label><input type="checkbox" name="insuranceNotified" value="true"/> Đã báo bảo hiểm</label></div><div class="col-md-3"><input name="estimatedDamage" type="number" min="0" class="form-control" placeholder="Thiệt hại dự kiến"/></div></div><button class="btn btn-danger mt-3">Gửi yêu cầu hỗ trợ</button>
+                    </form>
+                }
+            </div></div>
+
+            <div class="card detail-card shadow-sm mb-4 section-anchor" id="dispute"><div class="card-body p-4">
+                <h4>Khiếu nại và tranh chấp</h4>
+                @foreach(var item in Model.Disputes)
+                {
+                    var disputeEvidence=(item.EvidenceUrls??"").Split(',',StringSplitOptions.RemoveEmptyEntries);
+                    <div class="action-box mb-3">
+                        <div class="d-flex justify-content-between"><strong>@item.Type</strong><span class="badge badge-@Badge(item.Status)">@item.Status</span></div>
+                        <p>@item.Description</p>
+                        @if(disputeEvidence.Length>0){<div class="evidence-grid mb-3">@foreach(var url in disputeEvidence){<a href="@url" target="_blank"><img src="@url" alt="Chứng cứ tranh chấp"/></a>}</div>}
+                        <div class="border rounded p-3 bg-light mb-3">
+                            <strong>Trao đổi hai bên và nhân viên</strong>
+                            @if(item.Messages.Count==0){<div class="text-muted mt-2">Chưa có trao đổi bổ sung.</div>}
+                            @foreach(var message in item.Messages)
+                            {
+                                var messageEvidence=(message.EvidenceUrls??"").Split(',',StringSplitOptions.RemoveEmptyEntries);
+                                <div class="mt-3 pt-2 border-top"><div class="d-flex justify-content-between"><strong>@message.SenderName</strong><small>@message.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small></div><div>@message.Message</div>@if(messageEvidence.Length>0){<div class="evidence-grid mt-2">@foreach(var url in messageEvidence){<a href="@url" target="_blank"><img src="@url" alt="Chứng cứ trao đổi"/></a>}</div>}</div>
+                            }
+                            @if(item.Status!="Đã đóng")
+                            {
+                                <form asp-action="AddDisputeMessage" method="post" enctype="multipart/form-data" class="mt-3">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="disputeId" value="@item.DisputeID"/><div class="form-group"><textarea name="message" class="form-control" required maxlength="2000" placeholder="Bổ sung ý kiến, phản hồi hoặc yêu cầu chứng cứ..."></textarea></div><div class="form-group"><input name="evidence" type="file" multiple accept="image/*,video/mp4" class="form-control-file"/></div><button class="btn btn-sm btn-outline-primary">Gửi trao đổi</button></form>
+                            }
+                        </div>
+                        @if(!string.IsNullOrWhiteSpace(item.Resolution)){<div class="alert alert-success"><strong>Kết luận:</strong> @item.Resolution<br/><strong>Bồi thường:</strong> @item.CompensationAmount.ToString("#,0", CultureInfo.InvariantCulture) đồng</div>}
+                        @if((isStaff||isAdmin) && item.Status!="Đã giải quyết" && item.Status!="Đã đóng")
+                        {
+                            <form asp-action="ResolveDispute" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="disputeId" value="@item.DisputeID"/><div class="form-group"><textarea name="resolution" class="form-control" required placeholder="Kết luận dựa trên biên bản, ảnh, hóa đơn và lịch sử trao đổi"></textarea></div><div class="input-group"><input name="compensationAmount" type="number" min="0" class="form-control" placeholder="Mức bồi thường"/><div class="input-group-append"><button class="btn btn-primary">Lưu kết luận</button></div></div></form>
+                        }
+                    </div>
+                }
+                @if(Model.CanOpenDispute){<form asp-action="OpenDispute" method="post" enctype="multipart/form-data" class="action-box">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><div class="row"><div class="col-md-4 form-group"><label>Loại yêu cầu</label><select name="type" class="form-control"><option>Biên bản không đúng</option><option>Phụ phí</option><option>Tiền cọc</option><option>Chất lượng xe</option><option>Khác</option></select></div><div class="col-md-8 form-group"><label>Mô tả</label><textarea name="description" class="form-control" required></textarea></div></div><div class="form-group"><input name="evidence" type="file" multiple accept="image/*,video/mp4" class="form-control-file"/></div><button class="btn btn-outline-danger">Mở yêu cầu xử lý</button></form>}
+            </div></div>
+
+            <div class="card detail-card shadow-sm mb-4 section-anchor" id="traffic-fine"><div class="card-body p-4">
+                <h4>Phạt nguội và vi phạm giao thông</h4>
+                @if(Model.TrafficFines.Count==0){<div class="alert alert-light border">Chưa ghi nhận khoản phạt nào.</div>}
+                @foreach(var fine in Model.TrafficFines)
+                {
+                    <div class="action-box mb-2"><div class="d-flex justify-content-between"><strong>@fine.Violation</strong><span class="badge badge-@Badge(fine.Status)">@fine.Status</span></div><div class="text-danger font-weight-bold">@fine.Amount.ToString("#,0", CultureInfo.InvariantCulture) đồng</div><small>@VietnamTime.FromUtc(fine.ViolationAt).ToString("dd/MM/yyyy HH:mm") · @fine.LocationText · Hạn: @(fine.DueDate?.ToString("dd/MM/yyyy")??"Chưa đặt")</small><div>Số thông báo: @(fine.NoticeNumber??"Chưa có") @if(!string.IsNullOrWhiteSpace(fine.EvidenceUrl)){<a href="@fine.EvidenceUrl" target="_blank" class="ml-2">Xem chứng cứ</a>}</div></div>
+                }
+                @if(canManage && Model.Reservation.Status is not ("Đã hủy" or "Bị từ chối"))
+                {
+                    <form asp-action="AddTrafficFine" method="post" enctype="multipart/form-data" class="action-box mt-3">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><div class="row"><div class="col-md-4 form-group"><label>Thời điểm vi phạm</label><input name="violationAt" type="datetime-local" class="form-control" required/></div><div class="col-md-4 form-group"><label>Số thông báo</label><input name="noticeNumber" class="form-control"/></div><div class="col-md-4 form-group"><label>Hạn thanh toán</label><input name="dueDate" type="date" class="form-control"/></div></div><div class="form-group"><label>Nội dung vi phạm</label><input name="violation" class="form-control" required/></div><div class="row"><div class="col-md-6 form-group"><label>Địa điểm</label><input name="locationText" class="form-control"/></div><div class="col-md-6 form-group"><label>Số tiền</label><input name="amount" type="number" min="1" class="form-control" required/></div></div><div class="form-group"><label>Ảnh/thông báo phạt</label><input name="evidence" type="file" accept="image/*" class="form-control-file" required/></div><button class="btn btn-outline-danger">Ghi nhận và thông báo khách</button></form>
+                }
+            </div></div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4>Chi tiết giá</h4><div class="finance-row"><span>Giá/ngày</span><strong>@Model.Price.DailyPrice.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row"><span>Thời lượng</span><span>@Model.Price.RentalDays ngày</span></div><div class="finance-row"><span>Tiền thuê</span><span>@Model.Price.RentalAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Phí giao xe</span><span>@Model.Price.DeliveryFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Phí bảo hiểm</span><span>@Model.Price.InsuranceFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Phí nền tảng</span><span>@Model.Price.CustomerPlatformFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Khuyến mãi</span><span>-@Model.Price.DiscountAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row finance-total"><span>Tổng tiền thuê</span><strong>@Model.Price.TotalRental.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row"><span>Cọc giữ chỗ (cấn trừ tiền thuê)</span><strong>@Model.Price.ReservationDepositAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row"><span>Cọc bảo đảm (hoàn lại)</span><strong>@Model.Price.SecurityDepositAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row finance-total text-primary"><span>Tổng chi phí + cọc bảo đảm</span><strong>@Model.Price.TotalDue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="alert alert-light border mt-3"><small>@Model.Price.RefundableExplanation</small></div></div></div>
+
+            <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4>Thanh toán</h4>
+                @if (paymentConfigured && isCustomer && Model.CanSubmitSecurityDepositProof)
+                {
+                    <div class="alert alert-info">
+                        <strong>Cọc bảo đảm phải được ghi nhận trước khi giao xe.</strong>
+                        Còn phải nộp: <strong>@Model.SecurityDepositDue.ToString("#,0", CultureInfo.InvariantCulture) đồng</strong>.
+                        Nội dung chuyển khoản: <code>SC@Model.Reservation.ReservationID.ToString("D6")-SEC</code>.
+                    </div>
+                    <form asp-action="SubmitPaymentProof" method="post" class="action-box mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                        <input type="hidden" name="paymentType" value="Cọc bảo đảm"/>
+                        <button class="btn btn-info" onclick="return confirm('Bạn xác nhận đã chuyển đủ cọc bảo đảm?');">Tôi đã chuyển cọc bảo đảm</button>
+                    </form>
+                }
+                @if (paymentConfigured && isCustomer && Model.CanSubmitRentalPaymentProof)
+                {
+                    <div class="alert alert-warning">
+                        <strong>Cần thanh toán đủ tiền thuê trước khi giao xe.</strong>
+                        Còn phải thu: <strong>@Model.RentalPaymentDue.ToString("#,0", CultureInfo.InvariantCulture) đồng</strong>.
+                        Nội dung chuyển khoản: <code>SC@Model.Reservation.ReservationID.ToString("D6")-RENT</code>.
+                    </div>
+                    <form asp-action="SubmitPaymentProof" method="post" class="action-box mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                        <input type="hidden" name="paymentType" value="Tiền thuê"/>
+                        <button class="btn btn-primary" onclick="return confirm('Bạn xác nhận đã chuyển đủ tiền thuê còn lại?');">Tôi đã chuyển tiền thuê</button>
+                    </form>
+                }
+                @if(Model.Payments.Count==0){<p class="text-muted">Chưa có giao dịch.</p>}
+                @foreach(var p in Model.Payments)
+                {
+                    <div class="action-box mb-3">
+                        <div class="d-flex justify-content-between"><strong>@p.PaymentType</strong><span class="badge badge-@Badge(p.Status)">@p.Status</span></div>
+                        <div class="font-weight-bold">@p.Amount.ToString("#,0", CultureInfo.InvariantCulture) đồng</div>
+                        <small>
+                            Nội dung: <strong>@(p.TransferContent ?? transferContent)</strong> · @p.Provider
+                            @if (p.CustomerReportedDate.HasValue) { <span> · Khách báo lúc @p.CustomerReportedDate.Value.ToString("dd/MM/yyyy HH:mm")</span> }
+                            @if (p.IsSimulated) { <span class="badge badge-dark ml-1">Giả lập</span> }
+                        </small>
+                        @if (!string.IsNullOrWhiteSpace(p.TransactionCode)) { <div class="small mt-1">Mã giao dịch ngân hàng: <strong>@p.TransactionCode</strong></div> }
+                        @if (!string.IsNullOrWhiteSpace(p.VerificationNote)) { <div class="alert alert-light border mt-2 mb-0"><small>@p.VerificationNote</small></div> }
+
+                        @if ((isStaff || isAdmin) && p.Status == "Chờ xác nhận")
+                        {
+                            <form asp-controller="ReservationLookup" asp-action="ConfirmPayment" method="post" class="mt-3 border-top pt-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                                <input type="hidden" name="paymentId" value="@p.PaymentID"/>
+                                <input type="hidden" name="paymentType" value="@p.PaymentType"/>
+                                <div class="row">
+                                    <div class="col-md-4 form-group"><label>Số tiền thực nhận</label><input name="amount" type="number" min="1" step="1" value="@p.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture)" class="form-control" required/></div>
+                                    <div class="col-md-4 form-group"><label>Mã giao dịch trên sao kê</label><input name="transactionCode" class="form-control" maxlength="100" required placeholder="VD: FT240..."/></div>
+                                    <div class="col-md-4 form-group"><label>Ngân hàng/kênh nhận</label><input name="provider" class="form-control" value="@paymentBankName" maxlength="50"/></div>
+                                </div>
+                                <div class="form-group"><label>Ghi chú đối chiếu</label><input name="verificationNote" class="form-control" maxlength="500" value="Đã kiểm tra đúng số tiền và nội dung @transferContent trên sao kê."/></div>
+                                <button type="submit" class="btn btn-success" onclick="return confirm('Đã kiểm tra sao kê thật, đúng số tiền, nội dung và mã giao dịch?');">Xác nhận đã nhận tiền</button>
+                            </form>
+                            <form asp-controller="ReservationLookup" asp-action="ReviewPayment" method="post" class="mt-3 border-top pt-3">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                                <input type="hidden" name="paymentId" value="@p.PaymentID"/>
+                                <div class="row"><div class="col-md-5 form-group"><label>Kết quả khác</label><select name="decision" class="form-control" required><option>Chưa tìm thấy giao dịch</option><option>Thanh toán thiếu</option><option>Thanh toán thừa</option><option>Sai nội dung</option><option>Thanh toán muộn</option><option>Bị từ chối</option></select></div><div class="col-md-7 form-group"><label>Lý do/hướng dẫn khách</label><input name="note" class="form-control" maxlength="500" required placeholder="Nêu rõ số tiền thiếu, sai nội dung hoặc cách xử lý..."/></div></div>
+                                <button class="btn btn-outline-danger">Lưu kết quả chưa đạt</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div></div>
+
+            <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4>Phụ phí</h4>
+                @if(Model.AdditionalCharges.Count==0){<p class="text-muted">Chưa có phụ phí.</p>}
+                @foreach(var c in Model.AdditionalCharges)
+                {
+                    <div class="action-box mb-2">
+                        <div class="d-flex justify-content-between"><strong>@c.ChargeType</strong><span class="badge badge-@Badge(c.Status)">@c.Status</span></div>
+                        <div class="text-danger font-weight-bold">@c.Amount.ToString("#,0", CultureInfo.InvariantCulture) đồng</div>
+                        <p class="mb-1">@c.Reason</p><small>Phải có bằng chứng; không tự động khấu trừ cọc.</small>
+                        @if(!string.IsNullOrWhiteSpace(c.PaymentStatus)){<div class="small mt-1">Thanh toán phụ phí: <span class="badge badge-@Badge(c.PaymentStatus)">@c.PaymentStatus</span></div>}
+                        @if(isCustomer&&c.Status=="Chờ khách xác nhận")
+                        {
+                            <div class="mt-2"><form asp-action="RespondCharge" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="chargeId" value="@c.AdditionalChargeID"/><input type="hidden" name="accept" value="true"/><button class="btn btn-sm btn-success">Chấp nhận</button></form><form asp-action="RespondCharge" method="post" class="d-inline">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="chargeId" value="@c.AdditionalChargeID"/><input type="hidden" name="accept" value="false"/><input type="hidden" name="note" value="Khách không đồng ý với phụ phí."/><button class="btn btn-sm btn-outline-danger">Từ chối</button></form></div>
+                        }
+                        @if(paymentConfigured && c.CanSubmitPaymentProof)
+                        {
+                            <form asp-action="SubmitPaymentProof" method="post" class="mt-2">
+                                @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="paymentType" value="Phụ phí"/><input type="hidden" name="additionalChargeId" value="@c.AdditionalChargeID"/>
+                                <div class="small mb-1">Nội dung chuyển khoản: <code>SC@Model.Reservation.ReservationID.ToString("D6")-CHG@c.AdditionalChargeID</code></div>
+                                <button class="btn btn-sm btn-primary" onclick="return confirm('Bạn xác nhận đã chuyển đúng phụ phí này?');">Tôi đã chuyển phụ phí</button>
+                            </form>
+                        }
+                    </div>
+                }
+                @if(canManage && (Model.Reservation.Status is "Chờ trả xe" or "Chờ đối soát" or "Đang thuê")){<form asp-action="AddCharge" method="post" enctype="multipart/form-data" class="action-box mt-3">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><div class="form-group"><label>Loại phụ phí</label><select name="chargeType" class="form-control"><option>Vượt kilomet</option><option>Thiếu nhiên liệu</option><option>Thiếu phụ kiện</option><option>Vệ sinh</option><option>Hư hỏng</option></select></div><div class="form-group"><label>Số tiền</label><input name="amount" type="number" min="1" class="form-control" required/></div><div class="form-group"><label>Cách tính và lý do</label><textarea name="reason" class="form-control" required></textarea></div><div class="form-group"><label>Ảnh/hóa đơn</label><input name="evidence" type="file" multiple accept="image/*" class="form-control-file" required/></div><button class="btn btn-outline-primary">Đề xuất, không tự khấu trừ</button></form>}
+            </div></div>
+
+            @if(Model.Settlement!=null)
+            {
+                <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center"><h4>Đối soát chủ xe</h4><span class="badge badge-@Badge(Model.Settlement.Status)">@Model.Settlement.Status</span></div>
+                    <div class="finance-row"><span>Tổng tiền thuê và phụ phí đã thực thu</span><span>@Model.Settlement.GrossRental.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div>
+                    <div class="finance-row"><span>- Hoa hồng SmartCar</span><span>@Model.Settlement.PlatformFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div>
+                    <div class="finance-row"><span>- Phí cổng thanh toán</span><span>@Model.Settlement.PaymentGatewayFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div>
+                    <div class="finance-row"><span>- Khoản hoàn khách</span><span>@Model.Settlement.RefundAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div>
+                    <div class="finance-row"><span>- Khoản bồi thường</span><span>@Model.Settlement.CompensationAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div>
+                    <div class="finance-row finance-total"><span>Tiền chủ xe nhận</span><strong>@Model.Settlement.OwnerPayout.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div>
+                    <small class="text-muted">Lập lúc @Model.Settlement.CreatedDate.ToString("dd/MM/yyyy HH:mm"). Người lập không được tự phê duyệt chi trả.</small>
+                    @if(isAdmin && Model.Settlement.CanApprovePayment)
+                    {
+                        <form asp-action="PaySettlement" method="post" class="action-box mt-3">
+                            @Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><input type="hidden" name="settlementId" value="@Model.Settlement.SettlementID"/>
+                            <label>Mã giao dịch chuyển tiền cho chủ xe</label><div class="input-group"><input name="transactionCode" class="form-control" required maxlength="100" placeholder="Đối chiếu ngân hàng trước khi nhập"/><div class="input-group-append"><button class="btn btn-success" onclick="return confirm('Xác nhận đã đối chiếu và chuyển tiền cho chủ xe?')">Phê duyệt và ghi nhận chi trả</button></div></div>
+                        </form>
+                    }
+                    else if(isAdmin && Model.Settlement.Status=="Chờ đối soát")
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">Tài khoản này là người lập đối soát nên không thể tự phê duyệt. Hãy đăng nhập một tài khoản Admin khác.</div>
+                    }
+                    @if(!string.IsNullOrWhiteSpace(Model.Settlement.PayoutTransactionCode)){<div class="alert alert-success mt-3 mb-0">Mã chi trả: <strong>@Model.Settlement.PayoutTransactionCode</strong> · @Model.Settlement.PaidDate?.ToString("dd/MM/yyyy HH:mm")</div>}
+                </div></div>
+            }
+            else if((isStaff||isAdmin) && Model.Reservation.Status=="Chờ đối soát")
+            {
+                <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4>Lập đối soát</h4><p class="text-muted">Nhân viên/Admin lập đề xuất. Một Admin khác kiểm tra và phê duyệt chi trả.</p>
+                    <form asp-action="CreateSettlement" method="post" class="action-box">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.Reservation.ReservationID"/><div class="alert alert-info mb-3">Phí cổng thanh toán và khoản hoàn khách được máy chủ tự tính từ các giao dịch đã xác nhận. Nhân viên không thể nhập hoặc sửa trực tiếp các số tiền này.</div><button class="btn btn-primary">Tạo đề xuất đối soát tự động</button></form>
+                </div></div>
+            }
+
+            @if (isCustomer && Model.CanCancel)
+            {
+                <form asp-action="Cancel" method="post" class="mb-4 action-box">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Reservation.ReservationID"/>
+                    <h5>Hủy đơn thuê</h5>
+                    @if (cancellationPreview != null)
+                    {
+                        <div class="alert alert-warning">
+                            <div class="finance-row"><span>Số tiền đã xác nhận</span><strong>@cancellationPreview.PaidAmount.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture) đồng</strong></div>
+                            <div class="finance-row"><span>Tỷ lệ phí hủy</span><strong>@cancellationPreview.FeeRate.ToString("0.##")%</strong></div>
+                            <div class="finance-row"><span>Phí hủy dự kiến</span><strong>@cancellationPreview.CancellationFee.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture) đồng</strong></div>
+                            <div class="finance-row finance-total"><span>Khoản hoàn dự kiến</span><strong>@cancellationPreview.RefundAmount.ToString("#,0", System.Globalization.CultureInfo.InvariantCulture) đồng</strong></div>
+                        </div>
+                    }
+                    <div class="form-group"><label>Lý do hủy đơn</label><textarea name="reason" class="form-control" maxlength="500" required>Khách hàng chủ động hủy đơn.</textarea></div>
+                    <p class="small text-muted">Phí hủy được máy chủ tính lại tại thời điểm xác nhận: trước 72 giờ 0%, từ 24–72 giờ 10%, dưới 24 giờ 30%, dựa trên số tiền đã được xác nhận.</p>
+                    <button class="btn btn-outline-danger btn-block" onclick="return confirm('Bạn chắc chắn muốn hủy đơn? Phí và khoản hoàn sẽ được tính lại tại thời điểm xác nhận.')">Hủy đơn thuê</button>
+                </form>
+            }
+            <a href="@(isCustomer?"/ReservationLookup/Index":isOwner?"/VehiclePartner/Dashboard":isStaff?"/StaffDashboard/Index":"/Admin/AdminDashboard/Index")" class="btn btn-outline-secondary btn-block">Quay lại danh sách</a>
+        </div>
+    </div>
+</div>
+</section>
+@if(Model.HoldExpiresAt.HasValue){<script>(function(){const end=new Date('@Model.HoldExpiresAt.Value.ToString("O")').getTime(),el=document.getElementById('countdown');if(!el)return;function tick(){const d=end-Date.now();if(d<=0){el.textContent='Đã hết thời gian';return;}const m=Math.floor(d/60000),s=Math.floor((d%60000)/1000);el.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');setTimeout(tick,1000)}tick()})();</script>}
+
+<script>
+function copyPaymentText(value){
+    if(navigator.clipboard){navigator.clipboard.writeText(value);}
+    else{var area=document.createElement('textarea');area.value=value;document.body.appendChild(area);area.select();document.execCommand('copy');document.body.removeChild(area);}
+}
+</script>

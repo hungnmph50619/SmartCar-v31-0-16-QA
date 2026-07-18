@@ -1,0 +1,2 @@
+using System.ComponentModel.DataAnnotations;
+namespace SmartCar.Domain.Entities { public class Notification { public int NotificationID {get;set;} public int AppUserID {get;set;} [MaxLength(150)] public string Title {get;set;}=string.Empty; [MaxLength(2000)] public string Message {get;set;}=string.Empty; [MaxLength(50)] public string Type {get;set;}="System"; [MaxLength(500)] public string? Link {get;set;} public bool IsRead {get;set;} public DateTime CreatedDate {get;set;}=DateTime.UtcNow; public DateTime? ReadDate {get;set;} } }

@@ -1,0 +1,17 @@
+@model List<ResultFooterAddressDto>
+@{
+    var contact = Model?.FirstOrDefault();
+    var address = contact?.Address ?? "Cầu Giấy, Hà Nội";
+    var phone = contact?.Phone ?? "1900 6868";
+    var email = contact?.Email ?? "hotro@smartcar.vn";
+}
+<footer class="ftco-footer ftco-bg-dark ftco-section smart-footer">
+<div class="container"><div class="row mb-5">
+<div class="col-lg-3 col-md-6"><div class="ftco-footer-widget mb-4"><h2 class="ftco-heading-2"><a href="/Default/Index" class="logo">Smart<span>Car</span></a></h2><p>SmartCar là nền tảng trung gian kết nối chủ xe và khách thuê xe, hỗ trợ quản lý giao dịch minh bạch và thuận tiện.</p><p class="small text-white-50">Drive. Connect. Explore.<br/>Cầm lái – Kết nối – Khám phá</p></div></div>
+<div class="col-lg-3 col-md-6"><div class="ftco-footer-widget mb-4"><h2 class="ftco-heading-2">Chính sách</h2><ul class="list-unstyled"><li><a href="/Policy/OperatingRules" class="py-2 d-block">Quy chế hoạt động</a></li><li><a href="/Policy/Privacy" class="py-2 d-block">Bảo vệ dữ liệu cá nhân</a></li><li><a href="/CarPricing/Index" class="py-2 d-block">Phí dịch vụ</a></li><li><a href="/Policy/PaymentAndRefund" class="py-2 d-block">Thanh toán và hoàn tiền</a></li><li><a href="/Policy/DisputeResolution" class="py-2 d-block">Giải quyết khiếu nại</a></li></ul></div></div>
+<div class="col-lg-3 col-md-6"><div class="ftco-footer-widget mb-4"><h2 class="ftco-heading-2">Hướng dẫn và đối tác</h2><ul class="list-unstyled"><li><a href="/Default/Index#rent-search" class="py-2 d-block">Tìm kiếm và đặt xe</a></li><li><a href="/VehiclePartner/BecomeOwner" class="py-2 d-block">Trở thành đối tác chủ xe</a></li><li><a href="/VehiclePartner/RegisterAccount" class="py-2 d-block">Đăng ký tài khoản đối tác</a></li><li><a href="/Blog/Index" class="py-2 d-block">Tin tức và bài viết</a></li><li><a href="/Contact/Index" class="py-2 d-block">Liên hệ SmartCar</a></li></ul></div></div>
+<div class="col-lg-3 col-md-6"><div class="ftco-footer-widget mb-4"><h2 class="ftco-heading-2">Thông tin hỗ trợ</h2><div class="block-23 mb-3"><ul><li><span class="icon icon-map-marker"></span><span class="text">@address</span></li><li><a href="tel:@phone"><span class="icon icon-phone"></span><span class="text">@phone</span></a></li><li><a href="mailto:@email"><span class="icon icon-envelope"></span><span class="text">@email</span></a></li></ul></div><p class="small text-white-50">Phương thức dự kiến: tiền mặt, chuyển khoản, mã QR, tiền đặt cọc và thanh toán trực tuyến.</p></div></div>
+</div><div class="footer-divider"></div><div class="row"><div class="col-md-8"><p class="mb-1">© 2026 SmartCar. Bảo lưu mọi quyền.</p><p class="small text-white-50">Tên đơn vị: DATN · Mã số: 25101998 · Địa chỉ: Cầu Giấy, Hà Nội</p></div><div class="col-md-4 text-md-right"><p class="small text-white-50">Thông tin thanh toán được cấu hình riêng theo từng môi trường triển khai.</p></div></div></div>
+</footer>
+<div id="ftco-loader" class="show fullscreen"><svg class="circular" width="48px" height="48px"><circle class="path-bg" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke="#eeeeee" /><circle class="path" cx="24" cy="24" r="22" fill="none" stroke-width="4" stroke-miterlimit="10" /></svg></div>
+<style>.smart-footer .footer-divider{border-top:1px solid rgba(255,255,255,.12);margin-bottom:25px}.smart-footer a:hover{color:#01d28e!important}</style>

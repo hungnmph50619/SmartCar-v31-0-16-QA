@@ -1,0 +1,56 @@
+﻿@model List<ResultServiceDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Khu vực thông tin dịch vụ</h4>
+                        <p class="card-subtitle mb-4">
+                            Tại đây, quản trị viên có thể quản lý danh sách dịch vụ hiển thị trên trang chủ và trang Dịch vụ. Để giao diện cân đối, hãy nhập 4 dịch vụ.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Mô tả</th>
+                                        <th>Icon-Url</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <td>@count</td>
+                                            <td>@item.Title</td>
+                                            <td>@item.Description</td>
+                                            <td>@item.IconUrl</td>
+                                            <td><form method="post" action="/Admin/AdminService/RemoveService/@item.ServiceID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminService/UpdateService/@item.ServiceID" class="btn btn-outline-success">Cập nhật</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminService/CreateService" class="btn btn-outline-primary">Thêm dịch vụ mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

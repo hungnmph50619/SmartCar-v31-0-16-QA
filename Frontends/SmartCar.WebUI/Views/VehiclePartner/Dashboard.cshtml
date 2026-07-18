@@ -1,0 +1,110 @@
+@model PartnerVehicleDashboardDto
+@{
+    ViewData["Title"] = "Khu vực đối tác chủ xe";
+    Layout = "~/Views/UILayout/Partner.cshtml";
+    string StatusClass(string status) => status switch
+    {
+        "Đang hoạt động" => "success",
+        "Tạm khóa" => "danger",
+        "Đang bảo dưỡng" => "warning",
+        "Chờ duyệt" => "info",
+        "Đã duyệt" => "success",
+        "Bị từ chối" => "danger",
+        _ => "secondary"
+    };
+}
+<style>
+.owner-kpi{display:block;background:#fff;border:1px solid #e7edf3;border-radius:14px;padding:20px;height:100%;color:#243b53;box-shadow:0 8px 24px rgba(30,50,70,.06)}.owner-kpi:hover{color:#1089ff;border-color:#b8dcff}.owner-kpi small{display:block;color:#718096;margin-bottom:8px}.owner-kpi strong{font-size:22px}.owner-card{border:0;border-radius:14px}.owner-alert{border-left:4px solid #dc3545}.vehicle-card{display:flex;border:1px solid #e5ebf0;border-radius:14px;overflow:hidden;height:100%;background:#fff}.vehicle-card img{width:190px;object-fit:cover}.finance-line{display:flex;justify-content:space-between;padding:.4rem 0}.finance-total{border-top:1px solid #ddd;padding-top:.8rem;font-weight:700}.order-row,.application-row{border:1px solid #e5ebf0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff}.status-tabs{overflow-x:auto;white-space:nowrap;padding-bottom:4px}.status-tabs .btn{border-radius:20px;margin-right:6px}.status-tabs .btn.active{color:#fff!important;background:#1089ff!important;border-color:#1089ff!important;box-shadow:0 0 0 .2rem rgba(16,137,255,.15)}.vehicle-actions{display:flex;flex-wrap:wrap;gap:8px}.vehicle-actions .btn{margin:0!important}.filter-empty{display:none}.section-anchor{scroll-margin-top:90px}
+@@media(max-width:575px){.vehicle-card{display:block}.vehicle-card img{width:100%;height:190px}.vehicle-actions form,.vehicle-actions .btn{width:100%}.vehicle-actions form .btn{width:100%}}
+</style>
+<section class="ftco-section bg-light py-5"><div class="container" style="max-width:1250px">
+    @if(TempData["ReservationBlocked"]!=null){<div class="alert alert-warning" role="alert">@TempData["ReservationBlocked"]</div>}
+    @if(TempData["VehiclePartnerSuccess"]!=null){<div class="alert alert-success" role="status">@TempData["VehiclePartnerSuccess"]</div>}
+    @if(TempData["VehiclePartnerError"]!=null){<div class="alert alert-danger" role="alert">@TempData["VehiclePartnerError"]</div>}
+    @if(TempData["OperationSuccess"]!=null){<div class="alert alert-success" role="status">@TempData["OperationSuccess"]</div>}
+    @if(TempData["OperationError"]!=null){<div class="alert alert-danger" role="alert">@TempData["OperationError"]</div>}
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div><span class="text-success font-weight-bold">ĐỐI TÁC CHỦ XE</span><h1 class="h2 mb-1">Trung tâm vận hành xe</h1><p class="text-muted mb-0">Theo dõi việc cần xử lý, cảnh báo và dòng tiền trên một màn hình.</p></div>
+        @if(Model.PartnerProfile?.Status=="Đã xác minh"){<a href="/VehiclePartner/Register" class="btn btn-primary mt-3 mt-md-0">+ Đăng xe theo từng bước</a>}else{<a href="/VehiclePartner/VerifyProfile" class="btn btn-warning mt-3 mt-md-0">Hoàn thiện hồ sơ đối tác</a>}
+    </div>
+
+    @if(Model.PartnerProfile is null){<div class="alert alert-warning"><strong>Bạn chưa có hồ sơ đối tác.</strong> Vui lòng hoàn thiện hồ sơ xác minh trước khi đăng xe.</div>}
+    else if(Model.PartnerProfile.Status!="Đã xác minh"){
+        <div class="alert alert-warning"><strong>Hồ sơ đối tác:</strong> @Model.PartnerProfile.Status. @if(!string.IsNullOrWhiteSpace(Model.PartnerProfile.ReviewNote)){<span>@Model.PartnerProfile.ReviewNote</span>} <a href="/VehiclePartner/VerifyProfile" class="alert-link">Xem hoặc hoàn thiện hồ sơ</a>.</div>
+    }
+    else{<div class="alert alert-success"><strong>Hồ sơ đối tác đã xác minh.</strong> Bạn có thể gửi xe lên duyệt và quản lý hoạt động cho thuê.</div>}
+
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#orders" class="owner-kpi"><small>Đơn mới chờ chấp nhận</small><strong>@Model.PendingOwnerConfirmations</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#orders" class="owner-kpi"><small>Xe đang được thuê</small><strong>@Model.ActiveRentals</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#orders" class="owner-kpi"><small>Sắp phải giao xe</small><strong>@Model.UpcomingDeliveries</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#orders" class="owner-kpi"><small>Sắp được trả xe</small><strong>@Model.UpcomingReturns</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#vehicles" class="owner-kpi"><small>Giấy tờ sắp/hết hạn</small><strong>@Model.ExpiringDocuments</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#vehicles" class="owner-kpi"><small>Bảo dưỡng/cảnh báo an toàn</small><strong>@Model.DueMaintenanceVehicles</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#orders" class="owner-kpi"><small>Sự cố và khiếu nại</small><strong>@(Model.OpenIncidents+Model.OpenDisputes)</strong></a></div>
+        <div class="col-xl-3 col-md-6 mb-3"><a href="#settlements" class="owner-kpi"><small>Tiền chờ đối soát</small><strong>@Model.PendingPayout.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></a></div>
+    </div>
+
+    <div id="orders" class="card owner-card shadow-sm mt-4 mb-4 section-anchor"><div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center"><div><h2 class="h4">Đơn thuê cần theo dõi</h2><p class="text-muted">Mở chi tiết từng đơn trước khi quyết định.</p></div><span class="badge badge-info p-2">@Model.Reservations.Count đơn</span></div>
+        @foreach(var item in Model.Reservations)
+        {
+            var action=item.Status switch{"Chờ chủ xe xác nhận"=>"Kiểm tra hồ sơ và quyết định","Chờ giao xe" or "Đã đặt cọc"=>"Lập biên bản giao xe","Đang thuê"=>"Theo dõi chuyến thuê","Chờ trả xe"=>"Lập biên bản trả xe","Chờ đối soát"=>"Kiểm tra phụ phí và dòng tiền",_=>"Xem lịch sử"};
+            <div class="order-row"><div class="row align-items-center"><div class="col-md-2"><strong>#@item.ReservationID</strong><br/><small>@item.CreatedDate.ToString("dd/MM HH:mm")</small></div><div class="col-md-3"><strong>@item.CarName</strong><br/><small>@item.CustomerName · @item.Phone</small></div><div class="col-md-3"><small>@item.PickUpDate.ToString("dd/MM") @item.PickUpTime.ToString(@"hh\:mm") → @item.DropOffDate.ToString("dd/MM") @item.DropOffTime.ToString(@"hh\:mm")</small><br/><strong>@item.PickUpLocation</strong></div><div class="col-md-2"><strong>@item.TotalPrice.ToString("#,0", CultureInfo.InvariantCulture) đ</strong><br/><small>Nhận dự kiến @item.PartnerReceivableAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</small></div><div class="col-md-2 text-md-right"><span class="badge badge-info">@item.Status</span><br/><a href="/ReservationLookup/Details/@item.ReservationID" class="btn btn-sm btn-primary mt-2">@action</a></div></div></div>
+        }
+        @if(!Model.Reservations.Any()){<div class="alert alert-light border mb-0">Chưa có đơn thuê cần theo dõi.</div>}
+    </div></div>
+
+    @if(Model.Applications.Any())
+    {
+        <div id="applications" class="card owner-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center"><div><h2 class="h4">Hồ sơ xe đã gửi duyệt</h2><p class="text-muted">Theo dõi kết quả duyệt và ghi chú của nhân viên.</p></div><span class="badge badge-info p-2">@Model.Applications.Count hồ sơ</span></div>
+            @foreach(var app in Model.Applications.OrderByDescending(x=>x.CreatedDate))
+            {
+                <div class="application-row"><div class="row align-items-center"><div class="col-md-4"><strong>@app.BrandName @app.Model</strong><br/><small>@app.LicensePlate · @app.ManufactureYear</small></div><div class="col-md-3"><small>Gửi ngày @app.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small><br/><span class="badge badge-@StatusClass(app.Status)">@app.Status</span></div><div class="col-md-5">@if(!string.IsNullOrWhiteSpace(app.AdminNote)){<span><strong>Ghi chú:</strong> @app.AdminNote</span>}else{<span class="text-muted">Chưa có ghi chú xử lý.</span>}</div></div></div>
+            }
+        </div></div>
+    }
+
+    <div id="vehicles" class="card owner-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
+        <div><h2 class="h4">Quản lý xe và cảnh báo</h2><p class="text-muted">Chọn trạng thái để lọc danh sách xe.</p></div>
+        <div class="status-tabs mb-3" role="group" aria-label="Lọc xe theo trạng thái">
+            <button type="button" class="btn btn-sm btn-primary active vehicle-status-filter" data-status="all" aria-pressed="true">Tất cả @Model.Vehicles.Count</button>
+            <button type="button" class="btn btn-sm btn-outline-success vehicle-status-filter" data-status="Đang hoạt động" aria-pressed="false">Đang hoạt động @Model.Vehicles.Count(x=>x.OperationalStatus=="Đang hoạt động")</button>
+            <button type="button" class="btn btn-sm btn-outline-danger vehicle-status-filter" data-status="Tạm khóa" aria-pressed="false">Tạm khóa @Model.Vehicles.Count(x=>x.OperationalStatus=="Tạm khóa")</button>
+            <button type="button" class="btn btn-sm btn-outline-warning vehicle-status-filter" data-status="Đang bảo dưỡng" aria-pressed="false">Bảo dưỡng @Model.Vehicles.Count(x=>x.OperationalStatus=="Đang bảo dưỡng")</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary vehicle-status-filter" data-status="Ngừng cho thuê" aria-pressed="false">Ngừng cho thuê @Model.Vehicles.Count(x=>x.OperationalStatus=="Ngừng cho thuê")</button>
+            @if(Model.Applications.Any(x=>x.Status=="Chờ duyệt")){<a href="#applications" class="btn btn-sm btn-outline-info">Chờ duyệt @Model.Applications.Count(x=>x.Status=="Chờ duyệt")</a>}
+        </div>
+        <div class="row" id="vehicleList">
+            @foreach(var car in Model.Vehicles)
+            {
+                <div class="col-lg-6 mb-3 vehicle-filter-item" data-status="@car.OperationalStatus"><div class="vehicle-card"><img src="@car.CoverImageUrl" alt="Ảnh xe @car.CarName"/><div class="p-3 flex-grow-1"><div class="d-flex justify-content-between"><h3 class="h5">@car.CarName</h3><span class="badge badge-@StatusClass(car.OperationalStatus)">@car.OperationalStatus</span></div><p class="mb-1">@car.LicensePlate · @car.LocationName</p><p class="mb-1"><strong>@car.DailyPrice.ToString("#,0", CultureInfo.InvariantCulture) đ/ngày</strong> · Cọc @car.DepositAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</p><p class="mb-2">@car.CompletedReservations đơn · Thu nhập @car.OwnerNetRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</p>@if(!string.IsNullOrWhiteSpace(car.WarningText)){<div class="alert alert-warning owner-alert p-2"><strong>Cảnh báo:</strong> @car.WarningText</div>}<div class="vehicle-actions"><a href="/VehiclePartner/VehicleOperations/@car.PartnerVehicleID" class="btn btn-sm btn-primary">Quản lý vận hành</a><a href="/Car/CarDetail/@car.CarID" class="btn btn-sm btn-outline-primary">Xem xe</a><form asp-action="UpdateAvailability" method="post">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@car.PartnerVehicleID"/><input type="hidden" name="isActive" value="@(!car.IsActive)"/><input type="hidden" name="reason" value="Chủ xe thay đổi trạng thái từ dashboard"/><button type="submit" class="btn btn-sm @(car.IsActive?"btn-outline-danger":"btn-outline-success")" data-confirm="@(car.IsActive ? "Xác nhận ngừng cho thuê xe này? Các yêu cầu mới sẽ không thể đặt xe." : "Gửi đề nghị mở lại xe này?")">@(car.IsActive?"Ngừng cho thuê":"Đề nghị mở lại")</button></form></div></div></div></div>
+            }
+        </div>
+        <div id="vehicleFilterEmpty" class="alert alert-light border filter-empty mb-0">Không có xe ở trạng thái đã chọn.</div>
+        @if(!Model.Vehicles.Any()){<div class="alert alert-light border mb-0">Bạn chưa có xe đã được duyệt.</div>}
+    </div></div>
+
+    <div id="settlements" class="row section-anchor"><div class="col-lg-5 mb-4"><div class="card owner-card shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Tổng quan dòng tiền</h2><div class="finance-line"><span>Tổng tiền thuê</span><strong>@Model.TotalGrossRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-line"><span>- Hoa hồng SmartCar</span><span>@Model.TotalPlatformCommission.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-line finance-total"><span>Thu nhập sau phí sàn</span><strong>@Model.TotalOwnerNetRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-line"><span>Chờ thanh toán</span><strong class="text-warning">@Model.PendingPayout.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><small class="text-muted">Chi tiết phí, hoàn khách và bồi thường nằm trong từng đơn hoặc đối soát.</small></div></div></div>
+        <div class="col-lg-7 mb-4"><div class="card owner-card shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Đối soát gần đây</h2><div class="table-responsive"><table class="table"><thead><tr><th>Tham chiếu</th><th>Tiền thuê</th><th>Phí sàn</th><th>Thực nhận</th><th>Trạng thái</th></tr></thead><tbody>@foreach(var tx in Model.Transactions.Take(8)){<tr><td>@tx.Reference</td><td>@tx.GrossAmount.ToString("#,0", CultureInfo.InvariantCulture)</td><td>@tx.CommissionAmount.ToString("#,0", CultureInfo.InvariantCulture)</td><td><strong>@tx.PartnerNetAmount.ToString("#,0", CultureInfo.InvariantCulture)</strong></td><td>@tx.Status</td></tr>}@if(!Model.Transactions.Any()){<tr><td colspan="5" class="text-muted text-center">Chưa có đối soát.</td></tr>}</tbody></table></div></div></div></div>
+    </div>
+</div></section>
+<script>
+(function(){
+    var filters=document.querySelectorAll('.vehicle-status-filter');
+    var items=document.querySelectorAll('.vehicle-filter-item');
+    var empty=document.getElementById('vehicleFilterEmpty');
+    filters.forEach(function(button){
+        button.addEventListener('click', function(){
+            var status=button.getAttribute('data-status'), visible=0;
+            filters.forEach(function(x){x.classList.remove('active');x.setAttribute('aria-pressed','false');});
+            button.classList.add('active');button.setAttribute('aria-pressed','true');
+            items.forEach(function(item){var show=status==='all'||item.getAttribute('data-status')===status;item.style.display=show?'':'none';if(show)visible++;});
+            if(empty)empty.style.display=visible===0?'block':'none';
+        });
+    });
+    document.querySelectorAll('[data-confirm]').forEach(function(button){button.addEventListener('click',function(e){if(!window.confirm(button.getAttribute('data-confirm'))){e.preventDefault();}});});
+})();
+</script>

@@ -1,0 +1,398 @@
+@using System.Globalization
+@using Newtonsoft.Json
+@using SmartCar.Dto.AdminDashboardDtos
+@model AdminDashboardSummaryDto
+@{
+    ViewData["Title"] = "Tổng quan vận hành";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    var years = ViewBag.AvailableYears as List<int> ?? new List<int> { VietnamTime.Now.Year };
+}
+@functions {
+    public string Money(decimal value) => value.ToString("N0", CultureInfo.GetCultureInfo("en-US")) + " đ";
+    public string StatusBadge(string status) => status switch
+    {
+        "Hoàn thành" => "badge-success",
+        "Đã hủy" => "badge-danger",
+        "Đang tranh chấp" => "badge-danger",
+        "Đang thuê" => "badge-primary",
+        "Chờ chủ xe xác nhận" => "badge-warning",
+        "Đã xác nhận" => "badge-info",
+        "Đã thanh toán" => "badge-success",
+        "Đã đối soát" => "badge-info",
+        "Tạm giữ do tranh chấp" => "badge-danger",
+        _ => "badge-secondary"
+    };
+}
+
+<div class="page-content smart-dashboard-page">
+    <div class="container-fluid">
+        <div class="dashboard-heading">
+            <div>
+                <p class="dashboard-eyebrow">SMART CAR MARKETPLACE</p>
+                <h2>Tổng quan vận hành</h2>
+                <p class="text-muted mb-0">Theo dõi đơn thuê, doanh thu nền tảng, đối tác và các việc cần xử lý.</p>
+            </div>
+            <div class="d-flex flex-wrap" style="gap:8px">
+                <a href="@Url.Action("Export", "AdminDashboard", new { area = "Admin", year = Model.SelectedYear, month = Model.SelectedMonth, locationId = Model.SelectedLocationID, partnerId = Model.SelectedPartnerID, status = Model.SelectedStatus })" class="btn btn-outline-success"><i class="mdi mdi-file-excel-outline"></i> Xuất Excel (CSV)</a>
+                <a href="/Admin/AdminRiskCenter/Index" class="btn btn-outline-danger"><i class="mdi mdi-shield-alert-outline"></i> Trung tâm rủi ro</a>
+            </div>
+        </div>
+
+        @if (ViewBag.DashboardError is string error)
+        {
+            <div class="alert alert-danger">@error</div>
+        }
+
+        <form method="get" class="dashboard-panel p-3 mb-4" aria-label="Bộ lọc báo cáo quản trị">
+            <div class="form-row align-items-end">
+                <div class="form-group col-xl-2 col-md-4"><label>Năm</label><select name="year" class="form-control">@foreach(var y in years){if(y==Model.SelectedYear){<option value="@y" selected>@y</option>}else{<option value="@y">@y</option>}}</select></div>
+                <div class="form-group col-xl-2 col-md-4"><label>Tháng</label><select name="month" class="form-control"><option value="">Tất cả</option>@for(var m=1;m<=12;m++){if(Model.SelectedMonth==m){<option value="@m" selected>Tháng @m</option>}else{<option value="@m">Tháng @m</option>}}</select></div>
+                <div class="form-group col-xl-2 col-md-4"><label>Địa điểm</label><select name="locationId" class="form-control"><option value="">Tất cả</option>@foreach(var item in Model.Locations){if(Model.SelectedLocationID==item.ID){<option value="@item.ID" selected>@item.Name</option>}else{<option value="@item.ID">@item.Name</option>}}</select></div>
+                <div class="form-group col-xl-2 col-md-4"><label>Chủ xe</label><select name="partnerId" class="form-control"><option value="">Tất cả</option>@foreach(var item in Model.Partners){if(Model.SelectedPartnerID==item.ID){<option value="@item.ID" selected>@item.Name</option>}else{<option value="@item.ID">@item.Name</option>}}</select></div>
+                <div class="form-group col-xl-2 col-md-4"><label>Trạng thái</label><select name="status" class="form-control"><option value="">Tất cả</option>@foreach(var st in Model.StatusOptions){if(Model.SelectedStatus==st){<option selected>@st</option>}else{<option>@st</option>}}</select></div>
+                <div class="form-group col-xl-2 col-md-4"><button class="btn btn-primary btn-block" type="submit"><i class="mdi mdi-filter"></i> Áp dụng</button><a href="/Admin/AdminDashboard/Index" class="btn btn-link btn-block py-1">Xóa lọc</a></div>
+            </div>
+        </form>
+
+        <div class="row dashboard-kpi-row">
+            <div class="col-xl-3 col-md-6">
+                <div class="dashboard-kpi kpi-blue">
+                    <div class="kpi-icon"><i class="mdi mdi-cash-multiple"></i></div>
+                    <div class="kpi-copy">
+                        <span>Hoa hồng tháng này</span>
+                        <strong>@Money(Model.PlatformRevenueThisMonth)</strong>
+                        <small class="@(Model.MonthOverMonthGrowthPercent >= 0 ? "text-success" : "text-danger")">
+                            @(Model.MonthOverMonthGrowthPercent >= 0 ? "+" : "")@Model.MonthOverMonthGrowthPercent.ToString("0.#")% so với tháng trước
+                        </small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="dashboard-kpi kpi-green">
+                    <div class="kpi-icon"><i class="mdi mdi-check-circle-outline"></i></div>
+                    <div class="kpi-copy">
+                        <span>Đơn hoàn thành năm @Model.SelectedYear</span>
+                        <strong>@Model.CompletedReservationsInYear.ToString("#,0", CultureInfo.InvariantCulture)</strong>
+                        <small>@Model.TotalReservationsInYear.ToString("#,0", CultureInfo.InvariantCulture) đơn phát sinh trong năm</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="dashboard-kpi kpi-purple">
+                    <div class="kpi-icon"><i class="mdi mdi-car-multiple"></i></div>
+                    <div class="kpi-copy">
+                        <span>Xe đối tác đang hoạt động</span>
+                        <strong>@Model.TotalActiveVehicles.ToString("#,0", CultureInfo.InvariantCulture)</strong>
+                        <small>Chỉ gồm xe đã duyệt và đang hiển thị</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+                <div class="dashboard-kpi kpi-orange">
+                    <div class="kpi-icon"><i class="mdi mdi-account-group-outline"></i></div>
+                    <div class="kpi-copy">
+                        <span>Đối tác chủ xe hoạt động</span>
+                        <strong>@Model.TotalActivePartners.ToString("#,0", CultureInfo.InvariantCulture)</strong>
+                        <small>Tài khoản đối tác đang hoạt động</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-panel mb-4">
+            <div class="panel-heading"><div><h4>Dòng tiền và rủi ro tài chính</h4><p>Số liệu theo bộ lọc đang chọn. Lợi nhuận là ước tính sau phí cổng, hoàn khách và bồi thường.</p></div></div>
+            <div class="row px-3 pb-3">
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Tổng giá trị đơn</small><h5 class="mt-2">@Money(Model.GrossRevenueInYear)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Hoa hồng nền tảng</small><h5 class="mt-2 text-primary">@Money(Model.PlatformRevenueInYear)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Đã trả chủ xe</small><h5 class="mt-2 text-success">@Money(Model.OwnerPayouts)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Tiền cọc đang giữ</small><h5 class="mt-2 text-warning">@Money(Model.DepositsHeld)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Hoàn tiền khách</small><h5 class="mt-2">@Money(Model.CustomerRefunds)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Chi phí bồi thường</small><h5 class="mt-2 text-danger">@Money(Model.CompensationCost)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Phí cổng thanh toán</small><h5 class="mt-2">@Money(Model.PaymentGatewayFees)</h5></div></div>
+                <div class="col-xl-3 col-md-6 mb-3"><div class="border rounded p-3 h-100"><small>Lợi nhuận thực ước tính</small><h5 class="mt-2 @(Model.EstimatedNetProfit>=0?"text-success":"text-danger")">@Money(Model.EstimatedNetProfit)</h5></div></div>
+            </div>
+            <div class="px-3 pb-3"><a href="/Admin/AdminRiskCenter/Index" class="btn btn-sm btn-outline-danger mr-2">@Model.OpenDisputes tranh chấp đang mở</a><a href="/Admin/AdminRiskCenter/Index" class="btn btn-sm btn-outline-warning">@Model.AbnormalTransactions cảnh báo giao dịch bất thường</a></div>
+        </div>
+
+        <div class="row dashboard-action-row">
+            <div class="col-lg-4">
+                <a class="dashboard-action-card" href="/Admin/AdminReservation/Index?status=Chờ%20chủ%20xe%20xác%20nhận">
+                    <span class="action-icon warning"><i class="mdi mdi-clock-alert-outline"></i></span>
+                    <div><strong>@Model.PendingOwnerConfirmations</strong><span>đơn chờ chủ xe xác nhận</span></div>
+                    <i class="mdi mdi-chevron-right action-arrow"></i>
+                </a>
+            </div>
+            <div class="col-lg-4">
+                <a class="dashboard-action-card" href="/Admin/AdminVehiclePartner/Index">
+                    <span class="action-icon info"><i class="mdi mdi-file-document-check-outline"></i></span>
+                    <div><strong>@Model.PendingVehicleApplications</strong><span>hồ sơ xe đang chờ duyệt</span></div>
+                    <i class="mdi mdi-chevron-right action-arrow"></i>
+                </a>
+            </div>
+            <div class="col-lg-4">
+                <a class="dashboard-action-card" href="/Admin/AdminMarketplace/Index">
+                    <span class="action-icon danger"><i class="mdi mdi-bank-transfer"></i></span>
+                    <div><strong>@Money(Model.PendingSettlementAmount)</strong><span>đang chờ đối soát hoặc thanh toán</span></div>
+                    <i class="mdi mdi-chevron-right action-arrow"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-8">
+                <div class="dashboard-panel revenue-panel">
+                    <div class="panel-heading">
+                        <div>
+                            <h4>Doanh thu theo tháng</h4>
+                            <p>Doanh thu gộp và phần hoa hồng Smart Car trong năm @Model.SelectedYear.</p>
+                        </div>
+                        <a href="/Admin/AdminStatistics/Index?year=@Model.SelectedYear" class="btn btn-sm btn-outline-primary">Xem báo cáo chi tiết</a>
+                    </div>
+                    <div class="chart-wrap chart-large"><canvas id="monthlyRevenueChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="dashboard-panel insight-panel">
+                    <div class="panel-heading"><div><h4>Điểm nổi bật</h4><p>Những số liệu cần chú ý trong năm @Model.SelectedYear.</p></div></div>
+                    <div class="insight-item">
+                        <span class="insight-icon blue"><i class="mdi mdi-trophy-outline"></i></span>
+                        <div><small>Tháng doanh thu cao nhất</small><strong>@Model.HighestRevenueMonthName</strong><span>@Money(Model.HighestRevenueAmount)</span></div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-icon blue"><i class="mdi mdi-chart-line"></i></span>
+                        <div><small>Tháng lợi nhuận cao nhất</small><strong>@Model.HighestProfitMonthName</strong><span>@Money(Model.HighestProfitAmount)</span></div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-icon green"><i class="mdi mdi-account-star-outline"></i></span>
+                        <div><small>Đối tác có doanh thu cao nhất</small><strong>@Model.TopPartnerName</strong><span>@Money(Model.TopPartnerNetRevenue)</span></div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-icon purple"><i class="mdi mdi-car-sports"></i></span>
+                        <div><small>Xe được thuê nhiều nhất</small><strong>@Model.TopVehicleName</strong><span>@Model.TopVehicleRentalCount chuyến hoàn thành</span></div>
+                    </div>
+                    <div class="insight-item">
+                        <span class="insight-icon orange"><i class="mdi mdi-cancel"></i></span>
+                        <div><small>Tỷ lệ đơn bị hủy</small><strong>@Model.CancellationRate.ToString("0.#")%</strong><span>Trên tổng số đơn trong năm</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-4">
+                <div class="dashboard-panel">
+                    <div class="panel-heading"><div><h4>Trạng thái đơn thuê</h4><p>Phân bố đơn trong năm @Model.SelectedYear.</p></div></div>
+                    <div class="chart-wrap chart-medium"><canvas id="reservationStatusChart"></canvas></div>
+                    <div class="status-legend">
+                        @foreach (var item in Model.ReservationStatuses)
+                        {
+                            <div><span>@item.Status</span><strong>@item.Count</strong></div>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-8">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div><h4>Đơn thuê mới nhất</h4><p>Các giao dịch vừa phát sinh trên nền tảng.</p></div>
+                        <a href="/Admin/AdminReservation/Index" class="btn btn-sm btn-outline-secondary">Xem tất cả</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table dashboard-table mb-0">
+                            <thead><tr><th>Mã đơn</th><th>Xe và khách thuê</th><th>Chủ xe</th><th>Giá trị</th><th>Trạng thái</th></tr></thead>
+                            <tbody>
+                            @if (Model.RecentReservations.Count == 0)
+                            {
+                                <tr><td colspan="5" class="text-center text-muted py-4">Chưa có đơn thuê.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.RecentReservations)
+                                {
+                                    <tr>
+                                        <td><strong>#@item.ReservationID</strong><br/><small>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small></td>
+                                        <td><strong>@item.VehicleName</strong><br/><small>@item.CustomerName</small></td>
+                                        <td>@item.PartnerName</td>
+                                        <td class="money-cell">@Money(item.TotalPrice)</td>
+                                        <td><span class="badge @StatusBadge(item.Status)">@item.Status</span></td>
+                                    </tr>
+                                }
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xl-6">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div><h4>Xe chờ duyệt</h4><p>Ưu tiên kiểm tra hồ sơ đăng xe mới.</p></div>
+                        <a href="/Admin/AdminVehiclePartner/Index" class="btn btn-sm btn-outline-secondary">Mở danh sách</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table dashboard-table mb-0">
+                            <thead><tr><th>Đối tác</th><th>Phương tiện</th><th>Ngày gửi</th></tr></thead>
+                            <tbody>
+                            @if (Model.PendingVehicles.Count == 0)
+                            {
+                                <tr><td colspan="3" class="text-center text-muted py-4">Không có hồ sơ xe chờ duyệt.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.PendingVehicles)
+                                {
+                                    <tr>
+                                        <td><strong>@item.OwnerName</strong></td>
+                                        <td>@item.VehicleName<br/><small>@item.LicensePlate</small></td>
+                                        <td>@item.CreatedDate.ToString("dd/MM/yyyy")</td>
+                                    </tr>
+                                }
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6">
+                <div class="dashboard-panel">
+                    <div class="panel-heading">
+                        <div><h4>Đối soát cần xử lý</h4><p>Các khoản chưa hoàn tất thanh toán cho chủ xe.</p></div>
+                        <a href="/Admin/AdminMarketplace/Index" class="btn btn-sm btn-outline-secondary">Mở đối soát</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table dashboard-table mb-0">
+                            <thead><tr><th>Đối tác</th><th>Phí sàn</th><th>Chủ xe nhận</th><th>Trạng thái</th></tr></thead>
+                            <tbody>
+                            @if (Model.PendingSettlements.Count == 0)
+                            {
+                                <tr><td colspan="4" class="text-center text-muted py-4">Không có giao dịch cần đối soát.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var item in Model.PendingSettlements)
+                                {
+                                    <tr>
+                                        <td><strong>@item.PartnerName</strong><br/><small>@item.CreatedDate.ToString("dd/MM/yyyy")</small></td>
+                                        <td class="money-cell">@Money(item.CommissionAmount)</td>
+                                        <td class="money-cell">@Money(item.PartnerNetAmount)</td>
+                                        <td><span class="badge @StatusBadge(item.Status)">@item.Status</span></td>
+                                    </tr>
+                                }
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .smart-dashboard-page { background: #f4f7fb; min-height: calc(100vh - 70px); }
+    .dashboard-heading { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:24px; }
+    .dashboard-heading h2 { color:#1f2d3d; font-size:28px; margin:0 0 6px; font-weight:700; }
+    .dashboard-eyebrow { margin:0 0 6px; color:#168cf2; font-size:12px; font-weight:800; letter-spacing:1.4px; }
+    .dashboard-year-filter { display:flex; align-items:center; gap:10px; background:#fff; padding:10px 12px; border:1px solid #e5eaf0; border-radius:12px; }
+    .dashboard-year-filter label { margin:0; color:#66788a; white-space:nowrap; font-size:13px; }
+    .dashboard-year-filter select { min-width:100px; border:0; font-weight:700; color:#263746; }
+    .dashboard-kpi-row > div, .dashboard-action-row > div { margin-bottom:22px; }
+    .dashboard-kpi { height:100%; min-height:148px; display:flex; gap:16px; align-items:flex-start; padding:24px; background:#fff; border:1px solid #e7edf3; border-radius:16px; box-shadow:0 8px 24px rgba(24,39,75,.06); }
+    .kpi-icon { width:48px; height:48px; flex:0 0 48px; display:flex; align-items:center; justify-content:center; border-radius:14px; font-size:24px; }
+    .kpi-blue .kpi-icon { background:#e8f3ff; color:#168cf2; }
+    .kpi-green .kpi-icon { background:#e8f8ef; color:#20a464; }
+    .kpi-purple .kpi-icon { background:#f1edff; color:#7655d6; }
+    .kpi-orange .kpi-icon { background:#fff3e6; color:#e68a1f; }
+    .kpi-copy { min-width:0; display:flex; flex-direction:column; }
+    .kpi-copy > span { color:#748394; font-size:13px; margin-bottom:7px; }
+    .kpi-copy strong { color:#182536; font-size:25px; line-height:1.2; margin-bottom:8px; white-space:nowrap; }
+    .kpi-copy small { color:#8795a4; font-size:12px; line-height:1.45; }
+    .dashboard-action-card { height:100%; display:flex; align-items:center; gap:14px; padding:18px 20px; background:#fff; border:1px solid #e7edf3; border-radius:14px; color:#263746; box-shadow:0 6px 18px rgba(24,39,75,.04); transition:.2s ease; }
+    .dashboard-action-card:hover { color:#263746; transform:translateY(-2px); box-shadow:0 10px 25px rgba(24,39,75,.08); }
+    .action-icon { width:44px; height:44px; flex:0 0 44px; display:flex; align-items:center; justify-content:center; border-radius:12px; font-size:22px; }
+    .action-icon.warning { background:#fff5df; color:#d99516; } .action-icon.info { background:#e8f4ff; color:#168cf2; } .action-icon.danger { background:#fff0f0; color:#dc5a5a; }
+    .dashboard-action-card div { display:flex; flex-direction:column; flex:1; }
+    .dashboard-action-card strong { font-size:20px; color:#1d2c3b; }
+    .dashboard-action-card span { color:#738394; font-size:13px; }
+    .action-arrow { color:#a9b4c0; font-size:20px; }
+    .dashboard-panel { background:#fff; border:1px solid #e7edf3; border-radius:16px; box-shadow:0 8px 24px rgba(24,39,75,.05); margin-bottom:24px; overflow:hidden; }
+    .panel-heading { min-height:82px; padding:20px 22px; display:flex; justify-content:space-between; align-items:center; gap:16px; border-bottom:1px solid #edf1f5; }
+    .panel-heading h4 { margin:0 0 5px; color:#1e2d3c; font-size:17px; font-weight:700; }
+    .panel-heading p { margin:0; color:#8492a1; font-size:13px; }
+    .chart-wrap { padding:18px 20px 22px; position:relative; }
+    .chart-large { height:360px; } .chart-medium { height:280px; }
+    .insight-panel { padding-bottom:9px; }
+    .insight-item { display:flex; align-items:center; gap:14px; margin:0 20px; padding:15px 0; border-bottom:1px solid #edf1f5; }
+    .insight-item:last-child { border-bottom:0; }
+    .insight-icon { width:40px; height:40px; flex:0 0 40px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .insight-icon.blue { background:#e8f3ff; color:#168cf2; } .insight-icon.green { background:#e8f8ef; color:#20a464; } .insight-icon.purple { background:#f1edff; color:#7655d6; } .insight-icon.orange { background:#fff3e6; color:#e68a1f; }
+    .insight-item div { min-width:0; display:flex; flex-direction:column; }
+    .insight-item small { color:#8a98a7; font-size:12px; }
+    .insight-item strong { color:#243444; font-size:15px; margin:2px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .insight-item span { color:#66788a; font-size:13px; }
+    .status-legend { padding:0 22px 18px; }
+    .status-legend div { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed #edf1f5; font-size:13px; color:#617182; }
+    .status-legend div:last-child { border-bottom:0; }
+    .dashboard-table thead th { background:#f8fafc; color:#718096; font-size:12px; text-transform:uppercase; letter-spacing:.35px; border-top:0; border-bottom:1px solid #e8edf2; padding:13px 16px; }
+    .dashboard-table td { color:#415160; font-size:13px; vertical-align:middle; padding:14px 16px; border-color:#edf1f5; }
+    .dashboard-table td strong { color:#263746; }
+    .dashboard-table small { color:#8a98a7; }
+    .money-cell { white-space:nowrap; font-weight:600; color:#263746 !important; }
+    @@media (max-width: 991px) { .dashboard-heading { align-items:flex-start; flex-direction:column; } .dashboard-year-filter { width:100%; justify-content:space-between; } .chart-large { height:320px; } }
+    @@media (max-width: 575px) { .dashboard-kpi { padding:19px; } .kpi-copy strong { font-size:21px; white-space:normal; } .panel-heading { align-items:flex-start; flex-direction:column; } .chart-large { height:300px; } }
+</style>
+
+<script src="~/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const monthLabels = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.MonthName)));
+        const grossRevenue = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.GrossRevenue)));
+        const platformRevenue = @Html.Raw(JsonConvert.SerializeObject(Model.MonthlyRevenue.Select(x => x.PlatformRevenue)));
+        const statusLabels = @Html.Raw(JsonConvert.SerializeObject(Model.ReservationStatuses.Select(x => x.Status)));
+        const statusValues = @Html.Raw(JsonConvert.SerializeObject(Model.ReservationStatuses.Select(x => x.Count)));
+        const formatMoney = value => Number(value || 0).toLocaleString('en-US') + ' đ';
+
+        const monthlyCanvas = document.getElementById('monthlyRevenueChart');
+        if (monthlyCanvas) {
+            new Chart(monthlyCanvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: monthLabels,
+                    datasets: [
+                        { label: 'Tổng tiền thuê', data: grossRevenue, backgroundColor: 'rgba(22, 140, 242, .18)', borderColor: '#168cf2', borderWidth: 1, borderRadius: 6 },
+                        { label: 'Hoa hồng Smart Car', data: platformRevenue, backgroundColor: '#20a464', borderColor: '#20a464', borderWidth: 1, borderRadius: 6 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { tooltip: { callbacks: { label: context => context.dataset.label + ': ' + formatMoney(context.raw) } } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { callback: value => Number(value).toLocaleString('en-US') } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        const statusCanvas = document.getElementById('reservationStatusChart');
+        if (statusCanvas) {
+            new Chart(statusCanvas.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusValues,
+                        backgroundColor: ['#f2b84b', '#39a7ff', '#7f67d9', '#8b9bab', '#168cf2', '#52b8a6', '#20a464', '#dc5a5a', '#9b4dca'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+            });
+        }
+    });
+</script>

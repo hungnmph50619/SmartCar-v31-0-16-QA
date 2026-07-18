@@ -1,0 +1,54 @@
+﻿@model List<SmartCar.Dto.SocialMediaDtos.ResultSocialMediaDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Quản lý liên kết mạng xã hội</h4>
+                        <p class="card-subtitle mb-4">
+                            Đây là trang quản lý thông tin các tài khoản mạng xã hội.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                        <th>Mở</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <td>@count</td>
+                                            <td>@item.Name</td>
+                                            <td><form method="post" action="/Admin/AdminSocialMedia/RemoveSocialMedia/@item.SocialMediaID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminSocialMedia/UpdateSocialMedia/@item.SocialMediaID" class="btn btn-outline-success">Cập nhật</a></td>
+                                            <td><a href="/Admin/AdminSocialMedia/UpdateSocialMedia/@item.SocialMediaID" class="btn btn-outline-dark">Mở</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminSocialMedia/CreateSocialMedia" class="btn btn-outline-primary">Thêm mạng xã hội mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

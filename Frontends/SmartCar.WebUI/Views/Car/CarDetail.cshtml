@@ -1,0 +1,185 @@
+@model SmartCar.Dto.RentACarDtos.EnhancedCarDetailDto
+@using Newtonsoft.Json
+@{
+    ViewData["Title"] = $"{Model.Brand} {Model.Model}";
+    Layout = "~/Views/UILayout/Index.cshtml";
+
+    var gallery = Model.GalleryItems ?? new List<SmartCar.Dto.RentACarDtos.CarGalleryImageDto>();
+    if (gallery.Count == 0 && Model.GalleryImages != null)
+    {
+        gallery = Model.GalleryImages
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select((x, index) => new SmartCar.Dto.RentACarDtos.CarGalleryImageDto
+            {
+                Url = x,
+                Label = index == 0 ? "Ảnh chính" : $"Ảnh xe {index + 1}"
+            })
+            .ToList();
+    }
+
+    var firstGalleryItem = gallery.FirstOrDefault();
+    var initialImage = firstGalleryItem?.Url ?? string.Empty;
+    var initialLabel = firstGalleryItem?.Label ?? "Ảnh xe";
+}
+<section class="ftco-section bg-light car-detail-page">
+<div class="container">
+@if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage as string)) { <div class="alert alert-danger">@ViewBag.ErrorMessage</div> }
+<div class="row">
+    <div class="col-lg-8">
+        <div class="detail-card gallery-card mb-4">
+            <div class="gallery-heading">
+                <div>
+                    <h3>Hình ảnh xe</h3>
+                    <p>Ngoại thất, nội thất và các góc xe do chủ xe cung cấp.</p>
+                </div>
+                <span class="image-count"><i class="ion-ios-images"></i> @gallery.Count ảnh</span>
+            </div>
+
+            <div class="main-photo-frame">
+                @if (!string.IsNullOrWhiteSpace(initialImage))
+                {
+                    <img id="mainCarImage" class="main-photo" src="@initialImage" alt="@initialLabel - @Model.Brand @Model.Model" />
+                }
+                else
+                {
+                    <img id="mainCarImage" class="main-photo d-none" src="" alt="Ảnh xe @Model.Brand @Model.Model" />
+                }
+                <div id="mainImageFallback" class="image-fallback @(string.IsNullOrWhiteSpace(initialImage) ? "" : "d-none")">
+                    <i class="flaticon-car"></i>
+                    <strong>Chưa có ảnh xe</strong>
+                    <span>Chủ xe cần bổ sung ảnh ngoại thất và nội thất.</span>
+                </div>
+                <span id="mainImageLabel" class="main-image-label">@initialLabel</span>
+            </div>
+
+            @if (gallery.Count > 1)
+            {
+                <div class="thumb-row" role="list" aria-label="Danh sách ảnh xe">
+                    @for (var i = 0; i < gallery.Count; i++)
+                    {
+                        var image = gallery[i];
+                        <button type="button"
+                                class="thumb @(i == 0 ? "active" : "")"
+                                data-image="@image.Url"
+                                data-label="@image.Label"
+                                aria-label="Xem @image.Label"
+                                aria-pressed="@(i == 0 ? "true" : "false")"
+                                role="listitem">
+                            <span class="thumb-image-wrap">
+                                <img src="@image.Url" alt="@image.Label" loading="lazy" />
+                                <span class="thumb-placeholder"><i class="flaticon-car"></i></span>
+                            </span>
+                            <span class="thumb-label">@image.Label</span>
+                        </button>
+                    }
+                </div>
+            }
+            else if (gallery.Count == 1)
+            {
+                <div class="gallery-note"><i class="ion-ios-information-circle"></i> Xe mới có một ảnh. Chủ xe nên bổ sung ảnh mặt trước, mặt sau, hai bên và nội thất.</div>
+            }
+        </div>
+        <div class="detail-card p-4 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start">
+                <div><span class="brand-label">@Model.Brand</span><h2>@Model.Model</h2><p class="text-muted">@Model.ManufactureYear · Biển số @Model.MaskedLicensePlate · @Model.LocationName</p></div>
+                <div class="car-rating"><i class="ion-ios-star"></i> @(Model.RatingCount>0?Model.Rating.ToString("0.0"):"Chưa có") <small>(@Model.RatingCount đánh giá)</small></div>
+            </div>
+            <div class="spec-grid">
+                <div><i class="flaticon-car-seat"></i><span>Số chỗ</span><strong>@Model.Seat chỗ</strong></div>
+                <div><i class="ion-ios-settings"></i><span>Hộp số</span><strong>@Model.Transmission</strong></div>
+                <div><i class="ion-ios-flash"></i><span>Nhiên liệu</span><strong>@Model.Fuel</strong></div>
+                <div><i class="ion-ios-speedometer"></i><span>Odometer</span><strong>@Model.Km.ToString("#,0", CultureInfo.InvariantCulture) km</strong></div>
+                <div><i class="ion-ios-car"></i><span>Hình thức thuê</span><strong>@Model.RentalMode</strong></div>
+                <div><i class="ion-ios-pin"></i><span>Giao nhận</span><strong>@Model.DeliveryMethod</strong></div>
+            </div>
+        </div>
+        <div class="detail-card p-4 mb-4">
+            <h4>Tiện ích và phụ kiện</h4>
+            @if(Model.Features.Count==0){<p class="text-muted">Chưa cập nhật danh sách tiện ích.</p>}else{<div class="feature-list">@foreach(var f in Model.Features){<span><i class="ion-ios-checkmark-circle"></i>@f</span>}</div>}
+        </div>
+        <div class="detail-card p-4 mb-4">
+            <h4>Điều kiện và chính sách</h4>
+            <div class="policy-row"><i class="ion-ios-card"></i><div><strong>Điều kiện thuê</strong><p>@Model.RentalConditions</p></div></div>
+            <div class="policy-row"><i class="ion-ios-close-circle"></i><div><strong>Chính sách hủy</strong><p>@Model.CancellationPolicy</p></div></div>
+            <div class="policy-row"><i class="ion-ios-speedometer"></i><div><strong>Giới hạn kilomet</strong><p>@Model.KilometerLimitPerDay km/ngày; vượt mức dự kiến @Model.ExcessKilometerFee.ToString("#,0", CultureInfo.InvariantCulture) đ/km.</p></div></div>
+        </div>
+        <div class="detail-card p-4 mb-4">
+            <h4>Đánh giá từ khách thuê</h4>
+            @await Component.InvokeAsync("_CarDetailCommentsByCarIdComponentPartial", new { id = Model.CarID })
+        </div>
+        <div class="detail-card p-4 mb-4">
+            <h4>Lịch xe đã bận</h4>
+            @if(Model.BusyPeriods.Count==0){<div class="alert alert-success mb-0">Xe chưa có lịch bận sắp tới.</div>}else{
+                <div class="busy-list">@foreach(var b in Model.BusyPeriods.Take(12)){<div><i class="ion-ios-calendar"></i><span>@b.Start.ToString("dd/MM/yyyy HH:mm")</span><b>→</b><span>@b.End.ToString("dd/MM/yyyy HH:mm")</span></div>}</div>
+            }
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <aside class="booking-card sticky-top">
+            <div class="price-main"><strong>@Model.DailyPrice.ToString("#,0", CultureInfo.InvariantCulture) đ</strong><span>/ngày</span></div>
+            <div class="price-line"><span>Tiền cọc bảo đảm</span><b>@(Model.RentalMode == "Có tài xế" ? "Không áp dụng" : Model.DepositAmount.ToString("#,0", CultureInfo.InvariantCulture) + " đ")</b></div>
+            <div class="price-line"><span>Phí giao xe</span><b>@(Model.DeliveryMethod == "Nhận tại điểm giao xe" || Model.DeliveryFee == 0 ? "0 đ" : Model.DeliveryFee.ToString("#,0", CultureInfo.InvariantCulture) + " đ")</b></div>
+            <hr />
+            @if(Model.IsActive){<a class="btn btn-primary btn-lg btn-block" href="/Reservation/Index/@Model.CarID">Chọn thời gian và đặt xe</a>}else{<button class="btn btn-secondary btn-lg btn-block" disabled>Xe đang tạm ngừng nhận đơn</button>}
+            <p class="booking-note"><i class="ion-ios-information-circle"></i> Tổng tiền được tính và hiển thị đầy đủ trước khi gửi yêu cầu.</p>
+        </aside>
+    </div>
+</div>
+</div>
+</section>
+<style>
+.car-detail-page{padding-top:50px}.detail-card,.booking-card{background:#fff;border:1px solid #e5ebf1;border-radius:16px;box-shadow:0 8px 24px rgba(24,39,75,.055)}.gallery-card{overflow:hidden}.gallery-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px 14px}.gallery-heading h3{font-size:20px;margin:0 0 3px}.gallery-heading p{font-size:13px;color:#778797;margin:0}.image-count{white-space:nowrap;background:#eef7ff;color:#0c71c8;border-radius:999px;padding:7px 11px;font-size:12px;font-weight:700}.image-count i{margin-right:5px}.main-photo-frame{position:relative;height:470px;background:#edf2f6;overflow:hidden}.main-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center}.main-image-label{position:absolute;left:16px;bottom:16px;padding:7px 11px;border-radius:8px;background:rgba(0,0,0,.68);color:#fff;font-size:12px;font-weight:700}.image-fallback{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;color:#637381;text-align:center;padding:25px}.image-fallback i{font-size:58px;color:#9caab6}.image-fallback strong{font-size:18px;color:#34424e}.image-fallback span{font-size:13px}.thumb-row{display:flex;gap:12px;padding:14px;overflow-x:auto;background:#fff;scrollbar-width:thin}.thumb{flex:0 0 118px;padding:5px;border:2px solid transparent;border-radius:11px;background:#f7f9fb;cursor:pointer;text-align:left;transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease}.thumb:hover{border-color:#7fc1f8;transform:translateY(-1px)}.thumb.active{border-color:#168cf2;box-shadow:0 0 0 3px rgba(22,140,242,.13)}.thumb-image-wrap{position:relative;display:block;width:100%;height:72px;overflow:hidden;border-radius:7px;background:#e9eef2}.thumb img{display:block;width:100%;height:100%;object-fit:cover}.thumb-placeholder{display:none;width:100%;height:100%;align-items:center;justify-content:center;color:#8795a1;font-size:26px}.thumb.thumb-broken img{display:none}.thumb.thumb-broken .thumb-placeholder{display:flex}.thumb-label{display:block;padding:7px 3px 2px;color:#34424e;font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gallery-note{padding:12px 16px;background:#fff8df;color:#765c0b;border-top:1px solid #f4e6ad;font-size:12px}.gallery-note i{margin-right:5px}.brand-label{color:#168cf2;font-size:12px;font-weight:800;letter-spacing:1px}.car-rating{background:#fff7da;color:#966b00;padding:9px 12px;border-radius:10px;font-weight:700}.car-rating small{color:#7c7c7c;font-weight:400}.spec-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin-top:22px}.spec-grid>div{padding:16px;background:#f7f9fc;border-radius:12px;display:flex;flex-direction:column}.spec-grid i{font-size:23px;color:#168cf2}.spec-grid span{font-size:12px;color:#778797;margin-top:7px}.feature-list{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.feature-list span{padding:11px;background:#f5f9fd;border-radius:9px}.feature-list i{color:#20a464;margin-right:6px}.policy-row{display:flex;gap:15px;padding:15px 0;border-bottom:1px solid #edf1f5}.policy-row:last-child{border:0}.policy-row>i{font-size:25px;color:#168cf2}.policy-row p{margin:4px 0 0;color:#6f7f8e}.busy-list>div{display:grid;grid-template-columns:28px 1fr 25px 1fr;align-items:center;padding:11px;border-bottom:1px solid #edf1f5}.busy-list i{color:#dc5a5a}.booking-card{padding:25px;top:90px}.price-main strong{font-size:28px;color:#168cf2}.price-main span{color:#778797}.price-line{display:flex;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px dashed #e3e8ed;font-size:13px}.booking-note{font-size:12px;color:#738394;margin:15px 0 0}
+@@media(max-width:991px){.main-photo-frame{height:360px}.booking-card{margin-top:10px;position:static!important}.spec-grid{grid-template-columns:repeat(2,1fr)}}
+@@media(max-width:575px){.gallery-heading{align-items:flex-start;padding:15px}.gallery-heading p{display:none}.main-photo-frame{height:260px}.thumb{flex-basis:96px}.thumb-image-wrap{height:60px}.feature-list{grid-template-columns:1fr}.busy-list>div{grid-template-columns:24px 1fr;gap:4px}.busy-list b{display:none}.spec-grid{grid-template-columns:1fr 1fr}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const mainImage = document.getElementById('mainCarImage');
+    const fallback = document.getElementById('mainImageFallback');
+    const label = document.getElementById('mainImageLabel');
+    const thumbnails = Array.from(document.querySelectorAll('.thumb'));
+
+    function showFallback() {
+        if (mainImage) mainImage.classList.add('d-none');
+        if (fallback) fallback.classList.remove('d-none');
+        if (label) label.textContent = 'Ảnh chưa khả dụng';
+    }
+
+    function showImage(url, imageLabel) {
+        if (!mainImage || !url) {
+            showFallback();
+            return;
+        }
+        mainImage.classList.remove('d-none');
+        if (fallback) fallback.classList.add('d-none');
+        mainImage.alt = imageLabel + ' - @Model.Brand @Model.Model';
+        mainImage.src = url;
+        if (label) label.textContent = imageLabel || 'Ảnh xe';
+    }
+
+    if (mainImage) {
+        mainImage.addEventListener('error', showFallback);
+        if (!mainImage.getAttribute('src')) showFallback();
+    }
+
+    thumbnails.forEach(function (button) {
+        const thumbnailImage = button.querySelector('img');
+        if (thumbnailImage) {
+            thumbnailImage.addEventListener('error', function () {
+                button.classList.add('thumb-broken');
+            });
+        }
+
+        button.addEventListener('click', function () {
+            thumbnails.forEach(function (item) {
+                item.classList.remove('active');
+                item.setAttribute('aria-pressed', 'false');
+            });
+            button.classList.add('active');
+            button.setAttribute('aria-pressed', 'true');
+            showImage(button.dataset.image, button.dataset.label);
+        });
+    });
+});
+</script>

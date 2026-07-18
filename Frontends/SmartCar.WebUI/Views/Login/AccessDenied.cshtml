@@ -1,0 +1,14 @@
+@{
+    ViewData["Title"] = "Không có quyền truy cập";
+    Layout = "~/Views/UILayout/Index.cshtml";
+}
+<section class="ftco-section bg-light">
+    <div class="container text-center">
+        <div class="alert alert-warning">
+            <h4>Bạn không có quyền truy cập chức năng này.</h4>
+            <p>Chức năng đang yêu cầu một vai trò khác hoặc quyền cao hơn tài khoản hiện tại.</p>
+        </div>
+        <a href="/Login/Index/" class="btn btn-primary">Đăng nhập lại</a>
+        <a href="/Default/Index/" class="btn btn-secondary">Về trang chủ</a>
+    </div>
+</section>

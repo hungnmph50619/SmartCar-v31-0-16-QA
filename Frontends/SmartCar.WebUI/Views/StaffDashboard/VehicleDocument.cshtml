@@ -1,0 +1,22 @@
+@model StaffVehicleDocumentReviewDto
+@{
+    ViewData["Title"]="Duyệt giấy tờ xe";
+    Layout="~/Views/AdminLayout/Index.cshtml";
+    var expired = Model.ExpiryDate.HasValue && Model.ExpiryDate.Value.Date <= VietnamTime.Today;
+}
+<div class="page-content"><div class="container-fluid">
+<a href="/StaffDashboard/Index">← Hàng đợi công việc</a>
+<div class="d-flex justify-content-between align-items-center my-3"><div><h2>Duyệt giấy tờ xe</h2><p class="text-muted">Chỉ chấp nhận hoặc trả lại; nhân viên không sửa số giấy tờ hay ngày hết hạn.</p></div><span class="badge badge-info p-2">@Model.Status</span></div>
+@if(TempData["StaffError"]!=null){<div class="alert alert-danger">@TempData["StaffError"]</div>}
+<div class="row"><div class="col-lg-7"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h4>@Model.DocumentType</h4><div class="doc-image"><a href="@Model.FileUrl" target="_blank" rel="noopener noreferrer"><img src="@Model.FileUrl" alt="Ảnh giấy tờ xe"/></a></div><p class="text-center mt-2"><a href="@Model.FileUrl" target="_blank" rel="noopener noreferrer">Mở ảnh kích thước đầy đủ</a></p></div></div></div>
+<div class="col-lg-5"><div class="card border-0 shadow-sm"><div class="card-body p-4"><h4>Thông tin đối chiếu</h4><dl><dt>Xe</dt><dd>@Model.CarName · @Model.LicensePlate</dd><dt>Chủ xe</dt><dd>@Model.OwnerName</dd><dt>Số giấy tờ</dt><dd>@Model.DocumentNumber</dd><dt>Ngày cấp</dt><dd>@(Model.IssuedDate?.ToString("dd/MM/yyyy")??"Chưa nhập")</dd><dt>Ngày hết hạn</dt><dd class="@(expired?"text-danger":"")">@(Model.ExpiryDate?.ToString("dd/MM/yyyy")??"Không thời hạn")</dd><dt>Ngày gửi</dt><dd>@Model.CreatedDate.ToString("dd/MM/yyyy HH:mm")</dd></dl>
+@if(expired){<div class="alert alert-danger">Giấy tờ đã hết hạn, không được chấp nhận.</div>}
+<form asp-action="ReviewVehicleDocument" method="post" id="vehicleDocumentReviewForm">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@Model.VehicleDocumentID"/><div class="form-group"><label>Lý do/yêu cầu bổ sung</label><textarea name="reason" id="vehicleDocumentReason" class="form-control" rows="3" placeholder="Nêu rõ giấy tờ hoặc thông tin cần sửa" aria-describedby="vehicleDocumentReasonError"></textarea><div id="vehicleDocumentReasonError" class="text-danger mt-1" role="alert" style="display:none">Hãy nhập lý do từ chối.</div></div><button name="status" value="Đã xác minh" class="btn btn-success" @(expired?"disabled":null)>Chấp nhận</button> <button name="status" value="Bị từ chối" class="btn btn-outline-danger" data-needs-reason="true">Từ chối</button></form>
+</div></div></div></div>
+<div class="alert alert-light border mt-3"><strong>Kiểm tra:</strong> biển số, chủ sở hữu, số giấy tờ, ngày hết hạn và độ rõ của ảnh. Mọi quyết định được ghi audit log.</div>
+</div></div>
+<style>.doc-image{height:560px;background:#eef3f7;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:auto}.doc-image img{max-width:100%;max-height:100%;object-fit:contain}dl dt{color:#64748b;font-size:12px;text-transform:uppercase}dl dd{font-weight:600;margin-bottom:14px}</style>
+
+<script>
+(function(){var form=document.getElementById('vehicleDocumentReviewForm'),reason=document.getElementById('vehicleDocumentReason'),error=document.getElementById('vehicleDocumentReasonError');if(!form)return;form.addEventListener('submit',function(e){var button=e.submitter;if(button&&button.getAttribute('data-needs-reason')==='true'&&!reason.value.trim()){e.preventDefault();error.style.display='block';reason.focus();}else{error.style.display='none';}});})();
+</script>

@@ -1,0 +1,2 @@
+using System.ComponentModel.DataAnnotations;
+namespace SmartCar.Domain.Entities { public class HandoverImage { public int HandoverImageID {get;set;} public int HandoverReportID {get;set;} public HandoverReport HandoverReport {get;set;}=null!; [MaxLength(500)] public string FileUrl {get;set;}=string.Empty; [MaxLength(50)] public string ImageType {get;set;}="Khác"; [MaxLength(128)] public string? FileHash {get;set;} public DateTime CreatedDate {get;set;}=DateTime.UtcNow; } }

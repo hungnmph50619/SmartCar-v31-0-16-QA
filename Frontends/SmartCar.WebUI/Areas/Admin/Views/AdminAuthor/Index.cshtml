@@ -1,0 +1,54 @@
+﻿@model List<ResultAuthorDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Danh sách tác giả</h4>
+                        <p class="card-subtitle mb-4">
+                            Đây là trang quản lý tác giả. Vui lòng nhập đầy đủ thông tin khi thêm tác giả.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Ad Soyad</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                        <th>Bài viết của tác giả</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                            <td>@count</td>
+                                            <td><img src="@item.ImageUrl" width="50" height="50" style="margin-right:10px"/> @item.Name</td>
+                                            <td><form method="post" action="/Admin/AdminAuthor/RemoveAuthor/@item.AuthorID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminAuthor/UpdateAuthor/@item.AuthorID" class="btn btn-outline-success">Cập nhật</a></td>
+                                            <td><a href="/Admin/AdminAuthor/#/@item.AuthorID" class="btn btn-outline-dark">Bài viết của tác giả</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminAuthor/CreateAuthor" class="btn btn-outline-primary">Thêm tác giả mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

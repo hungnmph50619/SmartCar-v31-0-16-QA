@@ -1,0 +1,61 @@
+@model CreateContactDto
+@{
+    ViewData["Title"] = "Liên hệ";
+    Layout = "~/Views/UILayout/Index.cshtml";
+}
+
+<section class="ftco-section contact-section">
+    <div class="container">
+        <div class="row d-flex mb-5 contact-info">
+
+            @await Component.InvokeAsync("_FooterAddressComponentPartial")
+
+            <div class="col-md-8 block-9 mb-md-5">
+                <form class="bg-light p-5 contact-form" method="post" asp-controller="Contact" asp-action="Index">
+                    @Html.AntiForgeryToken()
+                    @if (TempData["ContactSuccess"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["ContactSuccess"]</div>
+                    }
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Họ và tên" asp-for="Name">
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" class="form-control" placeholder="Địa chỉ email" asp-for="Email">
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" class="form-control" placeholder="Chủ đề" asp-for="Subject">
+                        <span asp-validation-for="Subject" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <textarea asp-for="Message" cols="30" rows="7" class="form-control" placeholder="Nội dung tin nhắn"></textarea>
+                        <span asp-validation-for="Message" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <input type="submit" value="Gửi tin nhắn" class="btn btn-primary py-3 px-5">
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-12">
+                <div class="bg-white p-3 shadow-sm rounded">
+                    <h4 class="mb-3">Vị trí Smart Car</h4>
+                    <iframe
+                        title="Bản đồ vị trí Smart Car"
+                        src="https://www.openstreetmap.org/export/embed.html?bbox=105.817%2C21.005%2C105.892%2C21.055&amp;layer=mapnik&amp;marker=21.0285%2C105.8542"
+                        style="border:0; width:100%; height:430px;"
+                        loading="lazy">
+                    </iframe>
+                    <p class="mt-2 mb-0 text-muted">
+                        Bản đồ sử dụng OpenStreetMap nên không cần khóa Google Maps API.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

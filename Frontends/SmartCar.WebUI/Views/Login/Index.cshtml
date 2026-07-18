@@ -1,0 +1,115 @@
+@model SmartCar.Dto.LoginDtos.CreateLoginDto
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>Đăng nhập - SmartCar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="Đăng nhập hệ thống SmartCar" />
+    <meta name="author" content="Nhóm SD-46" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="shortcut icon" href="~/Admin/vertical/assets/images/favicon.ico" />
+    <link href="~/Admin/vertical/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/Admin/vertical/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/Admin/vertical/assets/css/theme.min.css" rel="stylesheet" type="text/css" />
+    <style>
+        .validation-summary-valid{display:none}.password-toggle{min-width:64px}.auth-label{font-weight:600;color:#34495e}.caps-warning{display:none;font-size:.875rem;color:#b7791f;margin-top:.35rem}
+        @@media(max-width:575px){.auth-panel{padding:1.5rem!important}.min-vh-100{min-height:auto!important}}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex align-items-center min-vh-100">
+                <div class="w-100 d-block bg-white shadow-lg rounded my-5">
+                    <div class="row no-gutters">
+                        <div class="col-lg-5 d-none d-lg-block bg-login rounded-left"></div>
+                        <div class="col-lg-7">
+                            <div class="p-5 auth-panel">
+                                <div class="text-center mb-5">
+                                    <a href="/Default/Index/" class="text-dark font-size-22 font-family-secondary" aria-label="Về trang chủ SmartCar">
+                                        <i class="mdi mdi-car" aria-hidden="true"></i> <b>SmartCar</b>
+                                    </a>
+                                </div>
+                                <h1 class="h4 mb-2">Chào mừng bạn quay lại</h1>
+                                <p class="text-muted mb-4">Đăng nhập để truy cập đúng khu vực theo vai trò của bạn.</p>
+                                <form class="user" method="post" asp-controller="Login" asp-action="Index" id="loginForm">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                                    @if (TempData["RegisterSuccess"] != null)
+                                    {
+                                        <div class="alert alert-success" role="status">@TempData["RegisterSuccess"]</div>
+                                    }
+                                    @if (TempData["PasswordResetSuccess"] != null)
+                                    {
+                                        <div class="alert alert-success" role="status">@TempData["PasswordResetSuccess"]</div>
+                                    }
+                                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+                                    <div class="form-group">
+                                        <label asp-for="Username" class="auth-label">Tên đăng nhập</label>
+                                        <input asp-for="Username" type="text" class="form-control form-control-user" autocomplete="username" autofocus aria-describedby="usernameError" />
+                                        <span asp-validation-for="Username" id="usernameError" class="text-danger"></span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label asp-for="Password" class="auth-label">Mật khẩu</label>
+                                        <div class="input-group">
+                                            <input asp-for="Password" type="password" class="form-control form-control-user" id="loginPassword" autocomplete="current-password" aria-describedby="passwordError capsWarning" />
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-secondary password-toggle" data-password-toggle="loginPassword" aria-label="Hiện mật khẩu">Hiện</button>
+                                            </div>
+                                        </div>
+                                        <div id="capsWarning" class="caps-warning" role="status">Caps Lock đang bật.</div>
+                                        <span asp-validation-for="Password" id="passwordError" class="text-danger"></span>
+                                    </div>
+                                    @if (ViewBag.ShowVerifyEmailLink == true)
+                                    {
+                                        <div class="alert alert-warning small">
+                                            Tài khoản đã đăng ký nhưng chưa xác minh email.
+                                            <a href="/Register/VerifyEmail" class="font-weight-bold">Xác minh hoặc gửi lại OTP</a>.
+                                        </div>
+                                    }
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <a href="/Account/ForgotPassword" class="text-primary">Quên mật khẩu?</a>
+                                    </div>
+                                    <button type="submit" class="btn btn-success btn-block waves-effect waves-light">Đăng nhập</button>
+                                </form>
+                                <div class="row mt-4">
+                                    <div class="col-12 text-center">
+                                        <p class="text-muted mb-2">Chưa có tài khoản? <a href="/Register/CreateAppUser/" class="font-weight-medium"><b>Đăng ký khách hàng</b></a></p>
+                                        <p class="text-muted mb-0">Muốn cho thuê xe? <a href="/VehiclePartner/RegisterAccount" class="text-success font-weight-medium"><b>Đăng ký đối tác chủ xe</b></a></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/Admin/vertical/assets/js/jquery.min.js"></script>
+<script src="~/Admin/vertical/assets/js/bootstrap.bundle.min.js"></script>
+<script src="~/Admin/vertical/assets/js/metismenu.min.js"></script>
+<script src="~/Admin/vertical/assets/js/waves.js"></script>
+<script src="~/Admin/vertical/assets/js/simplebar.min.js"></script>
+<script src="~/Admin/vertical/assets/js/theme.js"></script>
+<partial name="_ValidationScriptsPartial" />
+<script>
+(function(){
+    document.querySelectorAll('[data-password-toggle]').forEach(function(button){
+        button.addEventListener('click', function(){
+            var input=document.getElementById(button.getAttribute('data-password-toggle'));
+            var show=input.type==='password'; input.type=show?'text':'password';
+            button.textContent=show?'Ẩn':'Hiện'; button.setAttribute('aria-label', show?'Ẩn mật khẩu':'Hiện mật khẩu');
+        });
+    });
+    var password=document.getElementById('loginPassword'), warning=document.getElementById('capsWarning');
+    password.addEventListener('keyup', function(e){ warning.style.display=e.getModifierState&&e.getModifierState('CapsLock')?'block':'none'; });
+})();
+</script>
+</body>
+</html>

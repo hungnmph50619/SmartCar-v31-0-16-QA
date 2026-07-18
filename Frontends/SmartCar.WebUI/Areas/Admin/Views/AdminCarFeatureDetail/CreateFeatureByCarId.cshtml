@@ -1,0 +1,36 @@
+﻿@model List<ResultFeatureDto>
+
+@{
+    ViewData["Title"] = "CreateFeatureByCarId";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Trang thêm tính năng cho xe</h4>
+                        <p class="card-subtitle mb-4">
+                            Đây là trang gán tính năng cho xe.
+                        </p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            @for (int i = 0; i < Model.Count; i++)
+                            {
+                                <div class="form-check">
+                                    <input type="hidden" asp-for="@Model[i].FeatureID" />
+                                    <input type="hidden" asp-for="@Model[i].Name" />
+                                    <input type="checkbox" class="form-check-input" />
+                                    <label class="form-check-label">@Model[i].Name</label>
+                                </div>
+                            }
+                            <br />
+                            <button class="btn btn-primary">Gán tính năng cho xe</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

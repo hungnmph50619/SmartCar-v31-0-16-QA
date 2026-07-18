@@ -1,0 +1,68 @@
+﻿@model List<ResultBannerDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Banner trang chủ</h4>
+                        <p class="card-subtitle mb-4">
+                            Bạn có thể chỉnh sửa banner trang chủ ở bên dưới. Để tránh làm hỏng bố cục, chỉ nên lưu một bản ghi.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tiêu đề</th>
+                                        <th>Mô tả</th>
+                                        <th>Video URL</th>
+                                        <th>Mô tả video</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                        <th>Mở trên YouTube</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td>@item.Title</td>
+                                            <td>@item.Description</td>
+                                            <td>@item.VideoUrl</td>
+                                            <td>@item.VideoDescription</td>
+                                            <td><form method="post" action="/Admin/AdminBanner/RemoveBanner/@item.BannerID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminBanner/UpdateBanner/@item.BannerID" class="btn btn-outline-success">Cập nhật</a></td>
+                                            <td><a href="@item.VideoUrl" target="_blank" rel="noopener noreferrer" class="btn btn-outline-dark">Mở trên YouTube</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminBanner/CreateBanner" class="btn btn-outline-primary">Thêm banner mới</a>
+                        </div>
+
+                    </div>
+                    <!-- end card-body-->
+                </div>
+                <!-- end card -->
+
+            </div>
+            <!-- end col -->
+
+        </div>
+        <!-- end page title -->
+
+    </div> <!-- container-fluid -->
+</div>
+
+

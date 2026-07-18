@@ -1,0 +1,78 @@
+@model SmartCar.WebUI.Models.NotificationBellViewModel
+@{
+    var isAdminTheme = string.Equals(Model.Theme, "admin", StringComparison.OrdinalIgnoreCase);
+    var label = Model.UnreadCount > 0
+        ? $"Thông báo, có {Model.UnreadCount} thông báo chưa đọc"
+        : "Thông báo, không có thông báo chưa đọc";
+}
+<a href="/Notifications/Index"
+   class="@(isAdminTheme ? "btn header-item waves-effect smart-notification-bell smart-notification-bell-admin" : "nav-link smart-notification-bell smart-notification-bell-public")"
+   data-notification-bell
+   aria-label="@label"
+   title="@label">
+    @if (isAdminTheme)
+    {
+        <i class="mdi mdi-bell-outline smart-bell-icon" aria-hidden="true"></i>
+        <span class="d-none d-sm-inline-block ml-1">Thông báo</span>
+    }
+    else
+    {
+        <span class="icon-bell-o smart-bell-icon" aria-hidden="true"></span>
+        <span class="smart-notification-text">Thông báo</span>
+    }
+    <span class="smart-notification-badge @(Model.UnreadCount > 0 ? string.Empty : "d-none")"
+          data-notification-badge
+          aria-hidden="true">@Model.DisplayCount</span>
+</a>
+<style>
+    .smart-notification-bell{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important}
+    .smart-notification-bell-public{gap:5px}
+    .smart-notification-bell .smart-bell-icon{font-size:20px;line-height:1}
+    .smart-notification-badge{position:absolute;top:0;left:18px;right:auto;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e41e3f;color:#fff!important;border:2px solid #fff;font-size:10px;font-weight:800;line-height:14px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,.22);z-index:5}
+    .smart-role-navbar .smart-notification-badge{border-color:#168cf2}
+    .smart-notification-bell-admin .smart-notification-badge{top:2px;left:17px;border-color:#fff}
+    @@media(max-width:1199px){.smart-notification-bell-public{justify-content:flex-start!important}.smart-notification-badge{top:1px;left:23px}}
+</style>
+<script>
+(function () {
+    if (window.smartCarNotificationPollingStarted) return;
+    window.smartCarNotificationPollingStarted = true;
+
+    function renderUnreadCount(count) {
+        var safeCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+        var display = safeCount > 99 ? '99+' : String(safeCount);
+        var label = safeCount > 0
+            ? 'Thông báo, có ' + safeCount + ' thông báo chưa đọc'
+            : 'Thông báo, không có thông báo chưa đọc';
+
+        document.querySelectorAll('[data-notification-bell]').forEach(function (bell) {
+            bell.setAttribute('aria-label', label);
+            bell.setAttribute('title', label);
+            var badge = bell.querySelector('[data-notification-badge]');
+            if (!badge) return;
+            badge.textContent = display;
+            badge.classList.toggle('d-none', safeCount === 0);
+        });
+    }
+
+    async function refreshUnreadCount() {
+        try {
+            var response = await fetch('/Notifications/UnreadCount', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                cache: 'no-store'
+            });
+            if (!response.ok) return;
+            var data = await response.json();
+            renderUnreadCount(Number(data.unreadCount));
+        } catch (_) {
+            // Giữ số đếm hiện tại nếu mạng hoặc Web API tạm thời gián đoạn.
+        }
+    }
+
+    window.smartCarRefreshNotificationCount = refreshUnreadCount;
+    refreshUnreadCount();
+    window.setInterval(refreshUnreadCount, 45000);
+})();
+</script>

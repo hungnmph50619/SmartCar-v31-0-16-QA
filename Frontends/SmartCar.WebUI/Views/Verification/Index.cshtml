@@ -1,0 +1,288 @@
+@model CustomerVerificationViewModel
+@{
+    ViewData["Title"] = "Xác minh khách thuê";
+    Layout = "~/Views/UILayout/Index.cshtml";
+    var readiness = ViewBag.Readiness as CustomerReadinessDto;
+    var verificationStatus = (readiness?.VerificationStatus ?? "Chưa xác minh").Trim();
+    var isPending = verificationStatus == "Chờ duyệt" || verificationStatus == "Chờ duyệt hồ sơ";
+    var isVerified = verificationStatus == "Đã xác minh";
+    var isRejected = verificationStatus == "Bị từ chối";
+    var isSupplementRequired = verificationStatus == "Yêu cầu bổ sung";
+    var isReverificationRequired = verificationStatus == "Cần xác minh lại";
+    var isResubmission = isRejected || isSupplementRequired || isReverificationRequired;
+    var canEditVerification = !isPending && !isVerified;
+    var statusBadgeClass = isVerified ? "badge-success" : isRejected ? "badge-danger" : isPending ? "badge-info" : isReverificationRequired ? "badge-warning" : "badge-warning";
+    var citizenIdPlaceholder = string.IsNullOrWhiteSpace(readiness?.CitizenIdMasked)
+        ? "Nhập đủ 12 số CCCD"
+        : $"Để trống nếu không đổi ({readiness.CitizenIdMasked})";
+}
+
+<style>
+    .verify-card{border:0;border-radius:14px}.upload-box{border:1px dashed #aeb8c4;border-radius:10px;padding:16px;background:#fafcff}.verify-step{border-left:4px solid #1089ff;padding-left:14px}.status-pill{font-size:.9rem;padding:.55rem .8rem}.address-card{border:1px solid #e8edf4;border-radius:12px;padding:18px;background:#fff}.address-hint{font-size:.86rem;color:#6c757d}.same-address-box{background:#f2f9ff;border:1px solid #cfe9ff;border-radius:10px;padding:12px 14px}.field-note{font-size:.83rem;color:#6c757d;margin-top:4px}.readonly-box{border:1px solid #e8edf4;border-radius:12px;background:#fff;padding:18px}.readonly-label{font-size:.82rem;color:#6c757d;margin-bottom:2px}.readonly-value{font-weight:600;color:#27364a}.status-waiting{background:#fff8e5;border:1px solid #ffe08a;border-radius:12px;padding:18px}.status-verified{background:#eefaf1;border:1px solid #cfead6;border-radius:12px;padding:18px}
+</style>
+<section class="ftco-section bg-light py-5">
+<div class="container" style="max-width:1050px">
+    @if (TempData["VerificationSuccess"] != null){<div class="alert alert-success">@TempData["VerificationSuccess"]</div>}
+    @if (TempData["VerificationInfo"] != null){<div class="alert alert-info">@TempData["VerificationInfo"]</div>}
+    <div class="card verify-card shadow-sm mb-4"><div class="card-body p-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center">
+            <div><h3 class="mb-1">Xác minh khách thuê một lần</h3><p class="text-muted mb-0">Các lần thuê sau không phải tải lại, trừ khi giấy tờ hết hạn hoặc thông tin thay đổi.</p></div>
+            <span class="badge @statusBadgeClass status-pill mt-3 mt-md-0">@verificationStatus</span>
+        </div>
+        @if (canEditVerification && readiness?.MissingItems?.Count > 0){<div class="alert alert-light border mt-3 mb-0"><strong>Cần bổ sung:</strong> @string.Join(" · ", readiness.MissingItems)</div>}
+        @if (!string.IsNullOrWhiteSpace(readiness?.VerificationNote)){<div class="alert alert-danger mt-3 mb-0"><strong>Phản hồi của nhân viên:</strong> @readiness.VerificationNote</div>}
+        @if (isReverificationRequired)
+        {
+            <div class="alert alert-warning mt-3 mb-0">
+                <strong>Hồ sơ của bạn cần xác minh lại.</strong> Trong thời gian xác minh lại, bạn chưa thể tạo đơn thuê mới. Vui lòng cập nhật đúng nội dung Admin yêu cầu rồi gửi lại.
+            </div>
+        }
+        else if (isResubmission)
+        {
+            <div class="alert alert-info mt-3 mb-0">
+                <strong>Cách gửi lại:</strong> sửa đúng nội dung nhân viên yêu cầu. Ảnh cũ vẫn được giữ; bạn chỉ cần chọn file mới tại mục cần thay. Số CCCD có thể để trống nếu không thay đổi.
+            </div>
+        }
+    </div></div>
+
+    @if (canEditVerification)
+    {
+    <form method="post" enctype="multipart/form-data" class="card verify-card shadow-sm" id="verificationForm">
+        @Html.AntiForgeryToken()<input type="hidden" asp-for="ReturnUrl" />
+        <div class="card-body p-4 p-md-5">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+            <div class="verify-step mb-4"><h4>1. Thông tin cá nhân và hiệu lực giấy tờ</h4><p class="text-muted mb-0">Họ tên pháp lý phải nhập đúng theo CCCD. Tên này khác với tên hiển thị lúc đăng ký.</p></div>
+            <div class="row">
+                <div class="col-md-8 form-group"><label asp-for="LegalFullName">Họ và tên theo CCCD</label><input asp-for="LegalFullName" class="form-control" placeholder="Ví dụ: Nguyễn Mạnh Hùng"/><span asp-validation-for="LegalFullName" class="text-danger"></span></div>
+                <div class="col-md-4 form-group"><label asp-for="Gender">Giới tính</label><select asp-for="Gender" class="form-control"><option value="">-- Chọn --</option><option>Nam</option><option>Nữ</option><option>Khác</option></select><span asp-validation-for="Gender" class="text-danger"></span></div>
+                <div class="col-md-6 form-group"><label asp-for="Phone">Số điện thoại</label><input asp-for="Phone" class="form-control" placeholder="09xxxxxxxx"/><span asp-validation-for="Phone" class="text-danger"></span></div>
+                <div class="col-md-6 form-group"><label asp-for="CitizenIdNumber">Số CCCD</label><input asp-for="CitizenIdNumber" class="form-control" maxlength="12" inputmode="numeric" placeholder="@citizenIdPlaceholder"/><span asp-validation-for="CitizenIdNumber" class="text-danger"></span><small class="text-muted">Hệ thống chỉ lưu dạng che số. Khi gửi lại, để trống nếu CCCD không thay đổi.</small></div>
+                <div class="col-md-4 form-group"><label asp-for="DateOfBirth">Ngày sinh</label><input asp-for="DateOfBirth" type="date" class="form-control"/><span asp-validation-for="DateOfBirth" class="text-danger"></span></div>
+                <div class="col-md-4 form-group"><label asp-for="CitizenIdIssuedDate">Ngày cấp CCCD</label><input asp-for="CitizenIdIssuedDate" type="date" class="form-control"/><span asp-validation-for="CitizenIdIssuedDate" class="text-danger"></span></div>
+                <div class="col-md-4 form-group"><label asp-for="CitizenIdExpiryDate">Ngày hết hạn CCCD</label><input asp-for="CitizenIdExpiryDate" type="date" class="form-control"/><span asp-validation-for="CitizenIdExpiryDate" class="text-danger"></span></div>
+            </div>
+
+            <div class="verify-step my-4"><h4>2. Địa chỉ</h4><p class="text-muted mb-0">Địa chỉ được tách thành tỉnh/thành phố, xã/phường/đặc khu và địa chỉ chi tiết. Không bắt buộc chọn quận/huyện.</p></div>
+            <div class="address-card mb-4">
+                <h5 class="mb-2">Địa chỉ theo giấy tờ</h5>
+                <p class="address-hint mb-3">Nhập đúng dòng địa chỉ đang ghi trên CCCD/GPLX để nhân viên đối chiếu. Nếu CCCD còn ghi địa chỉ cũ trước sáp nhập thì vẫn nhập đúng theo giấy tờ.</p>
+                <div class="form-group mb-0">
+                    <label asp-for="CitizenIdAddress">Địa chỉ theo CCCD/GPLX</label>
+                    <textarea asp-for="CitizenIdAddress" rows="3" class="form-control" placeholder="Ví dụ: Phố Phong Lạc, Thị trấn Nho Quan, huyện Nho Quan, tỉnh Ninh Bình"></textarea>
+                    <span asp-validation-for="CitizenIdAddress" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="address-card mb-4">
+                <h5 class="mb-2">Địa chỉ thường trú hiện hành</h5>
+                <p class="address-hint mb-3">Chọn từ danh mục hành chính hiện hành để dữ liệu thống nhất, dễ lọc và dễ giao nhận xe theo khu vực.</p>
+                <div class="row">
+                    <div class="col-md-6 form-group"><label asp-for="PermanentProvinceCode">Tỉnh/thành phố</label><select asp-for="PermanentProvinceCode" class="form-control address-province" id="PermanentProvince" data-selected="@Model.PermanentProvinceCode" data-ward-target="PermanentWard"><option value="">-- Đang tải tỉnh/thành phố --</option></select><span asp-validation-for="PermanentProvinceCode" class="text-danger"></span></div>
+                    <div class="col-md-6 form-group"><label asp-for="PermanentWardCode">Xã/phường/đặc khu</label><select asp-for="PermanentWardCode" class="form-control address-ward" id="PermanentWard" data-selected="@Model.PermanentWardCode" disabled><option value="">-- Chọn tỉnh/thành phố trước --</option></select><span asp-validation-for="PermanentWardCode" class="text-danger"></span></div>
+                    <div class="col-md-12 form-group mb-0"><label asp-for="PermanentDetail">Số nhà, đường, thôn/xóm/tổ dân phố</label><input asp-for="PermanentDetail" class="form-control" placeholder="Ví dụ: Số nhà 5, ngõ 27, đường Thiên Quan, thôn Phong Lạc"/><span asp-validation-for="PermanentDetail" class="text-danger"></span><div class="field-note">Hệ thống sẽ tự ghép: chi tiết + xã/phường + tỉnh/thành phố.</div></div>
+                </div>
+            </div>
+
+            <div class="address-card mb-4">
+                <div class="same-address-box mb-3">
+                    <label class="mb-0"><input asp-for="CurrentAddressSameAsPermanent" id="CurrentAddressSameAsPermanent" class="mr-2"/> Địa chỉ hiện tại giống địa chỉ thường trú</label>
+                </div>
+                <div id="currentAddressFields">
+                    <h5 class="mb-2">Địa chỉ hiện tại</h5>
+                    <p class="address-hint mb-3">Dùng để liên hệ, hỗ trợ và giao nhận xe khi cần.</p>
+                    <div class="row">
+                        <div class="col-md-6 form-group"><label asp-for="CurrentProvinceCode">Tỉnh/thành phố hiện tại</label><select asp-for="CurrentProvinceCode" class="form-control address-province" id="CurrentProvince" data-selected="@Model.CurrentProvinceCode" data-ward-target="CurrentWard"><option value="">-- Đang tải tỉnh/thành phố --</option></select><span asp-validation-for="CurrentProvinceCode" class="text-danger"></span></div>
+                        <div class="col-md-6 form-group"><label asp-for="CurrentWardCode">Xã/phường/đặc khu hiện tại</label><select asp-for="CurrentWardCode" class="form-control address-ward" id="CurrentWard" data-selected="@Model.CurrentWardCode" disabled><option value="">-- Chọn tỉnh/thành phố trước --</option></select><span asp-validation-for="CurrentWardCode" class="text-danger"></span></div>
+                        <div class="col-md-12 form-group mb-0"><label asp-for="CurrentDetail">Số nhà, đường, thôn/xóm/tổ dân phố hiện tại</label><input asp-for="CurrentDetail" class="form-control" placeholder="Ví dụ: Nhà trọ số 12, ngõ 68, phố Cầu Giấy"/><span asp-validation-for="CurrentDetail" class="text-danger"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="verify-step my-4"><h4>3. Giấy phép lái xe</h4><p class="text-muted mb-0">Các trường bằng lái được dùng để kiểm tra tự động trước mỗi chuyến thuê.</p></div>
+            <div class="row">
+                <div class="col-md-4 form-group"><label asp-for="DriverLicenseNumber">Số GPLX</label><input asp-for="DriverLicenseNumber" class="form-control"/><span asp-validation-for="DriverLicenseNumber" class="text-danger"></span></div>
+                <div class="col-md-4 form-group"><label asp-for="DriverLicenseClass">Hạng GPLX</label><input asp-for="DriverLicenseClass" class="form-control" placeholder="Ví dụ: B1, B2"/><span asp-validation-for="DriverLicenseClass" class="text-danger"></span></div>
+                <div class="col-md-4 form-group"><label asp-for="DriverLicenseIssuedDate">Ngày cấp bằng lái</label><input asp-for="DriverLicenseIssuedDate" type="date" class="form-control"/><span asp-validation-for="DriverLicenseIssuedDate" class="text-danger"></span></div>
+                <div class="col-md-4 form-group"><label asp-for="DriverLicenseExpiry">Ngày hết hạn bằng lái</label><input asp-for="DriverLicenseExpiry" type="date" class="form-control"/><span asp-validation-for="DriverLicenseExpiry" class="text-danger"></span></div>
+            </div>
+            <div class="verify-step my-4"><h4>4. Ảnh giấy tờ</h4><p class="text-muted mb-0">Ảnh rõ nét, không cắt góc, tối đa 5 MB/ảnh; chấp nhận JPG, PNG, WEBP.</p></div>
+            <div class="row">
+                <div class="col-md-6 mb-3"><div class="upload-box"><label asp-for="CitizenIdFront"><strong>CCCD mặt trước</strong></label>@if(readiness?.HasCitizenIdFront == true){<div class="text-success small mb-2">✓ Đã có ảnh cũ — chỉ chọn file nếu cần thay</div>}<input asp-for="CitizenIdFront" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file"/><span asp-validation-for="CitizenIdFront" class="text-danger"></span></div></div>
+                <div class="col-md-6 mb-3"><div class="upload-box"><label asp-for="CitizenIdBack"><strong>CCCD mặt sau</strong></label>@if(readiness?.HasCitizenIdBack == true){<div class="text-success small mb-2">✓ Đã có ảnh cũ — chỉ chọn file nếu cần thay</div>}<input asp-for="CitizenIdBack" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file"/><span asp-validation-for="CitizenIdBack" class="text-danger"></span></div></div>
+                <div class="col-md-6 mb-3"><div class="upload-box"><label asp-for="DriverLicense"><strong>Bằng lái xe</strong></label>@if(readiness?.HasDriverLicense == true){<div class="text-success small mb-2">✓ Đã có ảnh cũ — chỉ chọn file nếu cần thay</div>}<input asp-for="DriverLicense" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file"/><span asp-validation-for="DriverLicense" class="text-danger"></span></div></div>
+                <div class="col-md-6 mb-3"><div class="upload-box"><label asp-for="Portrait"><strong>Ảnh chân dung</strong></label>@if(readiness?.HasPortrait == true){<div class="text-success small mb-2">✓ Đã có ảnh cũ — chỉ chọn file nếu cần thay</div>}<input asp-for="Portrait" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file"/><span asp-validation-for="Portrait" class="text-danger"></span></div></div>
+            </div>
+            <div class="alert alert-info"><strong>Bảo vệ dữ liệu:</strong> hồ sơ chỉ phục vụ xác minh thuê xe. Mọi lần duyệt, từ chối hoặc yêu cầu bổ sung đều được ghi nhật ký.</div>
+            <button class="btn btn-primary py-3 px-5" type="submit">@(isResubmission ? "Cập nhật và gửi lại hồ sơ" : "Gửi hồ sơ xác minh")</button>
+            <a href="/ReservationLookup/Index" class="btn btn-outline-secondary py-3 px-4">Đơn thuê của tôi</a>
+        </div>
+    </form>
+    }
+    else
+    {
+        <div class="card verify-card shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                @if (isPending)
+                {
+                    <div class="status-waiting mb-4">
+                        <h4 class="mb-2">Hồ sơ của bạn đang chờ nhân viên SmartCar duyệt</h4>
+                        <p class="mb-2">Trong thời gian chờ duyệt, bạn không thể chỉnh sửa trực tiếp hồ sơ để tránh thay đổi dữ liệu trong lúc nhân viên kiểm tra.</p>
+                        <p class="mb-0 text-muted">SmartCar sẽ thông báo khi hồ sơ được phê duyệt hoặc khi nhân viên yêu cầu bổ sung. Nếu phát hiện nhập sai, hãy chờ nhân viên trả hồ sơ/yêu cầu bổ sung hoặc liên hệ nhân viên hỗ trợ.</p>
+                    </div>
+                }
+                else if (isVerified)
+                {
+                    <div class="status-verified mb-4">
+                        <h4 class="mb-2">Hồ sơ của bạn đã được xác minh</h4>
+                        <p class="mb-2">Bạn có thể đặt xe nếu đồng thời đáp ứng các điều kiện khác như bằng lái còn hạn, không có khoản nợ quá hạn và không có đơn trùng thời gian.</p>
+                        <p class="mb-0 text-muted">Các thông tin pháp lý đã được khóa. Nếu cần thay đổi thông tin quan trọng, hãy gửi yêu cầu cập nhật hồ sơ để được xác minh lại.</p>
+                    </div>
+                }
+
+                <div class="readonly-box mb-4">
+                    <h5 class="mb-3">Thông tin hồ sơ hiện tại</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3"><div class="readonly-label">Họ tên pháp lý</div><div class="readonly-value">@(readiness?.LegalFullName ?? "Chưa có")</div></div>
+                        <div class="col-md-3 mb-3"><div class="readonly-label">Giới tính</div><div class="readonly-value">@(readiness?.Gender ?? "Chưa có")</div></div>
+                        <div class="col-md-3 mb-3"><div class="readonly-label">Số điện thoại</div><div class="readonly-value">@(readiness?.Phone ?? "Chưa có")</div></div>
+                        <div class="col-md-6 mb-3"><div class="readonly-label">CCCD</div><div class="readonly-value">@(string.IsNullOrWhiteSpace(readiness?.CitizenIdMasked) ? "Đã lưu dạng bảo mật" : readiness.CitizenIdMasked)</div></div>
+                        <div class="col-md-3 mb-3"><div class="readonly-label">Ngày hết hạn CCCD</div><div class="readonly-value">@(readiness?.CitizenIdExpiryDate?.ToString("dd/MM/yyyy") ?? "Chưa có")</div></div>
+                        <div class="col-md-3 mb-3"><div class="readonly-label">Hạn bằng lái</div><div class="readonly-value">@(readiness?.DriverLicenseExpiry?.ToString("dd/MM/yyyy") ?? "Chưa có")</div></div>
+                        <div class="col-md-12 mb-3"><div class="readonly-label">Địa chỉ theo giấy tờ</div><div class="readonly-value">@(readiness?.CitizenIdAddress ?? "Chưa có")</div></div>
+                        <div class="col-md-12 mb-3"><div class="readonly-label">Địa chỉ thường trú hiện hành</div><div class="readonly-value">@(readiness?.PermanentAddress ?? "Chưa có")</div></div>
+                        <div class="col-md-12 mb-3"><div class="readonly-label">Địa chỉ hiện tại</div><div class="readonly-value">@(readiness?.CurrentAddress ?? "Chưa có")</div></div>
+                        <div class="col-md-4 mb-3"><div class="readonly-label">Số GPLX</div><div class="readonly-value">@(readiness?.DriverLicenseNumber ?? "Chưa có")</div></div>
+                        <div class="col-md-4 mb-3"><div class="readonly-label">Hạng GPLX</div><div class="readonly-value">@(readiness?.DriverLicenseClass ?? "Chưa có")</div></div>
+                        <div class="col-md-4 mb-3"><div class="readonly-label">Thời điểm gửi hồ sơ</div><div class="readonly-value">@(readiness?.VerificationSubmittedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa có")</div></div>
+                    </div>
+                </div>
+
+                <a href="/ReservationLookup/Index" class="btn btn-outline-secondary py-3 px-4">Đơn thuê của tôi</a>
+                @if (isVerified)
+                {
+                    <a href="/Default/Index" class="btn btn-primary py-3 px-5">Tìm xe</a>
+                }
+            </div>
+        </div>
+    }
+</div>
+</section>
+
+@if (canEditVerification)
+{
+<script>
+(function(){
+    const provinceUrl = '@Url.Action("Provinces", "Verification")';
+    const wardUrl = '@Url.Action("Wards", "Verification")';
+    let provinces = null;
+
+    function setOptions(select, placeholder, items, selectedCode){
+        select.innerHTML = '';
+        const empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = placeholder;
+        select.appendChild(empty);
+        items.forEach(function(item){
+            const option = document.createElement('option');
+            option.value = item.code;
+            option.textContent = item.fullName || item.name;
+            option.selected = item.code === selectedCode;
+            select.appendChild(option);
+        });
+    }
+
+    async function getJson(url){
+        const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const raw = await response.text();
+        if(!response.ok){
+            let message = 'Không tải được danh mục hành chính.';
+            try { message = JSON.parse(raw).message || message; } catch { }
+            throw new Error(message);
+        }
+        return raw ? JSON.parse(raw) : [];
+    }
+
+    async function loadProvinces(select){
+        const selectedCode = select.dataset.selected || select.value;
+        select.disabled = true;
+        try {
+            provinces = provinces || await getJson(provinceUrl);
+            setOptions(select, '-- Chọn tỉnh/thành phố --', provinces, selectedCode);
+            select.disabled = false;
+        } catch (error) {
+            setOptions(select, '-- Không tải được danh mục --', [], '');
+            select.disabled = true;
+            console.error(error);
+        }
+    }
+
+    async function loadWards(provinceSelect, selectedOverride){
+        const wardSelect = document.getElementById(provinceSelect.dataset.wardTarget);
+        if(!wardSelect) return;
+        const selectedCode = selectedOverride !== undefined
+            ? selectedOverride
+            : (wardSelect.dataset.selected || wardSelect.value);
+        wardSelect.disabled = true;
+        if(!provinceSelect.value){
+            setOptions(wardSelect, '-- Chọn tỉnh/thành phố trước --', [], '');
+            return;
+        }
+        setOptions(wardSelect, '-- Đang tải xã/phường --', [], '');
+        try {
+            const wards = await getJson(wardUrl + '?provinceCode=' + encodeURIComponent(provinceSelect.value));
+            setOptions(wardSelect, '-- Chọn xã/phường/đặc khu --', wards, selectedCode);
+            wardSelect.disabled = false;
+            wardSelect.dataset.selected = '';
+        } catch (error) {
+            setOptions(wardSelect, '-- Không tải được xã/phường --', [], '');
+            console.error(error);
+        }
+    }
+
+    async function copyPermanentToCurrent(){
+        const same = document.getElementById('CurrentAddressSameAsPermanent');
+        const currentFields = document.getElementById('currentAddressFields');
+        if(!same || !currentFields) return;
+        currentFields.style.display = same.checked ? 'none' : '';
+        if(!same.checked) return;
+
+        const pp = document.getElementById('PermanentProvince');
+        const pw = document.getElementById('PermanentWard');
+        const pd = document.getElementById('PermanentDetail');
+        const cp = document.getElementById('CurrentProvince');
+        const cw = document.getElementById('CurrentWard');
+        const cd = document.getElementById('CurrentDetail');
+        cp.value = pp.value;
+        cp.dataset.selected = pp.value;
+        await loadWards(cp, pw.value);
+        cw.value = pw.value;
+        cd.value = pd.value;
+    }
+
+    async function initialise(){
+        const provinceSelects = Array.from(document.querySelectorAll('.address-province'));
+        await Promise.all(provinceSelects.map(loadProvinces));
+        await Promise.all(provinceSelects.map(function(select){ return loadWards(select); }));
+
+        provinceSelects.forEach(function(select){
+            select.addEventListener('change', async function(){
+                await loadWards(select, '');
+                await copyPermanentToCurrent();
+            });
+        });
+
+        ['PermanentWard','PermanentDetail'].forEach(function(id){
+            const element = document.getElementById(id);
+            if(!element) return;
+            element.addEventListener('change', copyPermanentToCurrent);
+            element.addEventListener('input', copyPermanentToCurrent);
+        });
+        const same = document.getElementById('CurrentAddressSameAsPermanent');
+        if(same) same.addEventListener('change', copyPermanentToCurrent);
+        await copyPermanentToCurrent();
+    }
+
+    initialise().catch(function(error){ console.error(error); });
+})();
+</script>
+}

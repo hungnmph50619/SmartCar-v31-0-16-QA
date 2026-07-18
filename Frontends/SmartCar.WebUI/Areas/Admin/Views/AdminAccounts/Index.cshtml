@@ -1,0 +1,121 @@
+@using SmartCar.Dto.AdminAccountDtos
+@model AdminAccountListDto
+@{
+    ViewData["Title"]="Quản lý tài khoản"; Layout="~/Views/AdminLayout/Index.cshtml";
+    string Tab(string value)=>Model.SelectedType==value?"btn-primary":"btn-outline-primary";
+    string Selected(string? current, string value)=>string.Equals(current, value, StringComparison.OrdinalIgnoreCase)?"selected":"";
+    string? filterGender = ViewBag.Gender as string;
+    string? filterVerificationStatus = ViewBag.VerificationStatus as string;
+    string? filterAccountStatus = ViewBag.AccountStatus as string;
+}
+<div class="page-content"><div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap mb-4"><div><h2>Quản lý tài khoản</h2><p class="text-muted">Quản lý tài khoản, hồ sơ xác minh, khóa tài khoản, đăng xuất thiết bị và audit log. Admin không sửa trực tiếp dữ liệu định danh của khách.</p></div><a href="/Admin/AdminRiskCenter/Index" class="btn btn-outline-danger">Audit và vi phạm</a></div>
+    @if(TempData["AccountSuccess"] is string ok){<div class="alert alert-success">@ok</div>}@if(TempData["AccountError"] is string err){<div class="alert alert-danger">@err</div>}
+    <div class="mb-3"><a class="btn @Tab("Khách hàng") mr-2" href="?type=Khách hàng">Khách hàng (@Model.CustomerCount)</a><a class="btn @Tab("Chủ xe") mr-2" href="?type=Chủ xe">Chủ xe (@Model.PartnerCount)</a><a class="btn @Tab("Nhân viên") mr-2" href="?type=Nhân viên">Nhân viên (@Model.StaffCount)</a><a class="btn @Tab("Admin")" href="?type=Admin">Admin (@Model.AdminCount)</a></div>
+    <form method="get" class="card card-body mb-3">
+        <input type="hidden" name="type" value="@Model.SelectedType"/>
+        <div class="form-row">
+            <div class="col-md-4 mb-2"><label>Tìm kiếm</label><input name="search" value="@ViewBag.Search" class="form-control" placeholder="Tên, username, email, số điện thoại"/></div>
+            <div class="col-md-2 mb-2"><label>Tỉnh/thành phố</label><input name="province" value="@ViewBag.Province" class="form-control" placeholder="VD: TP. Hồ Chí Minh"/></div>
+            <div class="col-md-2 mb-2"><label>Xã/phường</label><input name="ward" value="@ViewBag.Ward" class="form-control" placeholder="VD: Phường Sài Gòn"/></div>
+            <div class="col-md-2 mb-2">
+                <label>Giới tính</label>
+                <select name="gender" class="form-control">
+                    <option value="">Tất cả</option>
+                    @if (string.Equals(filterGender, "Nam", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="Nam" selected>Nam</option>
+                    }
+                    else
+                    {
+                        <option value="Nam">Nam</option>
+                    }
+                    @if (string.Equals(filterGender, "Nữ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="Nữ" selected>Nữ</option>
+                    }
+                    else
+                    {
+                        <option value="Nữ">Nữ</option>
+                    }
+                    @if (string.Equals(filterGender, "Khác", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="Khác" selected>Khác</option>
+                    }
+                    else
+                    {
+                        <option value="Khác">Khác</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <label>Hồ sơ</label>
+                <select name="verificationStatus" class="form-control">
+                    <option value="">Tất cả</option>
+                    @foreach (var status in new[] { "Chưa xác minh", "Chờ duyệt", "Đã xác minh", "Yêu cầu bổ sung", "Cần xác minh lại", "Bị từ chối" })
+                    {
+                        if (string.Equals(filterVerificationStatus, status, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@status" selected>@status</option>
+                        }
+                        else
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <label>Trạng thái TK</label>
+                <select name="accountStatus" class="form-control">
+                    <option value="">Tất cả</option>
+                    @foreach (var status in new[] { "Đang hoạt động", "Khóa tạm thời", "Khóa vĩnh viễn", "Đã xóa mềm", "Chưa xác minh email" })
+                    {
+                        if (string.Equals(filterAccountStatus, status, StringComparison.OrdinalIgnoreCase))
+                        {
+                            <option value="@status" selected>@status</option>
+                        }
+                        else
+                        {
+                            <option value="@status">@status</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 mb-2"><label>Tuổi từ</label><input name="minAge" type="number" value="@ViewBag.MinAge" class="form-control" min="18" max="100"/></div>
+            <div class="col-md-2 mb-2"><label>Tuổi đến</label><input name="maxAge" type="number" value="@ViewBag.MaxAge" class="form-control" min="18" max="100"/></div>
+            <div class="col-md-2 mb-2 d-flex align-items-end"><button class="btn btn-primary btn-block">Lọc dữ liệu</button></div>
+            <div class="col-md-2 mb-2 d-flex align-items-end"><a class="btn btn-light border btn-block" href="?type=@Model.SelectedType">Xóa lọc</a></div>
+        </div>
+    </form>
+    <div class="card"><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Tài khoản</th><th>Liên hệ</th><th>Khu vực</th><th>Tuổi/Giới tính</th><th>Hồ sơ</th><th>Rủi ro/nghiệp vụ</th><th>Trạng thái</th><th style="min-width:430px">Hành động</th></tr></thead><tbody>
+    @if(Model.Accounts.Count==0){<tr><td colspan="8" class="text-center text-muted py-5">Không có tài khoản phù hợp.</td></tr>}
+    @foreach(var item in Model.Accounts){
+        var activeNow = item.IsActive && (!item.LockoutEnd.HasValue || item.LockoutEnd <= DateTime.UtcNow);
+        <tr>
+        <td><strong>@item.FullName</strong><br/><code>@item.Username</code><br/><small>#@item.AppUserID · @item.AccountType</small></td>
+        <td>@item.Email<br/><small>@(item.Phone??"Chưa có số điện thoại")</small></td>
+        <td>@(item.Province??"Chưa có")<br/><small>@(item.Ward??"")</small></td>
+        <td>@(item.Age.HasValue?$"{item.Age} tuổi":"Chưa có")<br/><small>@(item.Gender??"Chưa có")</small></td>
+        <td><span class="badge badge-info">@item.VerificationStatus</span><br/><small>Lần đăng nhập: @(item.LastLoginAt?.ToString("dd/MM/yyyy HH:mm")??"Chưa có")</small></td>
+        <td><strong>@item.ViolationCount</strong> cảnh báo<br/><strong>@item.OpenReservationCount</strong> đơn đang mở</td>
+        <td>@if(item.IsDeleted){<span class="badge badge-dark">Đã xóa mềm</span>}else if(activeNow){<span class="badge badge-success">Đang hoạt động</span>}else if(item.IsActive && item.LockoutEnd.HasValue && item.LockoutEnd.Value>DateTime.UtcNow){<span class="badge badge-warning">@(item.LockType=="Khóa tự động"?"Khóa tự động":"Khóa tạm thời")</span><br/><small>Đến @(item.LockoutEnd?.ToLocalTime().ToString("dd/MM/yyyy HH:mm"))</small>}else{<span class="badge badge-danger">Khóa vĩnh viễn</span>}</td>
+        <td>
+            <a class="btn btn-sm btn-outline-primary mb-2" href="/Admin/AdminAccounts/Details/@item.AppUserID">Xem hồ sơ / audit log</a>
+            @if(!item.IsDeleted){
+                <form asp-action="UpdateStatus" method="post" class="mb-2 border rounded p-2"><input type="hidden" name="id" value="@item.AppUserID"/><input type="hidden" name="type" value="@Model.SelectedType"/>
+                    @if(activeNow){
+                        <input type="hidden" name="isActive" value="false"/>
+                        <div class="form-row"><div class="col-md-4 mb-1"><select name="lockMode" class="form-control form-control-sm"><option value="Temporary">Khóa tạm thời</option><option value="Permanent">Khóa vĩnh viễn</option></select></div><div class="col-md-3 mb-1"><input name="lockDays" type="number" min="1" max="365" value="7" class="form-control form-control-sm" placeholder="Số ngày"/></div><div class="col-md-5 mb-1"><input name="reason" class="form-control form-control-sm" placeholder="Lý do bắt buộc" required/></div></div><button class="btn btn-sm btn-danger">Khóa tài khoản</button>
+                    } else {
+                        <input type="hidden" name="isActive" value="true"/><input type="hidden" name="lockMode" value="Unlock"/>
+                        <div class="input-group input-group-sm"><input name="reason" class="form-control" placeholder="Lý do mở khóa" required/><div class="input-group-append"><button class="btn btn-success">Mở khóa</button></div></div>
+                    }
+                </form>
+                <form asp-action="RevokeSessions" method="post"><input type="hidden" name="id" value="@item.AppUserID"/><input type="hidden" name="type" value="@Model.SelectedType"/><div class="input-group input-group-sm"><input name="reason" class="form-control" placeholder="Lý do đăng xuất thiết bị" required/><div class="input-group-append"><button class="btn btn-outline-warning">Đăng xuất khỏi tất cả thiết bị</button></div></div></form>
+            }
+        </td>
+    </tr>}
+    </tbody></table></div></div></div>
+    <div class="alert alert-light border mt-3"><strong>Nguyên tắc:</strong> Admin xem hồ sơ, khóa/mở tài khoản, đăng xuất thiết bị, yêu cầu xác minh lại và xem audit log; không sửa trực tiếp mật khẩu, CCCD, tên hoặc ngày sinh.</div>
+</div></div>

@@ -1,0 +1,41 @@
+﻿@model CreateFooterAddressDto
+
+@{
+    ViewData["Title"] = "CreateFooterAddress";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Thêm thông tin địa chỉ mới</h4>
+                        <p class="card-subtitle mb-4">Bạn có thể nhập thông tin địa chỉ từ bảng bên dưới. Để tránh lỗi bố cục, chỉ giữ một bản ghi; hãy sửa bản ghi hiện có hoặc xóa bản cũ khi thêm mới.</p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label for="exampleInputAddress">Địa chỉ</label>
+                                <input type="text" class="form-control" id="exampleInputAddress" asp-for="Address" placeholder="Nhập địa chỉ">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputDescription">Mô tả</label>
+                                <input type="text" class="form-control" id="exampleInputDescription" asp-for="Description" placeholder="Nhập mô tả">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputPhone">Số điện thoại</label>
+                                <input type="tel" class="form-control" id="exampleInputPhone" asp-for="Phone" placeholder="Nhập số điện thoại">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputMail">Địa chỉ email</label>
+                                <input type="email" class="form-control" id="exampleInputMail" asp-for="Email" placeholder="Hãy nhập địa chỉ email">
+                            </div>
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Lưu địa chỉ</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

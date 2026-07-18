@@ -1,0 +1,26 @@
+<div class="menu-overlay"></div>
+
+
+<!-- jQuery  -->
+<script src="~/Admin/vertical/assets/js/jquery.min.js"></script>
+<script src="~/Admin/vertical/assets/js/bootstrap.bundle.min.js"></script>
+<script src="~/Admin/vertical/assets/js/metismenu.min.js"></script>
+<script src="~/Admin/vertical/assets/js/waves.js"></script>
+<script src="~/Admin/vertical/assets/js/simplebar.min.js"></script>
+
+<!-- App js -->
+<script src="~/Admin/vertical/assets/js/theme.js"></script>
+<script>
+(function(){
+    document.addEventListener('submit', function(event){
+        if(event.defaultPrevented) return;
+        var button=event.submitter;
+        if(!button) return;
+        var explicit=button.getAttribute('data-confirm');
+        var label=(button.textContent||button.value||'').trim();
+        var dangerous=/^(Xóa|Khóa|Từ chối|Ngừng|Thu hồi)/i.test(label);
+        var message=explicit||(dangerous?'Bạn có chắc muốn thực hiện thao tác “'+label+'”?':null);
+        if(message&&!window.confirm(message)) event.preventDefault();
+    });
+})();
+</script>

@@ -1,0 +1,70 @@
+﻿<div class="vertical-menu">
+    <div data-simplebar class="h-100">
+        <div class="navbar-brand-box">
+            <a href="@(User.IsInRole("Admin") ? "/Admin/AdminDashboard/Index" : "/StaffDashboard/Index")" class="logo">
+                <i class="mdi mdi-alpha-x-circle"></i>
+                <span>Smart Car @(User.IsInRole("Admin") ? "Admin" : "Staff")</span>
+            </a>
+        </div>
+
+        <div id="sidebar-menu">
+            <ul class="metismenu list-unstyled" id="side-menu">
+                <li class="menu-title">Nghiệp vụ</li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a href="/Admin/AdminDashboard/Index/" class="waves-effect"><i class="feather-airplay"></i><span>Tổng quan</span></a></li>
+                    <li><a href="/Admin/AdminStatistics/Index" class="waves-effect"><i class="fas fa-chart-pie"></i><span>Báo cáo doanh thu</span></a></li>
+                    <li><a href="/Admin/AdminRiskCenter/Index" class="waves-effect"><i class="fas fa-shield-alt"></i><span>Rủi ro & audit log</span></a></li>
+                }
+                else
+                {
+                    <li><a href="/StaffDashboard/Index" class="waves-effect"><i class="feather-airplay"></i><span>Khu vực nhân viên</span></a></li>
+                }
+
+                <li><a href="/Admin/AdminReservation/Index" class="waves-effect"><i class="fas fa-calendar-check"></i><span>Đơn đặt xe</span></a></li>
+                <li><a href="/Admin/AdminMarketplace/Index" class="waves-effect"><i class="fas fa-percentage"></i><span>Hoa hồng & đối soát</span></a></li>
+                <li><a href="/Notifications/Index" class="waves-effect"><i class="fas fa-bell"></i><span>Trung tâm thông báo</span></a></li>
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a href="/Admin/AdminVehiclePartner/Index" class="waves-effect"><i class="fas fa-car-side"></i><span>Duyệt xe đối tác</span></a></li>
+                    <li><a href="/Admin/AdminAccounts/Index" class="waves-effect"><i class="fas fa-users-cog"></i><span>Quản lý tài khoản</span></a></li>
+                    <li><a href="/Admin/AdminStaff/Index" class="waves-effect"><i class="fas fa-user-cog"></i><span>Phân quyền nhân viên</span></a></li>
+                    <li><a href="/Admin/AdminAnnouncement/Index" class="waves-effect"><i class="fas fa-bullhorn"></i><span>Thông báo công ty</span></a></li>
+                    <li class="menu-title">Cấu hình hệ thống</li>
+                    <li><a href="/Admin/AdminPricing/Index/" class="waves-effect"><i class="fas fa-money-bill-alt"></i><span>Loại thanh toán</span></a></li>
+                    <li><a href="/Admin/AdminLocation/Index/" class="waves-effect"><i class="fas fa-map-marker-alt"></i><span>Địa điểm hoạt động</span></a></li>
+                    <li>
+                        <a href="javascript:void(0);" class="has-arrow waves-effect"><i class="fas fa-layer-group"></i><span>Quản lý nội dung website</span></a>
+                        <ul class="sub-menu" aria-expanded="false">
+                            <li><a href="/Admin/AdminBanner/Index/">Banner</a></li>
+                            <li><a href="/Admin/AdminAbout/Index/">Giới thiệu</a></li>
+                            <li><a href="/Admin/AdminAuthor/Index/">Tác giả</a></li>
+                            <li><a href="/Admin/AdminCategory/Index/">Danh mục blog</a></li>
+                            <li><a href="/Admin/AdminBlog/Index/">Bài viết</a></li>
+                            <li><a href="/Admin/AdminComment/Index/">Bình luận</a></li>
+                            <li><a href="/Admin/AdminContact/Index/">Liên hệ</a></li>
+                            <li><a href="/Admin/AdminFooterAddress/Index/">Địa chỉ chân trang</a></li>
+                            <li><a href="/Admin/AdminService/Index/">Dịch vụ</a></li>
+                            <li><a href="/Admin/AdminSocialMedia/Index/">Mạng xã hội</a></li>
+                            <li><a href="/Admin/AdminTestimonial/Index/">Đánh giá khách hàng</a></li>
+                        </ul>
+                    </li>
+                }
+
+                <li class="menu-title">Tài khoản</li>
+                <li><a href="/Account/Profile" class="waves-effect"><i class="fas fa-user-circle"></i><span>Thông tin cá nhân</span></a></li>
+                @if (User.IsInRole("Admin"))
+                {
+                    <li><a href="/Default/Index/" class="waves-effect"><i class="fas fa-home"></i><span>Đi đến trang web</span></a></li>
+                }
+                <li>
+                    <form asp-area="" asp-controller="Login" asp-action="LogOut" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="waves-effect border-0 bg-transparent w-100 text-left"><i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span></button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

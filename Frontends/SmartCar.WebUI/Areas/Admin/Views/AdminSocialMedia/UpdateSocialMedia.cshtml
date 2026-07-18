@@ -1,0 +1,41 @@
+﻿@model SmartCar.Dto.SocialMediaDtos.UpdateSocialMediaDto
+
+@{
+    ViewData["Title"] = "UpdateSocialMedia";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Khu vực chỉnh sửa mạng xã hội</h4>
+                        <p class="card-subtitle mb-4">
+                            Tại đây, bạn có thể chỉnh sửa tài khoản mạng xã hội. Danh sách biểu tượng có trong mục biểu tượng.
+                        </p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="SocialMediaID" />
+                            <div class="form-group">
+                                <label for="exampleInputName">Tên mạng xã hội</label>
+                                <input type="text" class="form-control" id="exampleInputName" asp-for="Name" placeholder="Nhập tên mạng xã hội">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputUrl">URL</label>
+                                <input type="text" class="form-control" id="exampleInputUrl" asp-for="Url" placeholder="Nhập URL trang mạng xã hội">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputIcon">Biểu tượng mạng xã hội</label>
+                                <input type="text" class="form-control" id="exampleInputIcon" asp-for="Icon" placeholder="Mạng xã hội Ikon Thông tin Hãy nhập">
+                            </div>
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Mạng xã hội Thông tin Lưu</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+

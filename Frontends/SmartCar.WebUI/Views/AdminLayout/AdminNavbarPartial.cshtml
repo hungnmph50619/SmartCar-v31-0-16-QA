@@ -1,0 +1,40 @@
+<header id="page-topbar">
+    <div class="navbar-header">
+        <div class="d-flex align-items-left">
+            <button type="button" class="btn btn-sm mr-2 d-lg-none px-3 font-size-16 header-item waves-effect" id="vertical-menu-btn" aria-label="Mở hoặc đóng menu quản trị" aria-controls="sidebar-menu" aria-expanded="false">
+                <i class="fa fa-fw fa-bars"></i>
+            </button>
+            <a href="@(User.IsInRole("Admin") ? "/Admin/AdminDashboard/Index" : "/StaffDashboard/Index")" class="btn header-item waves-effect">
+                <i class="mdi mdi-view-dashboard"></i>
+                <span class="d-none d-sm-inline-block ml-1">@(User.IsInRole("Admin") ? "Quản trị hệ thống" : "Vận hành")</span>
+            </a>
+        </div>
+
+        <div class="d-flex align-items-center">
+            @await Component.InvokeAsync("NotificationBell", new { theme = "admin" })
+            <a href="/Admin/AdminReservation/Index" class="btn header-item waves-effect"><i class="mdi mdi-calendar-check"></i><span class="d-none d-sm-inline-block ml-1">Đơn đặt xe</span></a>
+            @if (User.IsInRole("Admin"))
+            {
+                <a href="/Default/Index" class="btn header-item waves-effect" target="_blank" rel="noopener noreferrer"><i class="mdi mdi-home"></i><span class="d-none d-sm-inline-block ml-1">Xem trang web</span></a>
+            }
+            <div class="dropdown d-inline-block ml-2">
+                <button type="button" class="btn header-item waves-effect" data-toggle="dropdown">
+                    <img class="rounded-circle header-profile-user" src="~/Admin/vertical/assets/images/users/avatar-3.jpg" alt="Ảnh tài khoản">
+                    <span class="d-none d-sm-inline-block ml-1">Xin chào, @(User.Identity?.Name ?? (User.IsInRole("Admin") ? "Quản trị viên" : "Nhân viên"))</span>
+                    <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item d-flex align-items-center" href="/Account/Profile"><i class="mdi mdi-account-circle mr-2"></i>Thông tin cá nhân</a>
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <a class="dropdown-item d-flex align-items-center" href="/Default/Index"><i class="mdi mdi-home mr-2"></i>Trang khách hàng</a>
+                    }
+                    <form asp-area="" asp-controller="Login" asp-action="LogOut" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="dropdown-item d-flex align-items-center"><i class="mdi mdi-logout mr-2"></i>Đăng xuất</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

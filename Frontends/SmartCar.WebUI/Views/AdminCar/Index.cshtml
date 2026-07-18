@@ -1,0 +1,75 @@
+﻿@model List<ResultCarWithBrandsDtos>
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    int count = 0;
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+
+        <!-- start page title -->
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Danh sách xe</h4>
+                        <p class="card-subtitle mb-4">
+                           Tại trang này, bạn có thể thêm, xóa, cập nhật, tìm kiếm và liệt kê xe.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Hãng xe</th>
+                                        <th>Model</th>
+                                        <th>Loại hộp số</th>
+                                        <th>Km</th>
+                                        <th>Xóa</th>
+                                        <th>Cập nhật</th>
+                                        <th>Chi tiết</th>
+                                        <th>Gán tính năng</th>
+                                        <th>Xem trên trang</th>
+                                        <th>Thông tin giá</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach(var item in Model)
+                                    {
+                                        count++;
+                                        <tr>
+                                        <th scope="row">@count</th>
+                                        <td>@item.BrandName</td>
+                                        <td>@item.Model</td>
+                                        <td>@item.Transmission</td>
+                                        <td>@item.Km</td>
+                                        <td><form method="post" action="/AdminCar/RemoveCar/@item.CarID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                        <td><a href="/AdminCar/UpdateCar/@item.CarID" class="btn btn-outline-success">Cập nhật</a></td>
+                                        <td><a href="/Admin/AdminCarFeatureDetail/Index/@item.CarID" class="btn btn-outline-dark">Chi tiết</a></td>
+                                        <td><a href="/Admin/AdminCarFeatureDetail/CreateFeatureByCarID" class="btn btn-outline-info">Gán tính năng</a></td>
+                                        <td><a href="/CarList/CarDetail/@item.CarID" class="btn btn-outline-warning">Xem trên trang</a></td>
+                                        <td><a href="/CarList/CarDetail/@item.CarID" class="btn btn-outline-secondary">Thông tin giá</a></td>
+                                    </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/AdminCar/CreateCar/" class="btn btn-outline-primary">Thêm xe mới</a>
+                        </div>
+
+                    </div>
+                    <!-- end card-body-->
+                </div>
+                <!-- end card -->
+
+            </div>
+            <!-- end col -->
+
+        </div>
+        <!-- end page title -->
+
+    </div> <!-- container-fluid -->
+</div>

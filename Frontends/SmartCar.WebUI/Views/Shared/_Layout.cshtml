@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - SmartCar</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="bg-light">
+<header><nav class="navbar navbar-light bg-white border-bottom shadow-sm"><div class="container"><a class="navbar-brand font-weight-bold" href="/Default/Index">SmartCar</a><a class="btn btn-outline-primary" href="/Default/Index">Về trang chủ</a></div></nav></header>
+<main role="main" class="container py-5">@RenderBody()</main>
+<footer class="border-top bg-white py-3 text-muted"><div class="container">© 2026 SmartCar · <a href="/Policy/Privacy">Chính sách bảo mật</a></div></footer>
+<script src="~/lib/jquery/dist/jquery.min.js"></script><script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>@RenderSection("Scripts", required: false)
+</body></html>

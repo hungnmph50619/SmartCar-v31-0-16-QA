@@ -1,0 +1,55 @@
+﻿@model List<ResultTestimonialDto>
+
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Danh sách đánh giá khách hàng</h4>
+                        <p class="card-subtitle mb-4">
+                            Tại đây, bạn có thể thêm và chỉnh sửa các nhận xét của khách hàng về chúng tôi.
+                        </p>
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Ad Soyad</th>
+                                        <th>Tiêu đề</th>
+                                        <th>Nhận xét</th>
+                                        <th>Cập nhật</th>
+                                        <th>Mở</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td><img src="@item.ImageUrl" width="50" height="50"/></td>
+                                            <td>@item.Name</td>
+                                            <td>@item.Title</td>
+                                            <td>@item.Comment</td>
+                                            <td><form method="post" action="/Admin/AdminTestimonial/RemoveTestimonial/@item.TestimonialID" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn xóa dữ liệu này?');">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-outline-danger">Xóa</button>
+</form></td>
+                                            <td><a href="/Admin/AdminTestimonial/UpdateTestimonial/@item.TestimonialID" class="btn btn-outline-success">Cập nhật</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                            <a href="/Admin/AdminTestimonial/CreateTestimonial" class="btn btn-outline-primary">Thêm đánh giá mới</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

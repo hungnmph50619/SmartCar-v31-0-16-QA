@@ -1,0 +1,159 @@
+@model List<NotificationItemDto>
+@{
+    ViewData["Title"] = "Trung tâm thông báo";
+    var adminLayout = User.IsInRole("Admin") || User.IsInRole("Staff");
+    Layout = adminLayout
+        ? "~/Views/AdminLayout/Index.cshtml"
+        : string.Equals(User.FindFirst("IsVehiclePartner")?.Value, "true", StringComparison.OrdinalIgnoreCase)
+            ? "~/Views/UILayout/Partner.cshtml"
+            : "~/Views/UILayout/Index.cshtml";
+
+    var selectedStatus = ViewBag.Status as string ?? "Tất cả";
+    var unreadCount = ViewBag.UnreadCount is int count ? count : Model.Count(x => !x.IsRead);
+    var currentUrl = $"{Context.Request.Path}{Context.Request.QueryString}";
+
+    string Icon(string type) => type switch
+    {
+        "Incident" or "Dispute" => "⚠",
+        "Payment" or "Settlement" => "₫",
+        "Verification" => "✓",
+        _ => "●"
+    };
+
+    string FilterClass(string value, string style) =>
+        string.Equals(selectedStatus, value, StringComparison.OrdinalIgnoreCase)
+            ? $"btn {style} active"
+            : $"btn {style}";
+
+    var unreadFilterClass = FilterClass("Chưa đọc", "btn-outline-primary");
+    var readFilterClass = FilterClass("Đã đọc", "btn-outline-secondary");
+    var allFilterClass = FilterClass("Tất cả", "btn-light");
+}
+
+<div class="@(adminLayout ? "page-content" : "ftco-section bg-light py-5")">
+    <div class="@(adminLayout ? "container-fluid" : "container") notification-wrap">
+        <div class="notification-header mb-4">
+            <div>
+                <div class="d-flex align-items-center flex-wrap">
+                    <h2 class="mb-1 mr-3">Trung tâm thông báo</h2>
+                    @if (unreadCount > 0)
+                    {
+                        <span class="unread-summary">@unreadCount chưa đọc</span>
+                    }
+                </div>
+                <p class="text-muted mb-0">Theo dõi xác minh, đơn thuê, thanh toán, giao nhận và xử lý sự cố.</p>
+            </div>
+
+            <div class="notification-actions mt-3 mt-lg-0">
+                <a href="?status=Chưa đọc" class="@unreadFilterClass">Chưa đọc</a>
+                <a href="?status=Đã đọc" class="@readFilterClass">Đã đọc</a>
+                <a href="/Notifications/Index" class="@allFilterClass">Tất cả</a>
+
+                @if (unreadCount > 0)
+                {
+                    <form asp-action="MarkAllRead" method="post" class="d-inline-block">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="returnUrl" value="@currentUrl" />
+                        <button type="submit" class="btn btn-primary">Đánh dấu tất cả đã đọc</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @if (TempData["NotificationSuccess"] != null)
+        {
+            <div class="alert alert-success">@TempData["NotificationSuccess"]</div>
+        }
+        @if (TempData["NotificationError"] != null)
+        {
+            <div class="alert alert-danger">@TempData["NotificationError"]</div>
+        }
+        @if (!string.IsNullOrWhiteSpace(ViewBag.Error as string))
+        {
+            <div class="alert alert-danger">@ViewBag.Error</div>
+        }
+
+        <div class="card border-0 shadow-sm notification-card">
+            <div class="card-body p-0">
+                @foreach (var item in Model)
+                {
+                    <div class="notice-item @(item.IsRead ? "read" : "unread")">
+                        <div class="notice-icon">@Icon(item.Type)</div>
+                        <div class="flex-grow-1 notice-content">
+                            <div class="d-flex flex-wrap justify-content-between align-items-start">
+                                <div class="notice-title-row">
+                                    <strong>@item.Title</strong>
+                                    @if (!item.IsRead)
+                                    {
+                                        <span class="new-dot" title="Chưa đọc"></span>
+                                    }
+                                </div>
+                                <small class="notice-time">@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small>
+                            </div>
+                            <p class="mb-2">@item.Message</p>
+                            <div class="notice-buttons">
+                                @if (!string.IsNullOrWhiteSpace(item.Link))
+                                {
+                                    @if (item.IsRead)
+                                    {
+                                        <a href="@item.Link" class="btn btn-sm btn-outline-primary">Mở nội dung liên quan</a>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Open" method="post" class="d-inline-block">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.NotificationID" />
+                                            <input type="hidden" name="link" value="@item.Link" />
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Mở nội dung liên quan</button>
+                                        </form>
+                                    }
+                                }
+
+                                @if (!item.IsRead)
+                                {
+                                    <form asp-action="MarkRead" method="post" class="d-inline-block">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.NotificationID" />
+                                        <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                        <button type="submit" class="btn btn-sm btn-light">Đánh dấu đã đọc</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="text-center text-muted py-5">
+                        <div class="empty-bell mb-2">🔔</div>
+                        Không có thông báo phù hợp.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .notification-wrap{max-width:1050px}
+    .notification-header{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+    .notification-actions{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+    .notification-actions .btn{white-space:nowrap}
+    .unread-summary{display:inline-flex;align-items:center;height:25px;padding:0 10px;border-radius:999px;background:#e41e3f;color:#fff;font-size:12px;font-weight:700}
+    .notification-card{overflow:hidden;border-radius:10px}
+    .notice-item{display:flex;gap:15px;padding:20px;border-bottom:1px solid #edf1f5;transition:background .18s ease}
+    .notice-item:last-child{border:0}
+    .notice-item.unread{background:#f1f8ff;border-left:4px solid #168cf2}
+    .notice-item.read{background:#fff;opacity:.82}
+    .notice-item:hover{background:#eef6fc}
+    .notice-icon{width:40px;height:40px;border-radius:50%;background:#e8f3ff;color:#126cc0;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+    .notice-content{min-width:0}
+    .notice-title-row{display:flex;align-items:center;gap:8px}
+    .notice-time{color:#8a99a8;white-space:nowrap;margin-left:12px}
+    .notice-item p{color:#526777}
+    .new-dot{width:9px;height:9px;border-radius:50%;background:#e41e3f;display:inline-block;flex:0 0 auto}
+    .notice-buttons{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .empty-bell{font-size:30px;opacity:.55}
+    @@media(max-width:767px){.notification-header{align-items:flex-start}.notification-actions{width:100%}.notice-item{padding:16px 12px}.notice-time{width:100%;margin:4px 0 0}.notice-icon{width:36px;height:36px}}
+</style>

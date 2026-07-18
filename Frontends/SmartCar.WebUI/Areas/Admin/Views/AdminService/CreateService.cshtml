@@ -1,0 +1,39 @@
+﻿@model CreateServiceDto
+
+@{
+    ViewData["Title"] = "CreateService";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Khu vực nhập dữ liệu dịch vụ</h4>
+                        <p class="card-subtitle mb-4">
+                            Tại đây, quản trị viên có thể quản lý danh sách dịch vụ hiển thị trên trang chủ và trang Dịch vụ. Để giao diện cân đối, hãy nhập 4 dịch vụ.
+                        </p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label for="exampleInputTitle">Tiêu đề dịch vụ</label>
+                                <input type="text" class="form-control" id="exampleInputTitle" asp-for="Title" placeholder="Nhập tiêu đề dịch vụ">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputDescription">Mô tả dịch vụ</label>
+                                <input type="text" class="form-control" id="exampleInputDescription" asp-for="Description" placeholder="Nhập mô tả dịch vụ">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputIconUrl">Dịch vụ Ikon Url</label>
+                                <input type="text" class="form-control" id="exampleInputIconUrl" asp-for="IconUrl" placeholder="Dịch vụ Ikon Thông tin Hãy nhập">
+                            </div>
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Dịch vụ Thông tin Lưu</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

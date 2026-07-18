@@ -1,0 +1,101 @@
+@model AdminVehiclePartnerViewModel
+@{
+    ViewData["Title"] = "Đối tác chủ xe";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+<div class="page-content"><div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3"><div><h3>Đối tác chủ xe</h3><p class="text-muted mb-0">Duyệt xe cá nhân và theo dõi xe đang khai thác. Chiết khấu chung: @Model.GlobalCommissionRate.ToString("0.##")%</p></div><a href="/Admin/AdminMarketplace/Index" class="btn btn-primary">Đối soát & chiết khấu</a></div>
+    @if(TempData["MarketplaceSuccess"]!=null){<div class="alert alert-success">@TempData["MarketplaceSuccess"]</div>}
+    @if(TempData["MarketplaceError"]!=null){<div class="alert alert-danger">@TempData["MarketplaceError"]</div>}
+    <div class="card mb-4"><div class="card-body">
+        <div class="d-flex flex-wrap align-items-center mb-3"><h4 class="mr-3 mb-0">Hồ sơ đối tác chờ xác minh</h4><span class="badge badge-warning p-2">@Model.Profiles.Count(x=>x.Status=="Chờ duyệt") chờ duyệt</span></div>
+        @foreach(var p in Model.Profiles.Where(x=>x.Status!="Bản nháp").OrderByDescending(x=>x.SubmittedDate ?? x.CreatedDate)){
+            <div class="border rounded p-3 mb-3"><div class="row">
+                <div class="col-lg-4"><strong>@(p.PartnerType=="Doanh nghiệp/Tổ chức" ? p.BusinessName : p.FullName)</strong><br/><span class="badge badge-info">@p.PartnerType</span> <span class="badge badge-secondary">@p.Status</span><br/><small>@p.Phone · @p.Email</small><br/><small>Gửi: @((p.SubmittedDate ?? p.CreatedDate).ToString("dd/MM/yyyy HH:mm"))</small></div>
+                <div class="col-lg-5">
+                    @if(p.PartnerType=="Doanh nghiệp/Tổ chức"){
+                        <p><strong>MST/ĐKKD:</strong> @p.TaxCode @p.BusinessRegistrationNumber<br/><strong>Trụ sở:</strong> @p.HeadquartersAddress<br/><strong>Địa chỉ theo giấy tờ:</strong> @p.HeadquartersPaperAddress<br/><strong>Đại diện pháp luật:</strong> @p.LegalRepresentativeName<br/><strong>Người phụ trách:</strong> @p.AccountManagerName - @p.AccountManagerTitle<br/><strong>Ngân hàng:</strong> @p.BankName - @p.BankAccountNumber - @p.BankAccountHolder</p>
+                        @if(!string.IsNullOrWhiteSpace(p.BusinessLicenseImageUrl)){<a href="@p.BusinessLicenseImageUrl" target="_blank">Giấy đăng ký/tài liệu pháp lý</a>}
+                        @if(!string.IsNullOrWhiteSpace(p.AuthorizationDocumentUrl)){<span> · </span><a href="@p.AuthorizationDocumentUrl" target="_blank">Giấy ủy quyền</a>}
+                    }else{
+                        <p><strong>CCCD:</strong> @p.CitizenIdentityNumber<br/><strong>Ngày sinh:</strong> @(p.DateOfBirth?.ToString("dd/MM/yyyy")) · <strong>Giới tính:</strong> @p.Gender<br/><strong>Thường trú:</strong> @p.PermanentAddress<br/><strong>Địa chỉ theo giấy tờ:</strong> @p.PermanentPaperAddress<br/><strong>Hiện tại:</strong> @p.CurrentAddress<br/><strong>Ngân hàng:</strong> @p.BankName - @p.BankAccountNumber - @p.BankAccountHolder</p>
+                        <a href="@p.CitizenFrontImageUrl" target="_blank">CCCD trước</a><span> · </span><a href="@p.CitizenBackImageUrl" target="_blank">CCCD sau</a><span> · </span><a href="@p.PortraitImageUrl" target="_blank">Chân dung</a>
+                    }
+                    @if(!string.IsNullOrWhiteSpace(p.ReviewNote)){<div class="alert alert-light border mt-2 mb-0"><strong>Ghi chú:</strong> @p.ReviewNote</div>}
+                </div>
+                <div class="col-lg-3">
+                    @if(p.Status!="Đã xác minh"){
+                        <form method="post" action="/Admin/AdminVehiclePartner/ReviewProfile">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@p.VehiclePartnerProfileID"/>
+                            <div class="form-group"><label>Kết quả</label><select name="status" class="form-control"><option>Đã xác minh</option><option>Yêu cầu bổ sung</option><option>Bị từ chối</option><option>Chờ xác minh lại</option></select></div>
+                            <div class="form-group"><label>Lý do/ghi chú</label><textarea name="reviewNote" class="form-control" rows="3"></textarea></div>
+                            <button class="btn btn-success btn-block">Lưu duyệt hồ sơ</button>
+                        </form>
+                    }else{<div class="alert alert-success">Đối tác đã xác minh và được phép gửi xe lên duyệt.</div>}
+                </div>
+            </div></div>
+        }
+        @if(!Model.Profiles.Any(x=>x.Status!="Bản nháp")){<div class="text-muted text-center py-4">Chưa có hồ sơ đối tác đã gửi duyệt.</div>}
+    </div></div>
+    <div class="card mb-4"><div class="card-body">
+        <div class="d-flex flex-wrap align-items-center mb-3"><h4 class="mr-3 mb-0">Hồ sơ xe chờ duyệt</h4>@foreach(var s in new[]{"Chờ duyệt","Yêu cầu bổ sung","Đã duyệt","Từ chối"}){<a class="btn btn-sm btn-outline-secondary mr-2" asp-area="Admin" asp-controller="AdminVehiclePartner" asp-action="Index" asp-route-status="@s">@s</a>}<a href="/Admin/AdminVehiclePartner/Index" class="btn btn-sm btn-light">Tất cả</a></div>
+        @foreach(var item in Model.Applications){
+            <div class="border rounded p-3 mb-3"><div class="row">
+                <div class="col-lg-3"><img src="@item.VehicleImageUrl" class="img-fluid rounded mb-2" style="height:180px;width:100%;object-fit:cover"/><strong>@item.BrandName @item.Model @item.VehicleVersion</strong><br/><span>@item.LicensePlate · @item.ManufactureYear</span></div>
+                <div class="col-lg-5"><p><strong>Chủ xe:</strong> @item.OwnerFullName<br/><strong>Liên hệ:</strong> @item.Phone · @item.Email<br/><strong>CCCD:</strong> @item.CitizenIdentityNumber<br/><strong>Địa điểm:</strong> @item.LocationName<br/><strong>Số khung:</strong> @item.ChassisNumber<br/><strong>Số máy:</strong> @item.EngineNumber<br/><strong>Hình thức thuê:</strong> @item.RentalMode<br/><strong>Giá đề xuất:</strong> @item.ProposedDailyPrice.ToString("#,0", CultureInfo.InvariantCulture) VNĐ/ngày<br/><strong>Đặt cọc đề xuất:</strong> @item.ProposedDepositAmount.ToString("#,0", CultureInfo.InvariantCulture) VNĐ<br/><strong>Ngân hàng:</strong> @item.BankName - @item.BankAccountNumber - @item.BankAccountHolder</p>
+                    <a href="@item.RegistrationImageUrl" target="_blank">Đăng ký xe</a> · <a href="@item.InspectionImageUrl" target="_blank">Đăng kiểm</a> · <a href="@item.InsuranceImageUrl" target="_blank">Bảo hiểm</a>
+                    @if(item.RentalMode is "Có tài xế" or "Tự lái hoặc có tài xế"){
+                        <div class="alert alert-info mt-3 mb-0">
+                            <strong>Hồ sơ tài xế:</strong> @item.DriverFullName · @item.DriverPhone<br/>
+                            <strong>CCCD:</strong> @item.DriverCitizenIdentityNumber<br/>
+                            <strong>GPLX:</strong> @item.DriverLicenseNumber · Hạng @item.DriverLicenseClass · Hết hạn @(item.DriverLicenseExpiryDate?.ToString("dd/MM/yyyy"))
+                            @if(!string.IsNullOrWhiteSpace(item.DriverLicenseImageUrl)){<br/><a href="@item.DriverLicenseImageUrl" target="_blank">Xem ảnh GPLX tài xế</a>}
+                        </div>
+                    }
+                </div>
+                <div class="col-lg-4"><div class="alert alert-light border"><strong>Trạng thái:</strong> @item.Status<br/>@item.AdminNote</div>
+                    @if(item.Status!="Đã duyệt"){
+                    <form method="post" action="/Admin/AdminVehiclePartner/Review">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.VehiclePartnerApplicationID"/>
+                        <div class="form-group"><label>Kết quả</label><select name="status" class="form-control"><option>Đã duyệt</option><option>Yêu cầu bổ sung</option><option>Từ chối</option></select></div>
+                        <div class="form-row">
+                            <div class="form-group col-6">
+                                <label>Giá/ngày duyệt</label>
+                                <input id="approvedDailyPrice_@item.VehiclePartnerApplicationID" name="approvedDailyPrice" type="hidden" value="@item.ProposedDailyPrice.ToString("0", CultureInfo.InvariantCulture)" />
+                                <input type="text" inputmode="numeric" class="form-control admin-money-display" data-target="approvedDailyPrice_@item.VehiclePartnerApplicationID" value="@item.ProposedDailyPrice.ToString("#,0", CultureInfo.InvariantCulture)" />
+                            </div>
+                            <div class="form-group col-6">
+                                <label>Tiền đặt cọc</label>
+                                <input id="approvedDepositAmount_@item.VehiclePartnerApplicationID" name="approvedDepositAmount" type="hidden" value="@(item.RentalMode == "Có tài xế" ? "0" : item.ProposedDepositAmount.ToString("0", CultureInfo.InvariantCulture))" />
+                                @if(item.RentalMode == "Có tài xế"){
+                                    <input type="text" inputmode="numeric" class="form-control admin-money-display bg-light" data-target="approvedDepositAmount_@item.VehiclePartnerApplicationID" value="0" readonly />
+                                    <small class="text-muted">Không áp dụng cọc tài sản.</small>
+                                }else{
+                                    <input type="text" inputmode="numeric" class="form-control admin-money-display" data-target="approvedDepositAmount_@item.VehiclePartnerApplicationID" value="@item.ProposedDepositAmount.ToString("#,0", CultureInfo.InvariantCulture)" />
+                                }
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Hoa hồng riêng (%)</label><input name="commissionRateOverride" type="number" min="0" max="100" step="0.1" class="form-control" placeholder="Để trống để dùng mức chung"/></div>
+                        <div class="form-group"><label>Ghi chú</label><textarea name="adminNote" class="form-control" rows="2"></textarea></div><button class="btn btn-success">Lưu kết quả duyệt</button>
+                    </form>}
+                </div>
+            </div></div>
+        }
+        @if(!Model.Applications.Any()){<div class="text-muted text-center py-4">Không có hồ sơ phù hợp.</div>}
+    </div></div>
+    <div class="card"><div class="card-body"><h4>Xe đối tác đang trên hệ thống</h4><div class="table-responsive"><table class="table table-bordered"><thead><tr><th>Xe</th><th>Địa điểm</th><th>Giá/ngày</th><th>Đặt cọc</th><th>Hoa hồng</th><th>Đơn hoàn thành</th><th>Doanh thu</th><th>Chủ xe nhận</th><th>Trạng thái</th></tr></thead><tbody>
+        @foreach(var car in Model.Vehicles){<tr><td>@car.CarName<br/><small>@car.LicensePlate</small></td><td>@car.LocationName</td><td>@car.DailyPrice.ToString("#,0", CultureInfo.InvariantCulture)</td><td>@car.DepositAmount.ToString("#,0", CultureInfo.InvariantCulture)</td><td>@car.AppliedCommissionRate.ToString("0.##")%</td><td>@car.CompletedReservations</td><td>@car.GrossRevenue.ToString("#,0", CultureInfo.InvariantCulture)</td><td>@car.OwnerNetRevenue.ToString("#,0", CultureInfo.InvariantCulture)</td><td>@(car.IsActive?"Đang hoạt động":"Tạm ẩn")</td></tr>}
+        @if(!Model.Vehicles.Any()){<tr><td colspan="9" class="text-center text-muted">Chưa có xe đối tác được duyệt.</td></tr>}
+    </tbody></table></div></div></div>
+</div></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.admin-money-display').forEach(function (display) {
+        display.addEventListener('input', function () {
+            const digits = display.value.replace(/[^0-9]/g, '');
+            const raw = document.getElementById(display.dataset.target);
+            if (raw) raw.value = digits || '0';
+            display.value = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(digits || 0));
+        });
+    });
+});
+</script>

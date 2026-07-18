@@ -1,0 +1,1458 @@
+@using SmartCar.Dto.LocationDtos
+@model SmartCar.Dto.LocationDtos.ResultLocationDto
+@{
+    ViewData["Title"] = "Trang chủ";
+    Layout = null;
+    var locations = ViewBag.Locations as List<ResultLocationDto> ?? new List<ResultLocationDto>();
+}
+
+
+<!DOCTYPE html>
+<html lang="vi">
+@await Component.InvokeAsync("_HeadUILayoutComponentPartial")
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+<body>
+
+    <style>
+        /* Ghi đè theme Carbook: dropdown trong form màu xanh phải luôn có nền sáng, chữ tối. */
+        #drop option,
+        #advancedFilters select.form-control option {
+            background-color: #ffffff !important;
+            color: #17212b !important;
+            -webkit-text-fill-color: #17212b !important;
+        }
+
+        #advancedFilters select.form-control option:disabled {
+            color: #7b8794 !important;
+            -webkit-text-fill-color: #7b8794 !important;
+        }
+
+        .advanced-filter-box {
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, .28);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, .13);
+        }
+
+        #advancedFilters .form-control {
+            height: 42px !important;
+            padding: 8px 10px !important;
+            border: 1px solid #d5dde5 !important;
+            border-radius: 7px !important;
+            background-color: #ffffff !important;
+            color: #17212b !important;
+            -webkit-text-fill-color: #17212b !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            opacity: 1 !important;
+            color-scheme: light;
+        }
+
+        #advancedFilters select.form-control {
+            cursor: pointer;
+        }
+
+        #advancedFilters .form-control:focus {
+            border-color: #005fbd !important;
+            box-shadow: 0 0 0 3px rgba(0, 95, 189, .20) !important;
+            outline: none !important;
+        }
+
+        #advancedFilters .label {
+            margin-bottom: 6px;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .location-picker-row {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .address-autocomplete {
+            position: relative;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .location-picker-row .form-control {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .address-suggestion-list {
+            position: absolute;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            z-index: 1200;
+            max-height: 310px;
+            overflow-y: auto;
+            border: 1px solid #d9e2ec;
+            border-radius: 9px;
+            background: #fff;
+            box-shadow: 0 12px 32px rgba(16, 42, 67, .22);
+        }
+
+        .address-suggestion-list[hidden] {
+            display: none !important;
+        }
+
+        .address-suggestion-item {
+            display: flex;
+            width: 100%;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px 12px;
+            border: 0;
+            border-bottom: 1px solid #edf2f7;
+            background: #fff;
+            color: #243b53;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .address-suggestion-item:last-of-type {
+            border-bottom: 0;
+        }
+
+        .address-suggestion-item:hover,
+        .address-suggestion-item.is-active {
+            background: #eef7ff;
+        }
+
+        .address-suggestion-icon {
+            flex: 0 0 28px;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #e9f5ff;
+            color: #168cf2;
+            font-size: 17px;
+        }
+
+        .address-suggestion-copy {
+            min-width: 0;
+        }
+
+        .address-suggestion-title {
+            display: block;
+            color: #102a43;
+            font-size: 13px;
+            font-weight: 800;
+            line-height: 1.3;
+        }
+
+        .address-suggestion-address {
+            display: block;
+            margin-top: 3px;
+            color: #627d98;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        .address-suggestion-footer,
+        .address-suggestion-state {
+            padding: 9px 12px;
+            background: #f8fbfe;
+            color: #829ab1;
+            font-size: 10px;
+            line-height: 1.35;
+        }
+
+        .current-location-btn,
+        .map-toggle-btn {
+            white-space: nowrap;
+            border: 1px solid rgba(255,255,255,.65);
+            color: #fff;
+            background: rgba(255,255,255,.12);
+            border-radius: 6px;
+            padding: 0 12px;
+            font-size: 12px;
+            font-weight: 700;
+            transition: .2s ease;
+        }
+
+        .current-location-btn:hover,
+        .map-toggle-btn:hover,
+        .map-toggle-btn[aria-expanded="true"] {
+            background: #fff;
+            color: #168cf2;
+        }
+
+        .location-action-row {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 9px;
+        }
+
+        .map-toggle-btn {
+            min-height: 36px;
+        }
+
+        .location-helper {
+            display: block;
+            color: rgba(255,255,255,.88);
+            font-size: 11px;
+            line-height: 1.45;
+            margin-top: 7px;
+        }
+
+        .location-preview {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 10px 30px rgba(25,45,70,.08);
+            margin-bottom: 22px;
+        }
+
+        .location-preview[hidden] {
+            display: none !important;
+        }
+
+        .location-preview-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .location-preview h4 {
+            font-size: 18px;
+            margin: 0 0 5px;
+            color: #243b53;
+        }
+
+        .location-preview p {
+            font-size: 13px;
+            margin: 0;
+            color: #6b7c8d;
+        }
+
+        .location-map-canvas {
+            width: 100%;
+            height: 300px;
+            border-radius: 12px;
+            background: #eef3f7;
+            overflow: hidden;
+        }
+
+        .location-map-empty {
+            height: 300px;
+            border-radius: 12px;
+            background: linear-gradient(135deg,#eef6ff,#f8fbff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 25px;
+            color: #66788a;
+        }
+
+        .map-coordinate-line {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #53697c;
+        }
+
+        .map-confirm-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .map-confirm-btn {
+            border: 0;
+            border-radius: 7px;
+            padding: 9px 14px;
+            background: #168cf2;
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .map-confirm-btn:hover { background: #0874cf; }
+
+        .exact-location-pin {
+            width: 34px;
+            height: 34px;
+            border-radius: 50% 50% 50% 0;
+            background: #e53935;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 14px rgba(0,0,0,.28);
+            transform: rotate(-45deg);
+        }
+
+        .current-position-dot {
+            position: relative;
+            display: block;
+            width: 18px;
+            height: 18px;
+            border: 4px solid #fff;
+            border-radius: 50%;
+            background: #168cf2;
+            box-shadow: 0 0 0 2px rgba(22,140,242,.30), 0 3px 10px rgba(0,0,0,.30);
+        }
+
+        .current-position-dot::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 38px;
+            height: 38px;
+            border: 2px solid rgba(22,140,242,.55);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: current-location-pulse 1.8s ease-out infinite;
+        }
+
+        @@keyframes current-location-pulse {
+            0% { opacity: .85; transform: translate(-50%, -50%) scale(.45); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+        }
+
+        .map-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 9px;
+            color: #53697c;
+            font-size: 11px;
+        }
+
+        .map-legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-current-dot {
+            width: 11px;
+            height: 11px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            background: #168cf2;
+            box-shadow: 0 0 0 1px rgba(22,140,242,.45);
+        }
+
+        .legend-pickup-pin {
+            width: 12px;
+            height: 12px;
+            border-radius: 50% 50% 50% 0;
+            background: #e53935;
+            transform: rotate(-45deg);
+        }
+
+        .map-action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .map-secondary-btn {
+            border: 1px solid #b8d6f2;
+            border-radius: 7px;
+            padding: 8px 12px;
+            background: #fff;
+            color: #0874cf;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .map-secondary-btn:hover { background: #eef7ff; }
+        .map-secondary-btn[hidden] { display: none !important; }
+
+        .accuracy-note {
+            font-size: 11px;
+            color: #6b7c8d;
+        }
+
+        .privacy-map-note {
+            font-size: 11px;
+            color: #6b7c8d;
+            margin-top: 10px;
+        }
+
+        .radius-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .radius-inline strong {
+            font-size: 12px;
+        }
+
+        @@media (max-width: 575.98px) {
+            .location-picker-row {
+                flex-direction: column;
+            }
+
+            .current-location-btn {
+                min-height: 40px;
+            }
+
+            .location-action-row {
+                justify-content: stretch;
+            }
+
+            .map-toggle-btn {
+                width: 100%;
+            }
+        }
+    </style>
+
+    @await Component.InvokeAsync("_NavbarUILayoutComponentPartial")
+
+    @await Component.InvokeAsync("_DefaultCoverUILayoutComponentPartial")
+
+    <section id="rent-search" class="ftco-section ftco-no-pt bg-light">
+        <div class="container">
+            <div class="row no-gutters">
+                <div class="col-md-12	featured-top">
+                    <div class="row no-gutters">
+                        <div class="col-md-5 d-flex align-items-center">
+                            <form method="post" asp-controller="Default" asp-action="Index"
+                                  id="rentalSearchForm" novalidate
+                                  class="request-form ftco-animate bg-primary">@Html.AntiForgeryToken()
+                                <h2>Thuê xe ngay</h2>
+                                <div id="searchValidationError" class="alert alert-warning" style="display:none;"></div>
+                                @if (TempData["SearchError"] != null)
+                                {
+                                    <div class="alert alert-warning">@TempData["SearchError"]</div>
+                                }
+                                @if (TempData["ReservationSuccess"] != null)
+                                {
+                                    <div class="alert alert-success">
+                                        @TempData["ReservationSuccess"]
+                                        <div class="mt-2">
+                                            <a href="/ReservationLookup/Index/" class="btn btn-sm btn-light">Xem đơn thuê của tôi</a>
+                                        </div>
+                                    </div>
+                                }
+                                <div class="form-group">
+                                    <label for="locationSearchInput" class="label">Điểm nhận xe cụ thể</label>
+                                    <input asp-for="LocationID" type="hidden" id="drop" />
+                                    <input type="hidden" name="searchLatitude" id="searchLatitude" />
+                                    <input type="hidden" name="searchLongitude" id="searchLongitude" />
+                                    <input type="hidden" name="searchAddress" id="searchAddress" />
+                                    <input type="hidden" name="locationSelectionMode" id="locationSelectionMode" value="catalog" />
+                                    <div class="location-picker-row">
+                                        <div class="address-autocomplete">
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="locationSearchInput"
+                                                   placeholder="Nhập tên đường, xã/phường, địa điểm..."
+                                                   autocomplete="off"
+                                                   role="combobox"
+                                                   aria-autocomplete="list"
+                                                   aria-expanded="false"
+                                                   aria-controls="addressSuggestionList"
+                                                   aria-describedby="locationInputHelp"
+                                                   required />
+                                            <div id="addressSuggestionList"
+                                                 class="address-suggestion-list"
+                                                 role="listbox"
+                                                 aria-label="Gợi ý địa chỉ"
+                                                 hidden></div>
+                                        </div>
+                                        <button type="button" id="useCurrentLocation" class="current-location-btn" title="Lấy vị trí hiện tại của thiết bị">
+                                            <i class="ion-ios-locate"></i> Gần tôi
+                                        </button>
+                                    </div>
+                                    <small id="locationInputHelp" class="location-helper">Gõ ít nhất 2 ký tự để xem gợi ý địa chỉ như ứng dụng gọi xe, hoặc bấm Gần tôi. Chấm xanh là vị trí hiện tại; ghim đỏ là điểm nhận xe.</small>
+                                    <div class="location-action-row">
+                                        <button type="button"
+                                                id="toggleLocationMap"
+                                                class="map-toggle-btn"
+                                                aria-expanded="false"
+                                                aria-controls="locationPreview">
+                                            <i class="ion-ios-map"></i> <span>Xem vị trí trên bản đồ</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex">
+                                    <div class="form-group mr-2">
+                                        <label for="pickup_date_native" class="label">Ngày nhận xe</label>
+                                        <input type="date" class="form-control" name="book_pick_date" id="pickup_date_native" min="@VietnamTime.Today.ToString("yyyy-MM-dd")" required>
+                                    </div>
+                                    <div class="form-group ml-2">
+                                        <label for="dropoff_date_native" class="label">Ngày trả xe</label>
+                                        <input type="date" class="form-control" name="book_off_date" id="dropoff_date_native" min="@VietnamTime.Today.ToString("yyyy-MM-dd")" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="pickup_time_native" class="label">Giờ nhận xe</label>
+                                    <input type="time" class="form-control" name="time_pick" id="pickup_time_native" step="1800" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="dropoff_time_native" class="label">Giờ trả xe</label>
+                                    <input type="time" class="form-control" name="time_off" id="dropoff_time_native" step="1800" required>
+                                </div>
+                                <button class="btn btn-link text-white p-0 mb-3" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false">
+                                    <i class="ion-ios-options mr-1"></i> Bộ lọc nâng cao
+                                </button>
+                                <div class="collapse" id="advancedFilters">
+                                    <div class="advanced-filter-box">
+                                        <div class="row">
+                                            <div class="col-6 form-group">
+                                                <label class="label">Số chỗ tối thiểu</label>
+                                                <select name="seats" class="form-control advanced-filter-select" aria-label="Số chỗ tối thiểu">
+                                                    <option value="">Tất cả</option><option value="4">4 chỗ</option><option value="5">5 chỗ</option><option value="7">7 chỗ</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-6 form-group">
+                                                <label class="label">Hình thức</label>
+                                                <select name="vehicleType" class="form-control advanced-filter-select" aria-label="Hình thức thuê xe"><option value="">Tất cả</option><option value="Tự lái">Tự lái</option><option value="Có tài xế">Có tài xế</option></select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 form-group"><label class="label">Hộp số</label><select name="transmission" class="form-control advanced-filter-select" aria-label="Hộp số"><option value="">Tất cả</option><option value="Tự động">Tự động</option><option value="Số sàn">Số sàn</option></select></div>
+                                            <div class="col-6 form-group"><label class="label">Nhiên liệu</label><select name="fuel" class="form-control advanced-filter-select" aria-label="Nhiên liệu"><option value="">Tất cả</option><option value="Xăng">Xăng</option><option value="Dầu">Dầu</option><option value="Điện">Điện</option><option value="Hybrid">Hybrid</option></select></div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-6 form-group"><label class="label">Giá từ</label><input name="minPrice" type="number" min="0" step="100000" class="form-control" placeholder="500.000"></div>
+                                            <div class="col-6 form-group"><label class="label">Đến</label><input name="maxPrice" type="number" min="0" step="100000" class="form-control" placeholder="3.000.000"></div>
+                                        </div>
+                                        <div class="form-group mb-0">
+                                            <label class="label">Bán kính tìm xe quanh điểm đã chọn</label>
+                                            <select name="radiusKm" id="radiusKm" class="form-control advanced-filter-select">
+                                                <option value="5">Trong 5 km</option>
+                                                <option value="10">Trong 10 km</option>
+                                                <option value="20" selected>Trong 20 km</option>
+                                                <option value="30">Trong 30 km</option>
+                                                <option value="50">Trong 50 km</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-secondary py-3 px-4">Hiển thị xe phù hợp</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-7 d-flex align-items-center">
+                            <div class="services-wrap rounded-right w-100">
+                                <div class="location-preview" id="locationPreview" hidden aria-hidden="true">
+                                    <div class="location-preview-head">
+                                        <div>
+                                            <span class="result-kicker">BẢN ĐỒ ĐIỂM NHẬN</span>
+                                            <h4 id="selectedLocationName">Chưa chọn điểm nhận xe</h4>
+                                            <p id="selectedLocationAddress">Nhập và chọn một địa điểm để xem vị trí trên bản đồ.</p>
+                                        </div>
+                                        <span class="badge badge-light" id="selectedRadiusBadge">20 km</span>
+                                    </div>
+                                    <div id="locationMapEmpty" class="location-map-empty"><div><i class="ion-ios-pin" style="font-size:38px;color:#168cf2"></i><br/>Đang chuẩn bị bản đồ...</div></div>
+                                    <div id="locationMapCanvas" class="location-map-canvas d-none" role="application" aria-label="Bản đồ chọn chính xác điểm nhận xe"></div>
+                                    <div id="selectedCoordinateText" class="map-coordinate-line">Chưa có tọa độ chính xác.</div>
+                                    <div class="map-legend" aria-label="Chú giải bản đồ">
+                                        <span id="currentLocationLegend" class="map-legend-item" hidden><span class="legend-current-dot"></span> Vị trí hiện tại của bạn</span>
+                                        <span class="map-legend-item"><span class="legend-pickup-pin"></span> Điểm nhận xe đã chọn</span>
+                                    </div>
+                                    <div class="map-confirm-row">
+                                        <span id="locationAccuracyText" class="accuracy-note">Bấm trên bản đồ hoặc kéo ghim đỏ để chỉnh vị trí.</span>
+                                        <div class="map-action-buttons">
+                                            <button type="button" id="centerCurrentLocation" class="map-secondary-btn" hidden><i class="ion-ios-locate"></i> Về vị trí của tôi</button>
+                                            <button type="button" id="confirmMapLocation" class="map-confirm-btn"><i class="ion-ios-checkmark-circle"></i> Xác nhận điểm nhận xe</button>
+                                        </div>
+                                    </div>
+                                    <div class="privacy-map-note"><i class="ion-ios-lock"></i> Đây là điểm tìm kiếm do bạn chọn. Địa chỉ nhà riêng chính xác của chủ xe vẫn chỉ hiện sau khi đơn được xác nhận.</div>
+                                </div>
+                                <h3 class="heading-section mb-4">Cách thuê xe đơn giản nhất</h3>
+                                <div class="row d-flex mb-4">
+                                    <div class="col-md-4 d-flex align-self-stretch ftco-animate">
+                                        <div class="services w-100 text-center">
+                                            <div class="icon d-flex align-items-center justify-content-center"><span class="flaticon-route"></span></div>
+                                            <div class="text w-100">
+                                                <h3 class="heading mb-2">Chọn địa điểm nhận xe</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-self-stretch ftco-animate">
+                                        <div class="services w-100 text-center">
+                                            <div class="icon d-flex align-items-center justify-content-center"><span class="flaticon-handshake"></span></div>
+                                            <div class="text w-100">
+                                                <h3 class="heading mb-2">Xem xe phù hợp</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 d-flex align-self-stretch ftco-animate">
+                                        <div class="services w-100 text-center">
+                                            <div class="icon d-flex align-items-center justify-content-center"><span class="flaticon-rent"></span></div>
+                                            <div class="text w-100">
+                                                <h3 class="heading mb-2">Hoàn tất thuê xe, chỉ đơn giản vậy thôi!</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p><a href="/CarPricing/Index/" class="btn btn-primary py-3 px-4">Xem bảng giá xe</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @await Component.InvokeAsync("_DefaultLast5CarsWithBrandsComponentPartial")
+
+    @await Component.InvokeAsync("_BecomeAVehiclePartnerComponentPartial")
+
+    @await Component.InvokeAsync("_TestimonialComponantPartial")
+
+    @await Component.InvokeAsync("_GetLast3BlogsWithAuthorListComponentPartial")
+
+    @await Component.InvokeAsync("_DefaultStatisticsComponentPartial")
+
+    @await Component.InvokeAsync("_FooterUILayoutComponentPartial")
+
+    @await Component.InvokeAsync("_ScriptUILayoutComponentPartial")
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const pickupDate = document.getElementById("pickup_date_native");
+            const dropoffDate = document.getElementById("dropoff_date_native");
+            const pickupTime = document.getElementById("pickup_time_native");
+            const dropoffTime = document.getElementById("dropoff_time_native");
+
+            if (!pickupDate || !dropoffDate) {
+                return;
+            }
+
+            const today = new Date();
+            const localToday = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+                .toISOString()
+                .split("T")[0];
+
+            pickupDate.min = localToday;
+            dropoffDate.min = localToday;
+
+            pickupDate.addEventListener("change", function () {
+                dropoffDate.min = pickupDate.value || localToday;
+
+                // Chỉ xóa ngày trả khi nó thực sự nhỏ hơn ngày nhận.
+                if (dropoffDate.value && pickupDate.value && dropoffDate.value < pickupDate.value) {
+                    dropoffDate.value = "";
+                }
+            });
+
+            // Không cho trình duyệt/plugin cũ tự thay đổi giá trị ô còn lại.
+            [pickupDate, dropoffDate, pickupTime, dropoffTime].forEach(function (element) {
+                if (element) {
+                    element.setAttribute("autocomplete", "off");
+                }
+            });
+
+            const form = document.getElementById("rentalSearchForm");
+            const locationSelect = document.getElementById("drop");
+            const locationSearchInput = document.getElementById("locationSearchInput");
+            const locationInputHelp = document.getElementById("locationInputHelp");
+            const addressSuggestionList = document.getElementById("addressSuggestionList");
+            const errorBox = document.getElementById("searchValidationError");
+            const locationData = @Html.Raw(ViewBag.LocationsJson ?? "[]");
+            const addressSuggestionsUrl = '@Url.Action("AddressSuggestions", "Default")';
+            const reverseGeocodeUrl = '@Url.Action("ReverseGeocode", "Default")';
+            const currentLocationButton = document.getElementById("useCurrentLocation");
+            const mapToggleButton = document.getElementById("toggleLocationMap");
+            const locationPreview = document.getElementById("locationPreview");
+            const radiusSelect = document.getElementById("radiusKm");
+            const mapCanvas = document.getElementById("locationMapCanvas");
+            const mapEmpty = document.getElementById("locationMapEmpty");
+            const selectedLocationName = document.getElementById("selectedLocationName");
+            const selectedLocationAddress = document.getElementById("selectedLocationAddress");
+            const selectedRadiusBadge = document.getElementById("selectedRadiusBadge");
+            const selectedCoordinateText = document.getElementById("selectedCoordinateText");
+            const locationAccuracyText = document.getElementById("locationAccuracyText");
+            const confirmMapLocationButton = document.getElementById("confirmMapLocation");
+            const centerCurrentLocationButton = document.getElementById("centerCurrentLocation");
+            const currentLocationLegend = document.getElementById("currentLocationLegend");
+            const searchLatitudeInput = document.getElementById("searchLatitude");
+            const searchLongitudeInput = document.getElementById("searchLongitude");
+            const searchAddressInput = document.getElementById("searchAddress");
+            const selectionModeInput = document.getElementById("locationSelectionMode");
+
+            let locationMap = null;
+            let pickupMarker = null;
+            let currentPositionMarker = null;
+            let currentAccuracyCircle = null;
+            let currentPosition = null;
+            let suppressManualReset = false;
+            let pendingReverseGeocode = 0;
+            let selectedAccuracyMeters = null;
+            let suggestionTimer = null;
+            let suggestionAbortController = null;
+            let currentSuggestions = [];
+            let activeSuggestionIndex = -1;
+
+            function normalizeLocationText(value) {
+                return (value || '')
+                    .trim()
+                    .toLocaleLowerCase('vi-VN')
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/đ/g, 'd')
+                    .replace(/\s+/g, ' ');
+            }
+
+            function resolveLocationFromText() {
+                const query = normalizeLocationText(locationSearchInput?.value);
+                if (!query) return null;
+
+                const exact = locationData.find(function (item) {
+                    return [item.displayName, item.fullAddress, item.name]
+                        .some(value => normalizeLocationText(value) === query);
+                });
+                if (exact) return exact;
+
+                const partialMatches = locationData.filter(function (item) {
+                    return [item.displayName, item.fullAddress, item.name, item.provinceCity, item.district, item.ward]
+                        .some(value => normalizeLocationText(value).includes(query));
+                });
+
+                return partialMatches.length === 1 ? partialMatches[0] : null;
+            }
+
+            function getLocalSuggestions(text) {
+                const query = normalizeLocationText(text);
+                if (query.length < 2) return [];
+
+                return locationData
+                    .filter(function (item) {
+                        return [item.displayName, item.fullAddress, item.name, item.provinceCity, item.district, item.ward]
+                            .some(value => normalizeLocationText(value).includes(query));
+                    })
+                    .slice(0, 4)
+                    .map(function (item) {
+                        return {
+                            id: 'catalog-' + item.id,
+                            title: item.name || item.displayName || 'Điểm nhận xe SmartCar',
+                            address: item.fullAddress || item.displayName || '',
+                            latitude: Number(item.latitude),
+                            longitude: Number(item.longitude),
+                            type: 'catalog',
+                            catalogId: item.id
+                        };
+                    })
+                    .filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+            }
+
+            function hideAddressSuggestions() {
+                if (!addressSuggestionList || !locationSearchInput) return;
+                addressSuggestionList.hidden = true;
+                addressSuggestionList.innerHTML = '';
+                locationSearchInput.setAttribute('aria-expanded', 'false');
+                locationSearchInput.removeAttribute('aria-activedescendant');
+                currentSuggestions = [];
+                activeSuggestionIndex = -1;
+            }
+
+            function setActiveSuggestion(index) {
+                if (!addressSuggestionList || !currentSuggestions.length) return;
+                const buttons = Array.from(addressSuggestionList.querySelectorAll('.address-suggestion-item'));
+                if (!buttons.length) return;
+
+                activeSuggestionIndex = (index + buttons.length) % buttons.length;
+                buttons.forEach((button, buttonIndex) => {
+                    const isActive = buttonIndex === activeSuggestionIndex;
+                    button.classList.toggle('is-active', isActive);
+                    button.setAttribute('aria-selected', String(isActive));
+                    if (isActive) {
+                        locationSearchInput?.setAttribute('aria-activedescendant', button.id);
+                        button.scrollIntoView({ block: 'nearest' });
+                    }
+                });
+            }
+
+            function renderAddressSuggestions(items, stateMessage) {
+                if (!addressSuggestionList || !locationSearchInput) return;
+                addressSuggestionList.innerHTML = '';
+                currentSuggestions = items || [];
+                activeSuggestionIndex = -1;
+
+                if (!currentSuggestions.length && !stateMessage) {
+                    hideAddressSuggestions();
+                    return;
+                }
+
+                currentSuggestions.forEach(function (item, index) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.id = 'address-suggestion-' + index;
+                    button.className = 'address-suggestion-item';
+                    button.setAttribute('role', 'option');
+                    button.setAttribute('aria-selected', 'false');
+
+                    const icon = document.createElement('span');
+                    icon.className = 'address-suggestion-icon';
+                    icon.innerHTML = item.type === 'catalog'
+                        ? '<i class="ion-ios-car"></i>'
+                        : '<i class="ion-ios-pin"></i>';
+
+                    const copy = document.createElement('span');
+                    copy.className = 'address-suggestion-copy';
+                    const title = document.createElement('span');
+                    title.className = 'address-suggestion-title';
+                    title.textContent = item.title || 'Địa điểm';
+                    const address = document.createElement('span');
+                    address.className = 'address-suggestion-address';
+                    address.textContent = item.address || '';
+                    copy.append(title, address);
+                    button.append(icon, copy);
+
+                    button.addEventListener('mousedown', event => event.preventDefault());
+                    button.addEventListener('click', function () {
+                        selectAddressSuggestion(item);
+                    });
+                    addressSuggestionList.appendChild(button);
+                });
+
+                if (stateMessage) {
+                    const state = document.createElement('div');
+                    state.className = 'address-suggestion-state';
+                    state.textContent = stateMessage;
+                    addressSuggestionList.appendChild(state);
+                }
+
+                if (currentSuggestions.length) {
+                    const footer = document.createElement('div');
+                    footer.className = 'address-suggestion-footer';
+                    footer.textContent = 'Gợi ý địa chỉ từ dữ liệu SmartCar và © OpenStreetMap contributors.';
+                    addressSuggestionList.appendChild(footer);
+                }
+
+                addressSuggestionList.hidden = false;
+                locationSearchInput.setAttribute('aria-expanded', 'true');
+            }
+
+            function deduplicateSuggestions(items) {
+                const seen = new Set();
+                return items.filter(function (item) {
+                    const key = Number(item.latitude).toFixed(5) + '|' + Number(item.longitude).toFixed(5);
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                }).slice(0, 7);
+            }
+
+            async function loadAddressSuggestions(text) {
+                const localSuggestions = getLocalSuggestions(text);
+                renderAddressSuggestions(localSuggestions, 'Đang tìm thêm địa chỉ phù hợp...');
+
+                suggestionAbortController?.abort();
+                suggestionAbortController = new AbortController();
+
+                try {
+                    const response = await fetch(addressSuggestionsUrl + '?query=' + encodeURIComponent(text), {
+                        headers: { 'Accept': 'application/json' },
+                        signal: suggestionAbortController.signal
+                    });
+                    if (!response.ok) throw new Error('suggestion request failed');
+                    const remoteRows = await response.json();
+                    const remoteSuggestions = (Array.isArray(remoteRows) ? remoteRows : [])
+                        .map(function (row) {
+                            return {
+                                id: 'osm-' + (row.id || ''),
+                                title: row.title || 'Địa điểm',
+                                address: row.address || '',
+                                latitude: Number(row.latitude),
+                                longitude: Number(row.longitude),
+                                type: row.type || 'osm'
+                            };
+                        })
+                        .filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude));
+
+                    if ((locationSearchInput?.value || '').trim() !== text || document.activeElement !== locationSearchInput) return;
+                    const combined = deduplicateSuggestions(localSuggestions.concat(remoteSuggestions));
+                    renderAddressSuggestions(combined, combined.length ? '' : 'Không tìm thấy. Hãy nhập rõ hơn tên đường, xã/phường và tỉnh/thành phố.');
+                } catch (error) {
+                    if (error?.name === 'AbortError') return;
+                    if ((locationSearchInput?.value || '').trim() !== text || document.activeElement !== locationSearchInput) return;
+                    renderAddressSuggestions(localSuggestions,
+                        localSuggestions.length ? 'Không tải được gợi ý trực tuyến; đang hiển thị dữ liệu SmartCar.' : 'Không tải được gợi ý địa chỉ. Kiểm tra Internet hoặc thử lại.');
+                }
+            }
+
+            function scheduleAddressSuggestions() {
+                window.clearTimeout(suggestionTimer);
+                suggestionAbortController?.abort();
+                const text = (locationSearchInput?.value || '').trim();
+                if (text.length < 2) {
+                    suggestionAbortController?.abort();
+                    hideAddressSuggestions();
+                    return;
+                }
+
+                const localSuggestions = getLocalSuggestions(text);
+                renderAddressSuggestions(localSuggestions, 'Đang tìm địa chỉ...');
+                suggestionTimer = window.setTimeout(() => loadAddressSuggestions(text), 450);
+            }
+
+            function selectAddressSuggestion(item) {
+                hideError();
+                if (item.catalogId != null) locationSelect.value = String(item.catalogId);
+                setExactLocation(item.latitude, item.longitude, item.address || item.title, null,
+                    item.type === 'catalog' ? 'catalog' : 'autocomplete', true, !isMapVisible());
+                hideAddressSuggestions();
+                if (locationInputHelp) {
+                    locationInputHelp.textContent = 'Đã chọn địa chỉ gợi ý. Mở bản đồ để kiểm tra chấm xanh và kéo ghim đỏ nếu cần.';
+                }
+                if (isMapVisible()) {
+                    refreshLocationPreview();
+                    focusMapOnKnownPoints();
+                }
+            }
+
+            function distanceKm(lat1, lon1, lat2, lon2) {
+                const toRad = value => value * Math.PI / 180;
+                const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+                return 6371.0088 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            function findNearestCatalogLocation(latitude, longitude) {
+                const candidates = locationData.filter(x => x.latitude != null && x.longitude != null);
+                if (!candidates.length) return null;
+                return candidates.slice().sort((a, b) =>
+                    distanceKm(latitude, longitude, Number(a.latitude), Number(a.longitude)) -
+                    distanceKm(latitude, longitude, Number(b.latitude), Number(b.longitude)))[0];
+            }
+
+            function hasExactCoordinates() {
+                return searchLatitudeInput?.value !== '' && searchLongitudeInput?.value !== '';
+            }
+
+            function clearPickupCoordinates() {
+                if (searchLatitudeInput) searchLatitudeInput.value = '';
+                if (searchLongitudeInput) searchLongitudeInput.value = '';
+                if (searchAddressInput) searchAddressInput.value = '';
+                if (selectionModeInput) selectionModeInput.value = 'catalog';
+                if (pickupMarker && locationMap) {
+                    locationMap.removeLayer(pickupMarker);
+                    pickupMarker = null;
+                }
+                selectedAccuracyMeters = null;
+            }
+
+            function syncLocationIdFromInput() {
+                const matched = resolveLocationFromText();
+                locationSelect.value = matched ? String(matched.id) : '';
+                return matched;
+            }
+
+            function isMapVisible() {
+                return locationPreview && !locationPreview.hidden;
+            }
+
+            function formatCoordinates(latitude, longitude) {
+                return Number(latitude).toFixed(6) + ', ' + Number(longitude).toFixed(6);
+            }
+
+            function updatePickupMarker(latitude, longitude) {
+                if (!locationMap || !window.L) return;
+                const point = [Number(latitude), Number(longitude)];
+                const markerIcon = L.divIcon({
+                    className: '',
+                    html: '<span class="exact-location-pin"></span>',
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 34]
+                });
+
+                if (!pickupMarker) {
+                    pickupMarker = L.marker(point, {
+                        draggable: true,
+                        icon: markerIcon,
+                        title: 'Điểm nhận xe đã chọn',
+                        zIndexOffset: 500
+                    }).addTo(locationMap);
+                    pickupMarker.bindPopup('<strong>Điểm nhận xe đã chọn</strong><br>Kéo ghim đỏ để chỉnh vị trí.');
+                    pickupMarker.on('dragend', async function () {
+                        const position = pickupMarker.getLatLng();
+                        const address = await reverseGeocode(position.lat, position.lng);
+                        setExactLocation(position.lat, position.lng, address, null, 'map', true, false);
+                    });
+                } else {
+                    pickupMarker.setLatLng(point);
+                }
+            }
+
+            function updateCurrentPositionMarker() {
+                if (!locationMap || !window.L || !currentPosition) return;
+                const point = [currentPosition.latitude, currentPosition.longitude];
+                const currentIcon = L.divIcon({
+                    className: '',
+                    html: '<span class="current-position-dot" aria-hidden="true"></span>',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                });
+
+                if (!currentPositionMarker) {
+                    currentPositionMarker = L.marker(point, {
+                        interactive: true,
+                        keyboard: true,
+                        icon: currentIcon,
+                        title: 'Vị trí hiện tại của bạn',
+                        zIndexOffset: 1000
+                    }).addTo(locationMap);
+                    currentPositionMarker.bindPopup('<strong>Vị trí hiện tại của bạn</strong><br>Chấm xanh thể hiện vị trí thiết bị cung cấp.');
+                } else {
+                    currentPositionMarker.setLatLng(point);
+                }
+
+                if (currentAccuracyCircle) locationMap.removeLayer(currentAccuracyCircle);
+                currentAccuracyCircle = L.circle(point, {
+                    radius: Math.max(1, Number(currentPosition.accuracy) || 1),
+                    color: '#168cf2',
+                    weight: 1,
+                    fillColor: '#168cf2',
+                    fillOpacity: .10,
+                    interactive: false
+                }).addTo(locationMap);
+
+                if (currentLocationLegend) currentLocationLegend.hidden = false;
+                if (centerCurrentLocationButton) centerCurrentLocationButton.hidden = false;
+            }
+
+            function focusMapOnKnownPoints() {
+                if (!locationMap) return;
+                const points = [];
+                if (hasExactCoordinates()) {
+                    points.push([Number(searchLatitudeInput.value), Number(searchLongitudeInput.value)]);
+                }
+                if (currentPosition) {
+                    points.push([currentPosition.latitude, currentPosition.longitude]);
+                }
+
+                if (points.length >= 2 && distanceKm(points[0][0], points[0][1], points[1][0], points[1][1]) > 0.08) {
+                    locationMap.fitBounds(L.latLngBounds(points), { padding: [45, 45], maxZoom: 17, animate: true });
+                } else if (points.length) {
+                    const accuracy = currentPosition?.accuracy || selectedAccuracyMeters || 0;
+                    locationMap.setView(points[0], Number(accuracy) > 1000 ? 14 : 17, { animate: true });
+                }
+            }
+
+            function setCurrentPosition(latitude, longitude, accuracyMeters) {
+                const lat = Number(latitude), lng = Number(longitude);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+                currentPosition = {
+                    latitude: lat,
+                    longitude: lng,
+                    accuracy: Number(accuracyMeters) > 0 ? Number(accuracyMeters) : 0
+                };
+                if (currentLocationLegend) currentLocationLegend.hidden = false;
+                if (centerCurrentLocationButton) centerCurrentLocationButton.hidden = false;
+                if (isMapVisible() && ensureMap()) updateCurrentPositionMarker();
+            }
+
+            function setExactLocation(latitude, longitude, address, accuracyMeters, mode, updateTextInput, keepMapClosed) {
+                const lat = Number(latitude), lng = Number(longitude);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+
+                const nearest = findNearestCatalogLocation(lat, lng);
+                if (nearest) locationSelect.value = String(nearest.id);
+
+                const safeAddress = (address || '').trim() || ('Tọa độ ' + formatCoordinates(lat, lng));
+                searchLatitudeInput.value = lat.toFixed(7);
+                searchLongitudeInput.value = lng.toFixed(7);
+                searchAddressInput.value = safeAddress;
+                selectionModeInput.value = mode || 'map';
+                selectedAccuracyMeters = Number(accuracyMeters) > 0 ? Number(accuracyMeters) : null;
+
+                if (updateTextInput && locationSearchInput) {
+                    suppressManualReset = true;
+                    locationSearchInput.value = safeAddress;
+                    suppressManualReset = false;
+                }
+
+                if (selectedLocationName) {
+                    selectedLocationName.textContent = mode === 'gps'
+                        ? 'Điểm nhận xe tại vị trí hiện tại'
+                        : 'Điểm nhận xe đã chọn';
+                }
+                if (selectedLocationAddress) selectedLocationAddress.textContent = safeAddress;
+                if (selectedCoordinateText) selectedCoordinateText.textContent = 'Tọa độ điểm nhận: ' + formatCoordinates(lat, lng);
+                if (locationAccuracyText) {
+                    if (mode === 'gps' && Number(accuracyMeters) > 80) {
+                        locationAccuracyText.textContent = 'GPS đang có sai số khoảng ±' + Math.round(Number(accuracyMeters)) + ' m. Chấm xanh là vị trí hiện tại; hãy kéo ghim đỏ đến đúng điểm nhận xe.';
+                    } else if (mode === 'gps' && Number(accuracyMeters) > 0) {
+                        locationAccuracyText.textContent = 'GPS ước tính sai số ±' + Math.round(Number(accuracyMeters)) + ' m. Chấm xanh là vị trí hiện tại; ghim đỏ là điểm nhận xe.';
+                    } else if (currentPosition) {
+                        locationAccuracyText.textContent = 'Chấm xanh là vị trí hiện tại; ghim đỏ là điểm nhận xe. Kéo ghim đỏ để chỉnh.';
+                    } else {
+                        locationAccuracyText.textContent = 'Ghim đỏ là điểm nhận xe. Bấm bản đồ hoặc kéo ghim để chỉnh lại.';
+                    }
+                }
+
+                if (!keepMapClosed && isMapVisible() && ensureMap()) {
+                    updatePickupMarker(lat, lng);
+                    updateCurrentPositionMarker();
+                }
+                return true;
+            }
+
+            async function reverseGeocode(latitude, longitude) {
+                const requestId = ++pendingReverseGeocode;
+                try {
+                    const url = reverseGeocodeUrl + '?latitude=' + encodeURIComponent(latitude) + '&longitude=' + encodeURIComponent(longitude);
+                    const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    if (!response.ok) throw new Error('reverse geocode failed');
+                    const data = await response.json();
+                    if (requestId !== pendingReverseGeocode) return '';
+                    return data.address || '';
+                } catch (_) {
+                    return '';
+                }
+            }
+
+            async function geocodeTypedAddress() {
+                const text = (locationSearchInput?.value || '').trim();
+                if (text.length < 2) return null;
+                try {
+                    const response = await fetch(addressSuggestionsUrl + '?query=' + encodeURIComponent(text), {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!response.ok) return null;
+                    const rows = await response.json();
+                    if (!Array.isArray(rows) || rows.length === 0) return null;
+                    return {
+                        latitude: Number(rows[0].latitude),
+                        longitude: Number(rows[0].longitude),
+                        address: rows[0].address || text
+                    };
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function ensureMap() {
+                if (locationMap) return true;
+                if (!window.L || !mapCanvas) {
+                    showError('Không tải được thư viện bản đồ. Hãy kiểm tra kết nối Internet rồi tải lại trang.', locationSearchInput);
+                    return false;
+                }
+
+                mapEmpty?.classList.add('d-none');
+                mapCanvas.classList.remove('d-none');
+                locationMap = L.map(mapCanvas, { scrollWheelZoom: true }).setView([16.047079, 108.206230], 6);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(locationMap);
+
+                locationMap.on('click', async function (event) {
+                    const address = await reverseGeocode(event.latlng.lat, event.latlng.lng);
+                    setExactLocation(event.latlng.lat, event.latlng.lng, address, null, 'map', true, false);
+                });
+                return true;
+            }
+
+            function refreshLocationPreview() {
+                const selected = locationData.find(x => String(x.id) === String(locationSelect.value));
+                const radius = radiusSelect?.value || selected?.radiusKm || 20;
+                if (selectedRadiusBadge) selectedRadiusBadge.textContent = radius + ' km';
+
+                if (hasExactCoordinates()) {
+                    const lat = Number(searchLatitudeInput.value), lng = Number(searchLongitudeInput.value);
+                    if (selectedLocationName && selectionModeInput.value !== 'gps') selectedLocationName.textContent = 'Điểm nhận xe đã chọn';
+                    if (selectedLocationAddress) selectedLocationAddress.textContent = searchAddressInput.value || locationSearchInput.value || 'Vị trí đã chọn';
+                    if (selectedCoordinateText) selectedCoordinateText.textContent = 'Tọa độ điểm nhận: ' + formatCoordinates(lat, lng);
+                    if (isMapVisible() && ensureMap()) {
+                        updatePickupMarker(lat, lng);
+                        updateCurrentPositionMarker();
+                    }
+                    return;
+                }
+
+                if (!selected) {
+                    if (selectedLocationName) selectedLocationName.textContent = 'Chưa xác định điểm nhận xe';
+                    if (selectedLocationAddress) selectedLocationAddress.textContent = 'Nhập địa chỉ và chọn trong danh sách gợi ý, hoặc bấm Gần tôi.';
+                    if (selectedCoordinateText) selectedCoordinateText.textContent = 'Chưa có tọa độ điểm nhận xe.';
+                    if (isMapVisible() && ensureMap()) updateCurrentPositionMarker();
+                    return;
+                }
+
+                if (selectedLocationName) selectedLocationName.textContent = selected.name || selected.displayName;
+                if (selectedLocationAddress) selectedLocationAddress.textContent = selected.fullAddress || selected.displayName;
+                if (selected.latitude != null && selected.longitude != null) {
+                    setExactLocation(selected.latitude, selected.longitude, selected.fullAddress || selected.displayName, null, 'catalog', false, true);
+                    if (isMapVisible() && ensureMap()) updatePickupMarker(selected.latitude, selected.longitude);
+                }
+            }
+
+            async function setMapVisibility(show) {
+                if (!locationPreview || !mapToggleButton) return;
+
+                hideAddressSuggestions();
+                if (show && !hasExactCoordinates()) {
+                    const matched = syncLocationIdFromInput();
+                    if (matched?.latitude != null && matched?.longitude != null) {
+                        setExactLocation(matched.latitude, matched.longitude, matched.fullAddress || matched.displayName, null, 'catalog', false, true);
+                    } else {
+                        mapToggleButton.disabled = true;
+                        mapToggleButton.innerHTML = '<i class="ion-ios-map"></i> <span>Đang tìm địa chỉ...</span>';
+                        const geocoded = await geocodeTypedAddress();
+                        mapToggleButton.disabled = false;
+                        if (!geocoded || !Number.isFinite(geocoded.latitude) || !Number.isFinite(geocoded.longitude)) {
+                            mapToggleButton.innerHTML = '<i class="ion-ios-map"></i> <span>Xem vị trí trên bản đồ</span>';
+                            showError('Không tìm thấy địa chỉ này. Hãy chọn một kết quả trong danh sách gợi ý hoặc nhập rõ hơn địa chỉ.', locationSearchInput);
+                            return;
+                        }
+                        setExactLocation(geocoded.latitude, geocoded.longitude, geocoded.address, null, 'manual', true, true);
+                    }
+                }
+
+                locationPreview.hidden = !show;
+                locationPreview.setAttribute('aria-hidden', String(!show));
+                mapToggleButton.setAttribute('aria-expanded', String(show));
+                mapToggleButton.innerHTML = show
+                    ? '<i class="ion-ios-map"></i> <span>Ẩn bản đồ</span>'
+                    : '<i class="ion-ios-map"></i> <span>Xem vị trí trên bản đồ</span>';
+
+                if (show && ensureMap()) {
+                    refreshLocationPreview();
+                    window.setTimeout(function () {
+                        locationMap.invalidateSize();
+                        updateCurrentPositionMarker();
+                        focusMapOnKnownPoints();
+                        locationPreview.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 100);
+                }
+            }
+
+            locationSearchInput?.addEventListener('input', function () {
+                if (suppressManualReset) return;
+                clearPickupCoordinates();
+                syncLocationIdFromInput();
+                scheduleAddressSuggestions();
+                if (isMapVisible()) refreshLocationPreview();
+            });
+
+            locationSearchInput?.addEventListener('focus', function () {
+                if ((locationSearchInput.value || '').trim().length >= 2 && !hasExactCoordinates()) {
+                    scheduleAddressSuggestions();
+                }
+            });
+
+            locationSearchInput?.addEventListener('blur', function () {
+                window.setTimeout(hideAddressSuggestions, 180);
+            });
+
+            locationSearchInput?.addEventListener('keydown', function (event) {
+                if (addressSuggestionList?.hidden) return;
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    setActiveSuggestion(activeSuggestionIndex + 1);
+                } else if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    setActiveSuggestion(activeSuggestionIndex - 1);
+                } else if (event.key === 'Enter' && activeSuggestionIndex >= 0) {
+                    event.preventDefault();
+                    selectAddressSuggestion(currentSuggestions[activeSuggestionIndex]);
+                } else if (event.key === 'Escape') {
+                    hideAddressSuggestions();
+                }
+            });
+
+            locationSearchInput?.addEventListener('change', function () {
+                if (suppressManualReset) return;
+                const matched = syncLocationIdFromInput();
+                if (matched?.latitude != null && matched?.longitude != null) {
+                    setExactLocation(matched.latitude, matched.longitude, matched.fullAddress || matched.displayName, null, 'catalog', false, true);
+                }
+                if (isMapVisible()) refreshLocationPreview();
+            });
+
+            radiusSelect?.addEventListener('change', function () {
+                if (isMapVisible()) refreshLocationPreview();
+            });
+
+            mapToggleButton?.addEventListener('click', function () {
+                hideError();
+                setMapVisibility(!isMapVisible());
+            });
+
+            confirmMapLocationButton?.addEventListener('click', function () {
+                if (!hasExactCoordinates()) {
+                    showError('Hãy chọn địa chỉ gợi ý, bấm trên bản đồ hoặc kéo ghim đỏ tới vị trí cần nhận xe.', locationSearchInput);
+                    return;
+                }
+                hideError();
+                setMapVisibility(false);
+                if (locationInputHelp) locationInputHelp.textContent = 'Đã xác nhận điểm nhận xe. Bạn vẫn có thể mở bản đồ để chỉnh lại ghim đỏ.';
+            });
+
+            centerCurrentLocationButton?.addEventListener('click', function () {
+                if (!currentPosition || !locationMap) return;
+                locationMap.setView([currentPosition.latitude, currentPosition.longitude], currentPosition.accuracy > 1000 ? 14 : 17, { animate: true });
+                currentPositionMarker?.openPopup();
+            });
+
+            function resetCurrentLocationButton() {
+                currentLocationButton.disabled = false;
+                currentLocationButton.innerHTML = '<i class="ion-ios-locate"></i> Gần tôi';
+            }
+
+            function describeGeolocationError(error) {
+                if (!window.isSecureContext) {
+                    return 'Trình duyệt chỉ cho phép lấy vị trí trên HTTPS hoặc localhost. Hãy mở đúng địa chỉ https://localhost:7154.';
+                }
+
+                switch (error?.code) {
+                    case 1:
+                        return 'Quyền vị trí đang bị chặn. Bấm biểu tượng ổ khóa cạnh địa chỉ → Quyền cho trang web → Vị trí → Cho phép, sau đó tải lại trang.';
+                    case 2:
+                        return 'Thiết bị chưa xác định được vị trí. Hãy bật Dịch vụ vị trí của Windows rồi thử lại.';
+                    case 3:
+                        return 'Lấy vị trí quá lâu. Hãy kiểm tra mạng hoặc chọn địa điểm thủ công.';
+                    default:
+                        return 'Không lấy được vị trí hiện tại. Hãy kiểm tra quyền vị trí của trình duyệt hoặc chọn địa điểm thủ công.';
+                }
+            }
+
+            currentLocationButton?.addEventListener('click', function () {
+                hideError();
+                hideAddressSuggestions();
+
+                if (!navigator.geolocation) {
+                    showError('Trình duyệt không hỗ trợ lấy vị trí hiện tại.', locationSearchInput);
+                    return;
+                }
+
+                currentLocationButton.disabled = true;
+                currentLocationButton.innerHTML = '<i class="ion-ios-locate"></i> Đang lấy GPS...';
+
+                navigator.geolocation.getCurrentPosition(async function (position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    setCurrentPosition(latitude, longitude, position.coords.accuracy);
+                    const address = await reverseGeocode(latitude, longitude);
+                    const displayAddress = address || ('Vị trí hiện tại (' + formatCoordinates(latitude, longitude) + ')');
+                    setExactLocation(latitude, longitude, displayAddress, position.coords.accuracy, 'gps', true, !isMapVisible());
+                    if (isMapVisible()) {
+                        refreshLocationPreview();
+                        focusMapOnKnownPoints();
+                    }
+                    if (locationInputHelp) {
+                        locationInputHelp.textContent = position.coords.accuracy > 80
+                            ? 'GPS có sai số khoảng ±' + Math.round(position.coords.accuracy) + ' m. Mở bản đồ và kéo ghim đỏ tới đúng điểm nhận xe.'
+                            : 'Đã lấy vị trí hiện tại. Chấm xanh là vị trí của bạn; ghim đỏ là điểm nhận xe.';
+                    }
+                    hideError();
+                    resetCurrentLocationButton();
+                }, function (error) {
+                    showError(describeGeolocationError(error), locationSearchInput);
+                    resetCurrentLocationButton();
+                }, {
+                    enableHighAccuracy: true,
+                    timeout: 20000,
+                    maximumAge: 0
+                });
+            });
+
+            const initialMatchedLocation = syncLocationIdFromInput();
+            if (initialMatchedLocation?.latitude != null && initialMatchedLocation?.longitude != null) {
+                setExactLocation(initialMatchedLocation.latitude, initialMatchedLocation.longitude,
+                    initialMatchedLocation.fullAddress || initialMatchedLocation.displayName, null, 'catalog', false, true);
+            }
+            function showError(message, element) {
+                errorBox.textContent = message;
+                errorBox.style.display = "block";
+                if (element) {
+                    element.focus();
+                }
+            }
+
+            function hideError() {
+                errorBox.textContent = "";
+                errorBox.style.display = "none";
+            }
+
+            function toLocalDateTime(dateValue, timeValue) {
+                return new Date(dateValue + "T" + timeValue + ":00");
+            }
+
+            form.addEventListener("submit", function (event) {
+                hideError();
+
+                if (!hasExactCoordinates()) {
+                    const selectedLocation = syncLocationIdFromInput();
+                    if (selectedLocation?.latitude != null && selectedLocation?.longitude != null) {
+                        setExactLocation(selectedLocation.latitude, selectedLocation.longitude,
+                            selectedLocation.fullAddress || selectedLocation.displayName, null, 'catalog', false, true);
+                    }
+                }
+
+                if (!locationSelect.value || Number(locationSelect.value) <= 0 || !hasExactCoordinates()) {
+                    event.preventDefault();
+                    showError("Vui lòng xác định điểm nhận xe: chọn gợi ý, nhập địa chỉ rồi mở bản đồ, hoặc bấm Gần tôi.", locationSearchInput);
+                    return;
+                }
+
+                if (!pickupDate.value) {
+                    event.preventDefault();
+                    showError("Vui lòng chọn ngày nhận xe.", pickupDate);
+                    return;
+                }
+
+                if (!dropoffDate.value) {
+                    event.preventDefault();
+                    showError("Vui lòng chọn ngày trả xe.", dropoffDate);
+                    return;
+                }
+
+                if (!pickupTime.value) {
+                    event.preventDefault();
+                    showError("Vui lòng chọn giờ nhận xe.", pickupTime);
+                    return;
+                }
+
+                if (!dropoffTime.value) {
+                    event.preventDefault();
+                    showError("Vui lòng chọn giờ trả xe.", dropoffTime);
+                    return;
+                }
+
+                const pickUp = toLocalDateTime(pickupDate.value, pickupTime.value);
+                const dropOff = toLocalDateTime(dropoffDate.value, dropoffTime.value);
+
+                if (Number.isNaN(pickUp.getTime())) {
+                    event.preventDefault();
+                    showError("Ngày hoặc giờ nhận xe không hợp lệ.", pickupDate);
+                    return;
+                }
+
+                if (Number.isNaN(dropOff.getTime())) {
+                    event.preventDefault();
+                    showError("Ngày hoặc giờ trả xe không hợp lệ.", dropoffDate);
+                    return;
+                }
+
+                if (pickUp.getTime() < Date.now() - 60000) {
+                    event.preventDefault();
+                    showError("Thời gian nhận xe không được nằm trong quá khứ.", pickupTime);
+                    return;
+                }
+
+                if (dropOff.getTime() <= pickUp.getTime()) {
+                    event.preventDefault();
+                    showError("Thời gian trả xe phải sau thời gian nhận xe.", dropoffTime);
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

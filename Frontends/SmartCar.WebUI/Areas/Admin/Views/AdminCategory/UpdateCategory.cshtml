@@ -1,0 +1,30 @@
+﻿@model UpdateCategoryDto
+
+@{
+    ViewData["Title"] = "UpdateCategory";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Trang cập nhật danh mục</h4>
+                        <p class="card-subtitle mb-4">Bạn có thể cập nhật thông tin danh mục trong biểu mẫu bên dưới.</p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="CategoryId" />
+                            <div class="form-group">
+                                <label for="exampleInputName">Tên danh mục</label>
+                                <input type="text" class="form-control" id="exampleInputName" asp-for="Name" placeholder="Nhập tên danh mục">
+                            </div>
+                            <button type="submit" class="btn btn-success waves-effect waves-light">Lưu danh mục</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

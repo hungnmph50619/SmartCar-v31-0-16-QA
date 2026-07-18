@@ -1,0 +1,89 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34112.27
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{1D997DA4-341D-41C7-A637-B39F51A7F0F5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{AD61D054-4015-460B-9585-DC3FBA61B8FD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentation", "Presentation", "{4F274B4D-DA70-431D-AE58-A3731FD8F6F0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Frontends", "Frontends", "{CEFD8FCE-03E2-4D3B-B399-CD64B4F48E4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.Domain", "Core\SmartCar.Domain\SmartCar.Domain.csproj", "{9614A54F-C8DC-748D-12BB-93C65C8E3729}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.Application", "Core\SmartCar.Application\SmartCar.Application.csproj", "{851D0BF8-B74B-8E15-6A91-352946A24CA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.Persistence", "Infrastructure\SmartCar.Persistence\SmartCar.Persistence.csproj", "{88004D1F-EC7B-22A9-30E1-94D8115DF120}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.Dto", "Frontends\SmartCar.Dto\SmartCar.Dto.csproj", "{9E1B5517-EEAC-8EAD-505E-8C016C960984}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.WebUI", "Frontends\SmartCar.WebUI\SmartCar.WebUI.csproj", "{22FB31DE-EED7-45ED-1427-B6651FB2C674}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.WebApi", "Presentation\SmartCar.WebApi\SmartCar.WebApi.csproj", "{BED13C99-B8D6-134D-ED46-175D0862E99F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{A411D997-341D-41C7-A637-B39F51A7F0F5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.UnitTests", "Tests\SmartCar.UnitTests\SmartCar.UnitTests.csproj", "{B511D0BF-B74B-4E15-A691-352946A24CA8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartCar.IntegrationTests", "Tests\SmartCar.IntegrationTests\SmartCar.IntegrationTests.csproj", "{C6124D1F-EC7B-42A9-B0E1-94D8115DF120}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9614A54F-C8DC-748D-12BB-93C65C8E3729}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9614A54F-C8DC-748D-12BB-93C65C8E3729}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9614A54F-C8DC-748D-12BB-93C65C8E3729}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9614A54F-C8DC-748D-12BB-93C65C8E3729}.Release|Any CPU.Build.0 = Release|Any CPU
+		{851D0BF8-B74B-8E15-6A91-352946A24CA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{851D0BF8-B74B-8E15-6A91-352946A24CA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{851D0BF8-B74B-8E15-6A91-352946A24CA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{851D0BF8-B74B-8E15-6A91-352946A24CA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88004D1F-EC7B-22A9-30E1-94D8115DF120}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88004D1F-EC7B-22A9-30E1-94D8115DF120}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88004D1F-EC7B-22A9-30E1-94D8115DF120}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88004D1F-EC7B-22A9-30E1-94D8115DF120}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E1B5517-EEAC-8EAD-505E-8C016C960984}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E1B5517-EEAC-8EAD-505E-8C016C960984}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E1B5517-EEAC-8EAD-505E-8C016C960984}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E1B5517-EEAC-8EAD-505E-8C016C960984}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22FB31DE-EED7-45ED-1427-B6651FB2C674}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22FB31DE-EED7-45ED-1427-B6651FB2C674}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22FB31DE-EED7-45ED-1427-B6651FB2C674}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22FB31DE-EED7-45ED-1427-B6651FB2C674}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BED13C99-B8D6-134D-ED46-175D0862E99F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BED13C99-B8D6-134D-ED46-175D0862E99F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BED13C99-B8D6-134D-ED46-175D0862E99F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BED13C99-B8D6-134D-ED46-175D0862E99F}.Release|Any CPU.Build.0 = Release|Any CPU
+
+		{B511D0BF-B74B-4E15-A691-352946A24CA8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B511D0BF-B74B-4E15-A691-352946A24CA8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B511D0BF-B74B-4E15-A691-352946A24CA8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B511D0BF-B74B-4E15-A691-352946A24CA8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6124D1F-EC7B-42A9-B0E1-94D8115DF120}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6124D1F-EC7B-42A9-B0E1-94D8115DF120}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6124D1F-EC7B-42A9-B0E1-94D8115DF120}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6124D1F-EC7B-42A9-B0E1-94D8115DF120}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9614A54F-C8DC-748D-12BB-93C65C8E3729} = {1D997DA4-341D-41C7-A637-B39F51A7F0F5}
+		{851D0BF8-B74B-8E15-6A91-352946A24CA8} = {1D997DA4-341D-41C7-A637-B39F51A7F0F5}
+		{88004D1F-EC7B-22A9-30E1-94D8115DF120} = {AD61D054-4015-460B-9585-DC3FBA61B8FD}
+		{9E1B5517-EEAC-8EAD-505E-8C016C960984} = {CEFD8FCE-03E2-4D3B-B399-CD64B4F48E4F}
+		{22FB31DE-EED7-45ED-1427-B6651FB2C674} = {CEFD8FCE-03E2-4D3B-B399-CD64B4F48E4F}
+		{BED13C99-B8D6-134D-ED46-175D0862E99F} = {4F274B4D-DA70-431D-AE58-A3731FD8F6F0}
+
+		{B511D0BF-B74B-4E15-A691-352946A24CA8} = {A411D997-341D-41C7-A637-B39F51A7F0F5}
+		{C6124D1F-EC7B-42A9-B0E1-94D8115DF120} = {A411D997-341D-41C7-A637-B39F51A7F0F5}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {17F55F86-9D21-4CFE-B1D3-39DAE5C25CE6}
+	EndGlobalSection
+EndGlobal

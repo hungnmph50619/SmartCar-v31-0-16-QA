@@ -1,0 +1,42 @@
+﻿@model UpdateAboutDto
+
+@{
+    ViewData["Title"] = "UpdateAbout";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Khu vực nhập thông tin giới thiệu</h4>
+                        <p class="card-subtitle mb-4">
+                            Bạn có thể chỉnh sửa nội dung giới thiệu hiển thị trên trang chủ và trang Giới thiệu ở bên dưới. Để tránh làm hỏng bố cục, chỉ nên lưu một bản ghi.
+                        </p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="aboutID" />
+                            <div class="form-group">
+                                <label for="exampleInputTitle">Tiêu đề</label>
+                                <input type="text" class="form-control" id="exampleInputTitle" asp-for="title" placeholder="Nhập tiêu đề">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputDescription">Mô tả</label>
+                                <textarea rows="5" asp-for="description" class="form-control" placeholder="Nhập mô tả"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputimageUrl">Mô tả video</label>
+                                <input type="text" class="form-control" id="exampleInputimageUrl" asp-for="imageUrl" placeholder="Nhập liên kết ảnh bìa giới thiệu">
+                            </div>
+                            <button type="submit" class="btn btn-success waves-effect waves-light">Cập nhật thông tin giới thiệu</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

@@ -1,0 +1,252 @@
+@using System.Globalization
+@using SmartCar.Dto.LocationDtos
+@model List<FilterRentACarDto>
+@{
+    ViewData["Title"] = "Xe phù hợp";
+    Layout = "~/Views/UILayout/Index.cshtml";
+    var selectedLocation = ViewBag.SelectedLocation as ResultLocationDto;
+    var radiusKm = (int)(ViewBag.RadiusKm ?? 20);
+    var exactLatitude = ViewData["SearchLatitude"] is double latitudeValue ? latitudeValue : (double?)null;
+    var exactLongitude = ViewData["SearchLongitude"] is double longitudeValue ? longitudeValue : (double?)null;
+    var exactAddress = ViewData["SearchAddress"] as string;
+    var hasExactSearchPoint = exactLatitude.HasValue && exactLongitude.HasValue;
+    var mapLatitude = hasExactSearchPoint
+        ? exactLatitude.Value.ToString(CultureInfo.InvariantCulture)
+        : selectedLocation?.Latitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+    var mapLongitude = hasExactSearchPoint
+        ? exactLongitude.Value.ToString(CultureInfo.InvariantCulture)
+        : selectedLocation?.Longitude?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+    var pickupPointName = hasExactSearchPoint ? "Điểm nhận xe chính xác" : selectedLocation?.Name ?? "Điểm nhận xe";
+    var pickupPointAddress = hasExactSearchPoint && !string.IsNullOrWhiteSpace(exactAddress)
+        ? exactAddress
+        : selectedLocation?.FullAddress ?? string.Empty;
+    var mapNameJson = Newtonsoft.Json.JsonConvert.SerializeObject(pickupPointName);
+    var mapAddressJson = Newtonsoft.Json.JsonConvert.SerializeObject(pickupPointAddress);
+    var mapCarsJson = ViewBag.MapCarsJson as string ?? "[]";
+}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+
+<section class="ftco-section bg-light smart-search-results">
+    <div class="container-fluid px-lg-5">
+        <div class="search-summary mb-4">
+            <div>
+                <span class="result-kicker">KẾT QUẢ CÒN TRỐNG</span>
+                <h2>Xe phù hợp gần điểm nhận của bạn</h2>
+                <p class="mb-1"><i class="ion-ios-pin mr-1"></i> <strong>@(hasExactSearchPoint ? pickupPointAddress : selectedLocation?.DisplayName ?? "Điểm nhận đã chọn")</strong> · trong bán kính <strong>@radiusKm km</strong></p>
+                @if (hasExactSearchPoint)
+                {
+                    <p class="text-muted mb-1"><i class="ion-ios-navigate mr-1"></i> Tọa độ chính xác: @exactLatitude.Value.ToString("0.000000", CultureInfo.InvariantCulture), @exactLongitude.Value.ToString("0.000000", CultureInfo.InvariantCulture)</p>
+                }
+                <p class="mb-1"><i class="ion-ios-calendar mr-1"></i> <strong>@ViewBag.bookPickDate @ViewBag.timePick</strong> → <strong>@ViewBag.bookOffDate @ViewBag.timeOff</strong></p>
+                <p class="text-muted mb-0">Chỉ hiển thị xe đã được duyệt, đang hoạt động và không trùng lịch.</p>
+            </div>
+            <a href="/Default/Index#rent-search" class="btn btn-outline-primary">Thay đổi tìm kiếm</a>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage as string))
+        {
+            <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+        }
+
+        <div class="row">
+            <div class="col-xl-7 col-lg-7">
+                @if (Model == null || Model.Count == 0)
+                {
+                    <div class="empty-result">
+                        <i class="ion-ios-car"></i>
+                        <h4>Chưa có xe phù hợp</h4>
+                        <p>Hãy đổi thời gian, bán kính, khoảng giá hoặc điểm nhận xe.</p>
+                        <a href="/Default/Index#rent-search" class="btn btn-primary">Tìm lại</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <strong>@Model.Count xe còn trống</strong>
+                        <small class="text-muted">Giá theo ngày, chưa bao gồm cọc hoàn lại</small>
+                    </div>
+                    <div class="row">
+                        @foreach (var item in Model)
+                        {
+                            <div class="col-xl-6 col-md-6 mb-4">
+                                <article class="vehicle-card h-100"
+                                         data-car-id="@item.carID"
+                                         data-latitude="@item.Latitude?.ToString(CultureInfo.InvariantCulture)"
+                                         data-longitude="@item.Longitude?.ToString(CultureInfo.InvariantCulture)"
+                                         data-title="@item.Brand @item.Model"
+                                         data-address="@item.LocationAddress">
+                                    <a href="/Car/CarDetail/@item.carID" class="vehicle-image" style="background-image:url('@item.CoverImageUrl')">
+                                        <span class="availability-pill"><i class="ion-ios-checkmark-circle"></i> Còn trống</span>
+                                        <span class="distance-pill"><i class="ion-ios-navigate"></i> @(item.DistanceKm < 0.1 ? "Ngay tại điểm chọn" : $"Cách {item.DistanceKm:0.0} km")</span>
+                                    </a>
+                                    <div class="vehicle-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <small class="text-muted">@item.Brand</small>
+                                                <h3><a href="/Car/CarDetail/@item.carID">@item.Model</a></h3>
+                                            </div>
+                                            <span class="rating"><i class="ion-ios-star"></i> @(item.RatingCount > 0 ? item.Rating.ToString("0.0") : "Mới")</span>
+                                        </div>
+                                        <div class="vehicle-specs">
+                                            <span><i class="flaticon-car-seat"></i> @item.Seat chỗ</span>
+                                            <span><i class="ion-ios-settings"></i> @item.Transmission</span>
+                                            <span><i class="ion-ios-flash"></i> @item.Fuel</span>
+                                            <span><i class="ion-ios-person"></i> @item.VehicleType</span>
+                                        </div>
+                                        <div class="location-line">
+                                            <strong><i class="ion-ios-pin"></i> @item.LocationName</strong>
+                                            <small>@item.LocationAddress</small>
+                                            @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                            {
+                                                <button type="button"
+                                                        class="btn btn-link p-0 show-on-map"
+                                                        data-car-id="@item.carID"
+                                                        data-latitude="@item.Latitude.Value.ToString(CultureInfo.InvariantCulture)"
+                                                        data-longitude="@item.Longitude.Value.ToString(CultureInfo.InvariantCulture)"
+                                                        data-title="@item.Brand @item.Model"
+                                                        data-address="@item.LocationAddress">Xem trên bản đồ</button>
+                                            }
+                                        </div>
+                                        <div class="price-row">
+                                            <div><strong>@item.Amount.ToString("#,0", CultureInfo.InvariantCulture) đ</strong><small>/ngày</small></div>
+                                            <div class="deposit">@(item.DepositAmount > 0 ? $"Cọc: {item.DepositAmount.ToString("#,0", CultureInfo.InvariantCulture)} đ" : "Không cọc tài sản")</div>
+                                        </div>
+                                        <div class="d-flex mt-3">
+                                            <a asp-controller="Reservation"
+                                               asp-action="Index"
+                                               asp-route-id="@item.carID"
+                                               asp-route-pickUpLocationID="@item.LocationID"
+                                               asp-route-pickUpDate="@ViewBag.bookPickDateIso"
+                                               asp-route-dropOffDate="@ViewBag.bookOffDateIso"
+                                               asp-route-pickUpTime="@ViewBag.timePickIso"
+                                               asp-route-dropOffTime="@ViewBag.timeOffIso"
+                                               asp-route-rentalMode="@ViewBag.VehicleType"
+                                               class="btn btn-primary flex-fill mr-2">Chọn xe</a>
+                                            <a href="/Car/CarDetail/@item.carID" class="btn btn-outline-secondary">Chi tiết</a>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="col-xl-5 col-lg-5">
+                <aside class="map-panel">
+                    <div class="map-panel-head">
+                        <div>
+                            <span class="result-kicker">BẢN ĐỒ XE GẦN BẠN</span>
+                            <h4 id="mapTitle">@pickupPointName</h4>
+                            <p id="mapAddress">@(string.IsNullOrWhiteSpace(pickupPointAddress) ? "Chọn một xe để xem vị trí giao nhận." : pickupPointAddress)</p>
+                        </div>
+                        <span class="badge badge-primary">@radiusKm km</span>
+                    </div>
+                    @if (hasExactSearchPoint || selectedLocation?.HasCoordinates == true)
+                    {
+                        <div id="resultMap" class="result-map-frame" role="application" aria-label="Bản đồ xe gần điểm nhận"></div>
+                        <iframe id="resultMapFallback" class="result-map-frame d-none" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Bản đồ xe gần điểm nhận"></iframe>
+                    }
+                    else
+                    {
+                        <div class="map-empty"><i class="ion-ios-map"></i><br />Điểm nhận chưa có tọa độ bản đồ.</div>
+                    }
+                    <div class="map-privacy"><i class="ion-ios-lock"></i> Vị trí trên bản đồ là khu vực giao nhận. Số nhà riêng chỉ hiện sau khi đơn được xác nhận.</div>
+                </aside>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .smart-search-results{min-height:70vh}.search-summary{display:flex;justify-content:space-between;align-items:center;gap:20px;background:#fff;padding:25px 28px;border-radius:16px;box-shadow:0 10px 30px rgba(25,45,70,.07)}.search-summary h2{margin:4px 0 8px}.result-kicker{color:#168cf2;font-weight:800;font-size:12px;letter-spacing:1.3px}.vehicle-card{background:#fff;border:1px solid #e7edf3;border-radius:16px;overflow:hidden;box-shadow:0 8px 25px rgba(24,39,75,.06);transition:.2s}.vehicle-card:hover{transform:translateY(-4px);box-shadow:0 16px 35px rgba(24,39,75,.12)}.vehicle-image{display:block;height:220px;background-size:cover;background-position:center;position:relative}.availability-pill,.distance-pill{position:absolute;top:14px;background:#e9fbf1;color:#168653;padding:7px 10px;border-radius:999px;font-size:12px;font-weight:700}.availability-pill{left:14px}.distance-pill{right:14px;background:#eef6ff;color:#1674b8}.vehicle-body{padding:20px}.vehicle-body h3{font-size:21px;margin:2px 0 12px}.vehicle-body h3 a{color:#243b53}.rating{background:#fff7dd;color:#9b6b00;border-radius:8px;padding:5px 8px;font-size:12px;font-weight:700}.vehicle-specs{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 0;border-top:1px solid #edf1f4;border-bottom:1px solid #edf1f4}.vehicle-specs span{font-size:13px;color:#627383;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vehicle-specs i,.location-line i{color:#168cf2;margin-right:4px}.location-line{padding:13px 0;border-bottom:1px solid #edf1f4}.location-line strong,.location-line small{display:block}.location-line small{color:#6d7e8e;margin:4px 0;font-size:12px}.show-on-map{font-size:12px}.price-row{display:flex;justify-content:space-between;align-items:flex-end;padding-top:15px}.price-row strong{font-size:22px;color:#168cf2}.price-row small{color:#7f8c98}.deposit{font-size:12px;color:#697989}.empty-result{text-align:center;background:#fff;border-radius:16px;padding:60px 20px}.empty-result i{font-size:55px;color:#b7c4d0}.map-panel{position:sticky;top:20px;background:#fff;border-radius:16px;padding:20px;box-shadow:0 10px 30px rgba(25,45,70,.08)}.map-panel-head{display:flex;justify-content:space-between;gap:15px;margin-bottom:14px}.map-panel-head h4{margin:3px 0;font-size:20px}.map-panel-head p{margin:0;color:#697b8b;font-size:13px}.result-map-frame{width:100%;height:620px;border:0;border-radius:12px;background:#eef3f7;overflow:hidden}.map-empty{height:420px;border-radius:12px;background:#eef6ff;display:flex;align-items:center;justify-content:center;text-align:center;color:#67798a;font-size:15px}.map-empty i{font-size:45px;color:#168cf2}.map-privacy{font-size:11px;color:#6b7c8d;margin-top:10px}.car-map-pin{width:34px;height:34px;border-radius:50% 50% 50% 0;background:#168cf2;color:#fff;display:flex;align-items:center;justify-content:center;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.28)}.car-map-pin i{transform:rotate(45deg);font-size:17px}.pickup-map-pin{width:22px;height:22px;border-radius:50%;background:#14b86e;border:4px solid #fff;box-shadow:0 3px 12px rgba(0,0,0,.25)}.leaflet-popup-content{min-width:190px}.leaflet-popup-content strong,.leaflet-popup-content small{display:block}.leaflet-popup-content small{margin-top:4px;color:#65798b}
+    @@media(max-width:991px){.search-summary{align-items:flex-start;flex-direction:column}.search-summary .btn{width:100%}.vehicle-image{height:200px}.map-panel{position:static;margin-top:15px}.result-map-frame{height:360px}}
+    @@media(max-width:575px){.distance-pill{top:52px;left:14px;right:auto}.search-summary{padding:20px}.vehicle-specs{grid-template-columns:1fr}}
+</style>
+
+@if (hasExactSearchPoint || selectedLocation?.HasCoordinates == true)
+{
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <script>
+        (function () {
+            const latitude = '@mapLatitude';
+            const longitude = '@mapLongitude';
+            const initialTitle = @Html.Raw(mapNameJson);
+            const initialAddress = @Html.Raw(mapAddressJson);
+            const cars = @Html.Raw(mapCarsJson);
+            const title = document.getElementById('mapTitle');
+            const address = document.getElementById('mapAddress');
+            const mapElement = document.getElementById('resultMap');
+            const fallback = document.getElementById('resultMapFallback');
+
+            function mapUrl(latValue, lngValue) {
+                const lat = Number(latValue), lng = Number(lngValue), delta = .035;
+                const bbox = [lng - delta, lat - delta, lng + delta, lat + delta].join(',');
+                return 'https://www.openstreetmap.org/export/embed.html?bbox=' + encodeURIComponent(bbox) + '&layer=mapnik&marker=' + encodeURIComponent(lat + ',' + lng);
+            }
+
+            function updateHeading(mapTitle, mapAddress) {
+                if (title) title.textContent = mapTitle || 'Điểm giao nhận';
+                if (address) address.textContent = mapAddress || '';
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '').replace(/[&<>'"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[ch]));
+            }
+
+            if (!window.L) {
+                mapElement?.classList.add('d-none');
+                fallback?.classList.remove('d-none');
+                if (fallback) fallback.src = mapUrl(latitude, longitude);
+                document.querySelectorAll('.show-on-map').forEach(button => button.addEventListener('click', () => {
+                    if (fallback) fallback.src = mapUrl(button.dataset.latitude, button.dataset.longitude);
+                    updateHeading(button.dataset.title, button.dataset.address);
+                    if (window.innerWidth < 992) fallback?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }));
+                return;
+            }
+
+            const map = L.map('resultMap', { scrollWheelZoom: true }).setView([Number(latitude), Number(longitude)], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            const pickupIcon = L.divIcon({ className: '', html: '<span class="pickup-map-pin"></span>', iconSize: [22, 22], iconAnchor: [11, 11] });
+            const carIcon = L.divIcon({ className: '', html: '<span class="car-map-pin"><i class="ion-ios-car"></i></span>', iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -32] });
+            const bounds = [];
+
+            L.marker([Number(latitude), Number(longitude)], { icon: pickupIcon, title: initialTitle })
+                .addTo(map)
+                .bindPopup('<strong>' + escapeHtml(initialTitle) + '</strong><small>' + escapeHtml(initialAddress) + '</small>');
+            bounds.push([Number(latitude), Number(longitude)]);
+
+            const markerByCarId = new Map();
+            (Array.isArray(cars) ? cars : []).forEach(car => {
+                if (car.latitude == null || car.longitude == null) return;
+                const lat = Number(car.latitude), lng = Number(car.longitude);
+                const popup = '<strong>' + escapeHtml(car.title || 'Xe SmartCar') + '</strong>' +
+                    '<small>' + escapeHtml(car.address || car.location || '') + '</small>' +
+                    '<small>Cách điểm chọn ' + Number(car.distanceKm || 0).toFixed(1) + ' km · ' + Number(car.price || 0).toLocaleString('vi-VN') + ' đ/ngày</small>';
+                const marker = L.marker([lat, lng], { icon: carIcon, title: car.title || 'Xe SmartCar' })
+                    .addTo(map)
+                    .bindPopup(popup);
+                marker.on('click', () => updateHeading(car.title, car.address || car.location));
+                markerByCarId.set(String(car.carId), marker);
+                bounds.push([lat, lng]);
+            });
+
+            if (bounds.length > 1) map.fitBounds(bounds, { padding: [35, 35], maxZoom: 14 });
+
+            document.querySelectorAll('.show-on-map').forEach(button => button.addEventListener('click', () => {
+                const lat = Number(button.dataset.latitude), lng = Number(button.dataset.longitude);
+                map.setView([lat, lng], 15, { animate: true });
+                markerByCarId.get(String(button.dataset.carId))?.openPopup();
+                updateHeading(button.dataset.title, button.dataset.address);
+                if (window.innerWidth < 992) mapElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }));
+
+            setTimeout(() => map.invalidateSize(), 150);
+        })();
+    </script>
+}

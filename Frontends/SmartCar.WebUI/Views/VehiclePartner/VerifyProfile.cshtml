@@ -1,0 +1,524 @@
+@model VehiclePartnerProfileVerifyViewModel
+@{
+    ViewData["Title"] = "Xác minh hồ sơ đối tác";
+    Layout = "~/Views/UILayout/Partner.cshtml";
+    var currentStatus = (Model.CurrentProfile?.Status ?? "Bản nháp").Trim();
+    var isOrganization = Model.Form.PartnerType == "Doanh nghiệp/Tổ chức";
+    var banks = SubmitVehiclePartnerProfileDto.SupportedBanks;
+}
+<section class="ftco-section bg-light py-5">
+    <div class="container" style="max-width:1080px">
+        @if (TempData["VehiclePartnerError"] != null) { <div class="alert alert-danger">@TempData["VehiclePartnerError"]</div> }
+        @if (TempData["VehiclePartnerSuccess"] != null) { <div class="alert alert-success">@TempData["VehiclePartnerSuccess"]</div> }
+        @if (ViewBag.ProfileSubmitFailed != null)
+        {
+            <div class="alert alert-danger" id="serverValidationBox">
+                <h5 class="mb-2">@ViewBag.ProfileSubmitFailed</h5>
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <ul class="mb-0">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).Where(e => !string.IsNullOrWhiteSpace(e)).Distinct())
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+        <div id="clientValidationBox" class="alert alert-danger" style="display:none"></div>
+        <div id="submitProgressBox" class="alert alert-info" style="display:none">Đang gửi hồ sơ xác minh, vui lòng đợi trong giây lát...</div>
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4 p-md-5">
+                <h2 class="mb-1">Xác minh hồ sơ đối tác</h2>
+                <p class="text-muted">Chỉ sau khi hồ sơ được nhân viên xác minh, bạn mới được gửi xe lên duyệt.</p>
+                <div class="alert alert-info">
+                    <strong>Trạng thái hiện tại:</strong> @currentStatus
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentProfile?.ReviewNote)) { <br /><span>@Model.CurrentProfile.ReviewNote</span> }
+                </div>
+                @if (currentStatus == "Chờ duyệt")
+                {
+                    <div class="alert alert-success">
+                        <h5 class="mb-2">Đã gửi hồ sơ xác minh</h5>
+                        <p class="mb-1">Hồ sơ của bạn đã được gửi thành công và đang chờ nhân viên SmartCar kiểm tra.</p>
+                        <p class="mb-0">Trong thời gian chờ duyệt, bạn không thể sửa trực tiếp hồ sơ để tránh thay đổi dữ liệu khi nhân viên đang đối chiếu.</p>
+                    </div>
+                    <a href="/VehiclePartner/Dashboard" class="btn btn-outline-primary">Về bảng điều khiển</a>
+                }
+                else if (currentStatus == "Đã xác minh")
+                {
+                    <div class="alert alert-success">Hồ sơ đối tác đã xác minh. Bạn có thể gửi xe lên duyệt.</div>
+                    <a href="/VehiclePartner/Register" class="btn btn-primary">Đăng xe</a>
+                }
+                else
+                {
+                    <form id="partnerProfileForm" method="post" enctype="multipart/form-data" asp-action="VerifyProfile" novalidate>
+                        @Html.AntiForgeryToken()
+                        @if (!ViewData.ModelState.IsValid) { <div asp-validation-summary="All" class="alert alert-danger"></div> }
+
+                        <div class="form-group">
+                            <label>Loại đối tác *</label>
+                            <select asp-for="Form.PartnerType" id="partnerType" class="form-control">
+                                <option>Cá nhân</option>
+                                <option>Doanh nghiệp/Tổ chức</option>
+                            </select>
+                            <span asp-validation-for="Form.PartnerType" class="text-danger"></span>
+                            <small class="form-text text-muted">Nếu chọn Cá nhân, hệ thống yêu cầu CCCD, ảnh chân dung và tài khoản ngân hàng cá nhân. Nếu chọn Doanh nghiệp/Tổ chức, hệ thống yêu cầu thêm thông tin pháp lý, người đại diện và tài khoản nhận đối soát.</small>
+                        </div>
+
+                        <div id="individualFields" style="display:@(isOrganization ? "none" : "block")">
+                            <h4 class="mt-4">Thông tin cá nhân</h4>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label>Họ và tên theo CCCD *</label>
+                                    <input asp-for="Form.FullName" class="form-control" />
+                                    <span asp-validation-for="Form.FullName" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Ngày sinh *</label>
+                                    <input asp-for="Form.DateOfBirth" type="date" class="form-control" />
+                                    <span asp-validation-for="Form.DateOfBirth" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Giới tính *</label>
+                                    <select asp-for="Form.Gender" class="form-control">
+                                        <option value="">-- Chọn giới tính --</option>
+                                        <option>Nam</option>
+                                        <option>Nữ</option>
+                                        <option>Khác</option>
+                                    </select>
+                                    <span asp-validation-for="Form.Gender" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label>Số CCCD *</label>
+                                    <input asp-for="Form.CitizenIdentityNumber" class="form-control" maxlength="12" inputmode="numeric" pattern="\d{12}" />
+                                    <span asp-validation-for="Form.CitizenIdentityNumber" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Ngày cấp CCCD *</label>
+                                    <input asp-for="Form.CitizenIssuedDate" type="date" class="form-control" />
+                                    <span asp-validation-for="Form.CitizenIssuedDate" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Ngày hết hạn CCCD *</label>
+                                    <input asp-for="Form.CitizenExpiryDate" type="date" class="form-control" />
+                                    <span asp-validation-for="Form.CitizenExpiryDate" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <h5 class="mt-4">Địa chỉ thường trú</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label>Tỉnh/thành phố *</label>
+                                    <select asp-for="Form.PermanentProvinceCode" class="form-control province-select" data-ward-target="permanentWard" data-selected="@Model.Form.PermanentProvinceCode" data-selected-name="@Model.Form.PermanentProvince">
+                                        <option value="">-- Đang tải tỉnh/thành phố --</option>
+                                    </select>
+                                    <span asp-validation-for="Form.PermanentProvinceCode" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Xã/phường/đặc khu *</label>
+                                    <select asp-for="Form.PermanentWardCode" id="permanentWard" class="form-control ward-select" data-selected="@Model.Form.PermanentWardCode" data-selected-name="@Model.Form.PermanentWard">
+                                        <option value="">-- Chọn xã/phường/đặc khu --</option>
+                                    </select>
+                                    <span asp-validation-for="Form.PermanentWardCode" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Địa chỉ chi tiết *</label>
+                                    <input asp-for="Form.PermanentDetail" class="form-control" placeholder="Số nhà, ngõ, đường, thôn, xóm..." />
+                                    <span asp-validation-for="Form.PermanentDetail" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Địa chỉ theo giấy tờ nếu khác do thay đổi đơn vị hành chính</label>
+                                <input asp-for="Form.PermanentPaperAddress" class="form-control" placeholder="Nhập đúng địa chỉ ghi trên CCCD nếu khác địa chỉ hành chính hiện hành" />
+                                <span asp-validation-for="Form.PermanentPaperAddress" class="text-danger"></span>
+                            </div>
+
+                            <h5 class="mt-4">Địa chỉ hiện tại</h5>
+                            <div class="form-group form-check">
+                                <input asp-for="Form.CurrentAddressSameAsPermanent" class="form-check-input" id="sameAddress" />
+                                <label class="form-check-label" for="sameAddress">Địa chỉ hiện tại giống địa chỉ thường trú</label>
+                            </div>
+                            <div id="currentAddressFields">
+                                <div class="form-row">
+                                    <div class="form-group col-md-4">
+                                        <label>Tỉnh/thành phố *</label>
+                                        <select asp-for="Form.CurrentProvinceCode" class="form-control province-select" data-ward-target="currentWard" data-selected="@Model.Form.CurrentProvinceCode" data-selected-name="@Model.Form.CurrentProvince">
+                                            <option value="">-- Đang tải tỉnh/thành phố --</option>
+                                        </select>
+                                        <span asp-validation-for="Form.CurrentProvinceCode" class="text-danger"></span>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label>Xã/phường/đặc khu *</label>
+                                        <select asp-for="Form.CurrentWardCode" id="currentWard" class="form-control ward-select" data-selected="@Model.Form.CurrentWardCode" data-selected-name="@Model.Form.CurrentWard">
+                                            <option value="">-- Chọn xã/phường/đặc khu --</option>
+                                        </select>
+                                        <span asp-validation-for="Form.CurrentWardCode" class="text-danger"></span>
+                                    </div>
+                                    <div class="form-group col-md-4">
+                                        <label>Địa chỉ chi tiết *</label>
+                                        <input asp-for="Form.CurrentDetail" class="form-control" placeholder="Số nhà, ngõ, đường, thôn, xóm..." />
+                                        <span asp-validation-for="Form.CurrentDetail" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h5 class="mt-4">Ảnh xác minh</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label>Ảnh CCCD mặt trước *</label>
+                                    <input name="CitizenFrontImage" type="file" accept="image/*" class="form-control-file" />
+                                    <span asp-validation-for="CitizenFrontImage" class="text-danger d-block"></span>
+                                    <small class="form-text text-muted">Ảnh rõ nét, đủ 4 góc, không lóa, không che thông tin.</small>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Ảnh CCCD mặt sau *</label>
+                                    <input name="CitizenBackImage" type="file" accept="image/*" class="form-control-file" />
+                                    <span asp-validation-for="CitizenBackImage" class="text-danger d-block"></span>
+                                    <small class="form-text text-muted">Ảnh phải thuộc cùng giấy tờ với mặt trước.</small>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Ảnh chân dung hiện tại *</label>
+                                    <input name="PortraitImage" type="file" accept="image/*" class="form-control-file" />
+                                    <span asp-validation-for="PortraitImage" class="text-danger d-block"></span>
+                                    <small class="form-text text-muted">Ảnh chụp rõ mặt, không khẩu trang, không kính tối màu.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="organizationFields" style="display:@(isOrganization ? "block" : "none")">
+                            <h4 class="mt-4">Thông tin doanh nghiệp/tổ chức</h4>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label>Tên doanh nghiệp/tổ chức *</label>
+                                    <input asp-for="Form.BusinessName" class="form-control" />
+                                    <span asp-validation-for="Form.BusinessName" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Mã số thuế *</label>
+                                    <input asp-for="Form.TaxCode" class="form-control" placeholder="Ví dụ: 0101234567" />
+                                    <span asp-validation-for="Form.TaxCode" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Số ĐKKD/mã pháp lý *</label>
+                                    <input asp-for="Form.BusinessRegistrationNumber" class="form-control" />
+                                    <span asp-validation-for="Form.BusinessRegistrationNumber" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <h5 class="mt-4">Địa chỉ trụ sở</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label>Tỉnh/thành phố *</label>
+                                    <select asp-for="Form.HeadquartersProvinceCode" class="form-control province-select" data-ward-target="headquartersWard" data-selected="@Model.Form.HeadquartersProvinceCode" data-selected-name="@Model.Form.HeadquartersProvince">
+                                        <option value="">-- Đang tải tỉnh/thành phố --</option>
+                                    </select>
+                                    <span asp-validation-for="Form.HeadquartersProvinceCode" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Xã/phường/đặc khu *</label>
+                                    <select asp-for="Form.HeadquartersWardCode" id="headquartersWard" class="form-control ward-select" data-selected="@Model.Form.HeadquartersWardCode" data-selected-name="@Model.Form.HeadquartersWard">
+                                        <option value="">-- Chọn xã/phường/đặc khu --</option>
+                                    </select>
+                                    <span asp-validation-for="Form.HeadquartersWardCode" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Địa chỉ chi tiết *</label>
+                                    <input asp-for="Form.HeadquartersDetail" class="form-control" placeholder="Số nhà, tòa nhà, tầng, phòng, khu công nghiệp..." />
+                                    <span asp-validation-for="Form.HeadquartersDetail" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Địa chỉ theo giấy tờ đăng ký kinh doanh nếu khác</label>
+                                <input asp-for="Form.HeadquartersPaperAddress" class="form-control" placeholder="Nhập đúng địa chỉ trên giấy đăng ký kinh doanh nếu khác địa chỉ hành chính hiện hành" />
+                                <span asp-validation-for="Form.HeadquartersPaperAddress" class="text-danger"></span>
+                            </div>
+
+                            <h5 class="mt-4">Người đại diện và người phụ trách tài khoản</h5>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label>Người đại diện pháp luật *</label>
+                                    <input asp-for="Form.LegalRepresentativeName" class="form-control" />
+                                    <span asp-validation-for="Form.LegalRepresentativeName" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Người phụ trách tài khoản *</label>
+                                    <input asp-for="Form.AccountManagerName" class="form-control" />
+                                    <span asp-validation-for="Form.AccountManagerName" class="text-danger"></span>
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label>Chức vụ người phụ trách *</label>
+                                    <input asp-for="Form.AccountManagerTitle" class="form-control" />
+                                    <span asp-validation-for="Form.AccountManagerTitle" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label>Giấy đăng ký doanh nghiệp/tài liệu pháp lý *</label>
+                                    <input name="BusinessLicenseImage" type="file" accept="image/*,.pdf" class="form-control-file" />
+                                    <span asp-validation-for="BusinessLicenseImage" class="text-danger d-block"></span>
+                                    <small class="form-text text-muted">Tệp rõ nét, đầy đủ trang/góc, không chỉnh sửa bất thường.</small>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>Giấy ủy quyền nếu cần</label>
+                                    <input name="AuthorizationDocument" type="file" accept="image/*,.pdf" class="form-control-file" />
+                                    <span asp-validation-for="AuthorizationDocument" class="text-danger d-block"></span>
+                                    <small class="form-text text-muted">Bắt buộc nếu người thao tác không phải người đại diện pháp luật.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="mt-4">Tài khoản ngân hàng nhận đối soát</h4>
+                        <div class="alert alert-light border">
+                            Đối với cá nhân, tên chủ tài khoản phải khớp với họ tên theo CCCD. Đối với doanh nghiệp/tổ chức, tên chủ tài khoản phải khớp với tên doanh nghiệp/tổ chức đã xác minh.
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label>Tên ngân hàng *</label>
+                                <select asp-for="Form.BankName" class="form-control">
+                                    <option value="">-- Chọn ngân hàng --</option>
+                                    @foreach (var bank in banks)
+                                    {
+                                        <option value="@bank">@bank</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Form.BankName" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label>Số tài khoản *</label>
+                                <input asp-for="Form.BankAccountNumber" class="form-control" />
+                                <span asp-validation-for="Form.BankAccountNumber" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label>Tên chủ tài khoản *</label>
+                                <input asp-for="Form.BankAccountHolder" class="form-control" />
+                                <span asp-validation-for="Form.BankAccountHolder" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Chi nhánh nếu cần</label>
+                            <input asp-for="Form.BankBranch" class="form-control" />
+                        </div>
+                        <div class="alert alert-light border">Khi bấm gửi, hồ sơ chuyển sang <b>Chờ duyệt</b>. Trong thời gian nhân viên kiểm tra, bạn không thể sửa trực tiếp hồ sơ.</div>
+                        <button id="submitProfileButton" type="submit" class="btn btn-success btn-lg">Gửi hồ sơ xác minh</button>
+                        <a href="/VehiclePartner/Dashboard" class="btn btn-outline-secondary btn-lg ml-2">Về bảng điều khiển</a>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+<script>
+const provincesUrl = '@Url.Action("Provinces", "VehiclePartner")';
+const wardsUrl = '@Url.Action("Wards", "VehiclePartner")';
+const typeSelect = document.getElementById('partnerType');
+const individual = document.getElementById('individualFields');
+const organization = document.getElementById('organizationFields');
+const sameAddress = document.getElementById('sameAddress');
+const currentAddressFields = document.getElementById('currentAddressFields');
+
+function normalizedAddressName(value) {
+    return (value || '').replace(/^(Tỉnh|Thành phố|Phường|Xã|Đặc khu)\s+/i, '').trim().toLocaleLowerCase('vi');
+}
+
+async function fillWards(provinceSelect) {
+    const wardId = provinceSelect.dataset.wardTarget;
+    const wardSelect = document.getElementById(wardId);
+    if (!wardSelect) return;
+    const selectedWard = wardSelect.dataset.selected || wardSelect.value;
+    const selectedWardName = normalizedAddressName(wardSelect.dataset.selectedName);
+    wardSelect.innerHTML = '<option value="">-- Chọn xã/phường/đặc khu --</option>';
+    if (!provinceSelect.value) return;
+    wardSelect.disabled = true;
+    const response = await fetch(`${wardsUrl}?provinceCode=${encodeURIComponent(provinceSelect.value)}`, { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Không tải được danh sách xã/phường/đặc khu.');
+    const wards = await response.json();
+    wards.forEach(w => {
+        const option = document.createElement('option');
+        option.value = w.code;
+        option.textContent = w.fullName;
+        if (w.code === selectedWard || (!selectedWard && selectedWardName && normalizedAddressName(w.fullName) === selectedWardName)) option.selected = true;
+        wardSelect.appendChild(option);
+    });
+    wardSelect.disabled = false;
+    wardSelect.dataset.selected = '';
+    wardSelect.dataset.selectedName = '';
+}
+
+async function loadAdministrativeUnits() {
+    try {
+        const response = await fetch(provincesUrl, { credentials: 'same-origin' });
+        if (!response.ok) throw new Error('Không tải được danh sách tỉnh/thành phố.');
+        const provinces = await response.json();
+        const provinceSelects = [...document.querySelectorAll('.province-select')];
+        provinceSelects.forEach(select => {
+            const selectedCode = select.dataset.selected || select.value;
+            const selectedName = normalizedAddressName(select.dataset.selectedName);
+            select.innerHTML = '<option value="">-- Chọn tỉnh/thành phố --</option>';
+            provinces.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.code;
+                option.textContent = p.fullName;
+                if (p.code === selectedCode || (!selectedCode && selectedName && normalizedAddressName(p.fullName) === selectedName)) option.selected = true;
+                select.appendChild(option);
+            });
+            select.dataset.selected = '';
+            select.dataset.selectedName = '';
+        });
+        await Promise.all(provinceSelects.map(fillWards));
+    } catch (error) {
+        const box = document.getElementById('clientValidationBox');
+        if (box) {
+            box.textContent = `${error.message} Vui lòng tải lại trang hoặc kiểm tra Web API.`;
+            box.style.display = 'block';
+        }
+    }
+}
+
+function syncPartnerType() {
+    const org = typeSelect && typeSelect.value === 'Doanh nghiệp/Tổ chức';
+    if (individual) individual.style.display = org ? 'none' : 'block';
+    if (organization) organization.style.display = org ? 'block' : 'none';
+}
+
+function syncCurrentAddress() {
+    if (!sameAddress || !currentAddressFields) return;
+    currentAddressFields.style.display = sameAddress.checked ? 'none' : 'block';
+}
+
+document.querySelectorAll('.province-select').forEach(select => {
+    select.addEventListener('change', async () => {
+        try { await fillWards(select); }
+        catch (error) {
+            const box = document.getElementById('clientValidationBox');
+            if (box) { box.textContent = error.message; box.style.display = 'block'; }
+        }
+    });
+});
+loadAdministrativeUnits();
+if (typeSelect) { typeSelect.addEventListener('change', syncPartnerType); syncPartnerType(); }
+if (sameAddress) { sameAddress.addEventListener('change', syncCurrentAddress); syncCurrentAddress(); }
+
+function valueOf(name) {
+    const el = document.querySelector(`[name="${name}"]`);
+    return el ? (el.value || '').trim() : '';
+}
+
+function fileChosen(name) {
+    const el = document.querySelector(`[name="${name}"]`);
+    return !!(el && el.files && el.files.length > 0);
+}
+
+function normalizeVietnamese(value) {
+    return (value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/đ/g, 'd')
+        .replace(/Đ/g, 'D')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toUpperCase();
+}
+
+function parseDateInput(value) {
+    if (!value) return null;
+    const parts = value.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function validatePartnerProfileBeforeSubmit() {
+    const errors = [];
+    const isOrg = valueOf('Form.PartnerType') === 'Doanh nghiệp/Tổ chức';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (!isOrg) {
+        const fullName = valueOf('Form.FullName');
+        const dob = parseDateInput(valueOf('Form.DateOfBirth'));
+        const issued = parseDateInput(valueOf('Form.CitizenIssuedDate'));
+        const expiry = parseDateInput(valueOf('Form.CitizenExpiryDate'));
+        const cccd = valueOf('Form.CitizenIdentityNumber');
+        const bankHolder = valueOf('Form.BankAccountHolder');
+
+        if (!fullName) errors.push('Vui lòng nhập họ và tên theo CCCD.');
+        if (!dob) errors.push('Vui lòng nhập ngày sinh.');
+        else if (dob >= today) errors.push('Ngày sinh phải nhỏ hơn ngày hiện tại.');
+        if (!valueOf('Form.Gender')) errors.push('Vui lòng chọn giới tính.');
+        if (!/^\d{12}$/.test(cccd)) errors.push('Số CCCD phải gồm đúng 12 chữ số.');
+        if (!issued) errors.push('Vui lòng nhập ngày cấp CCCD.');
+        else if (issued > today) errors.push('Ngày cấp CCCD không được lớn hơn ngày hiện tại.');
+        if (!expiry) errors.push('Vui lòng nhập ngày hết hạn CCCD.');
+        else if (expiry < today) errors.push('CCCD không được hết hạn tại thời điểm gửi hồ sơ.');
+        if (issued && expiry && expiry <= issued) errors.push('Ngày hết hạn CCCD phải sau ngày cấp CCCD.');
+        if (!valueOf('Form.PermanentProvinceCode')) errors.push('Vui lòng chọn tỉnh/thành phố thường trú.');
+        if (!valueOf('Form.PermanentWardCode')) errors.push('Vui lòng chọn xã/phường/đặc khu thường trú.');
+        if (!valueOf('Form.PermanentDetail')) errors.push('Vui lòng nhập địa chỉ chi tiết thường trú.');
+        const same = document.querySelector('[name="Form.CurrentAddressSameAsPermanent"]')?.checked;
+        if (!same) {
+            if (!valueOf('Form.CurrentProvinceCode')) errors.push('Vui lòng chọn tỉnh/thành phố hiện tại.');
+            if (!valueOf('Form.CurrentWardCode')) errors.push('Vui lòng chọn xã/phường/đặc khu hiện tại.');
+            if (!valueOf('Form.CurrentDetail')) errors.push('Vui lòng nhập địa chỉ chi tiết hiện tại.');
+        }
+        if (!fileChosen('CitizenFrontImage')) errors.push('Vui lòng tải ảnh CCCD mặt trước.');
+        if (!fileChosen('CitizenBackImage')) errors.push('Vui lòng tải ảnh CCCD mặt sau.');
+        if (!fileChosen('PortraitImage')) errors.push('Vui lòng tải ảnh chân dung hiện tại.');
+        if (fullName && bankHolder && normalizeVietnamese(fullName) !== normalizeVietnamese(bankHolder)) {
+            errors.push('Tên chủ tài khoản ngân hàng phải khớp với họ tên theo CCCD của đối tác cá nhân.');
+        }
+    } else {
+        const businessName = valueOf('Form.BusinessName');
+        const bankHolder = valueOf('Form.BankAccountHolder');
+        if (!businessName) errors.push('Vui lòng nhập tên doanh nghiệp/tổ chức.');
+        if (!/^\d{10}(-\d{3})?$/.test(valueOf('Form.TaxCode'))) errors.push('Mã số thuế phải có 10 chữ số hoặc dạng 10 chữ số-3 chữ số.');
+        if (!valueOf('Form.BusinessRegistrationNumber')) errors.push('Vui lòng nhập số đăng ký kinh doanh hoặc mã định danh pháp lý tương đương.');
+        if (!valueOf('Form.HeadquartersProvinceCode')) errors.push('Vui lòng chọn tỉnh/thành phố trụ sở.');
+        if (!valueOf('Form.HeadquartersWardCode')) errors.push('Vui lòng chọn xã/phường/đặc khu trụ sở.');
+        if (!valueOf('Form.HeadquartersDetail')) errors.push('Vui lòng nhập địa chỉ chi tiết trụ sở.');
+        if (!valueOf('Form.LegalRepresentativeName')) errors.push('Vui lòng nhập người đại diện pháp luật.');
+        if (!valueOf('Form.AccountManagerName')) errors.push('Vui lòng nhập người phụ trách tài khoản.');
+        if (!valueOf('Form.AccountManagerTitle')) errors.push('Vui lòng nhập chức vụ người phụ trách.');
+        if (!fileChosen('BusinessLicenseImage')) errors.push('Vui lòng tải giấy đăng ký doanh nghiệp hoặc tài liệu pháp lý tương đương.');
+        if (businessName && bankHolder && normalizeVietnamese(businessName) !== normalizeVietnamese(bankHolder)) {
+            errors.push('Tên chủ tài khoản ngân hàng phải khớp với tên doanh nghiệp/tổ chức đã xác minh.');
+        }
+    }
+
+    if (!valueOf('Form.BankName')) errors.push('Vui lòng chọn ngân hàng nhận đối soát.');
+    if (!valueOf('Form.BankAccountNumber')) errors.push('Vui lòng nhập số tài khoản nhận đối soát.');
+    if (!valueOf('Form.BankAccountHolder')) errors.push('Vui lòng nhập tên chủ tài khoản nhận đối soát.');
+
+    return [...new Set(errors)];
+}
+
+const partnerForm = document.getElementById('partnerProfileForm');
+if (partnerForm) {
+    partnerForm.addEventListener('submit', function (event) {
+        const clientBox = document.getElementById('clientValidationBox');
+        const progressBox = document.getElementById('submitProgressBox');
+        const submitButton = document.getElementById('submitProfileButton');
+        const errors = validatePartnerProfileBeforeSubmit();
+        if (errors.length > 0) {
+            event.preventDefault();
+            if (progressBox) progressBox.style.display = 'none';
+            if (submitButton) {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Gửi hồ sơ xác minh';
+            }
+            if (clientBox) {
+                clientBox.innerHTML = '<h5 class="mb-2">Hồ sơ chưa được gửi</h5><p class="mb-2">Vui lòng sửa các lỗi sau:</p><ul class="mb-0"><li>' + errors.join('</li><li>') + '</li></ul>';
+                clientBox.style.display = 'block';
+                clientBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            return false;
+        }
+        if (clientBox) clientBox.style.display = 'none';
+        if (progressBox) progressBox.style.display = 'block';
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Đang gửi hồ sơ...';
+        }
+    });
+}
+</script>

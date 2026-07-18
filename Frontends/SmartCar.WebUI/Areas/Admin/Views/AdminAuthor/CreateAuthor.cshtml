@@ -1,0 +1,36 @@
+﻿@model CreateAuthorDto
+
+@{
+    ViewData["Title"] = "CreateAuthor";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Thêm thông tin tác giả mới</h4>
+                        <p class="card-subtitle mb-4">Tác giả vào khu vực việc nhập dữ liệu từ bảng bên dưới bạn có thể thực hiện.</p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label for="exampleInputName">Ad Soyad</label>
+                                <input type="text" class="form-control" id="exampleInputName" asp-for="Name" placeholder="Nhập tên tác giả">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputDescription">Mô tả</label>
+                                <input type="text" class="form-control" id="exampleInputDescription" asp-for="Description" placeholder="Nhập mô tả">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputImageUrl">Ảnh tác giả</label>
+                                <input type="text" class="form-control" id="exampleInputImageUrl" asp-for="ImageUrl" placeholder="Nhập URL ảnh tác giả">
+                            </div>                       
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Lưu tác giả</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

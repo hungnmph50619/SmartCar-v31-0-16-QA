@@ -1,0 +1,47 @@
+﻿@model UpdateTestimonialDto
+
+@{
+    ViewData["Title"] = "UpdateTestimonial";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Khu vực chỉnh sửa đánh giá khách hàng</h4>
+                        <p class="card-subtitle mb-4">
+                            Đây là trang chỉnh sửa đánh giá khách hàng. Hãy nhập đầy đủ thông tin và nhấn nút lưu.
+                        </p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="TestimonialID" />
+                            <div class="form-group">
+                                <label for="exampleInputName">Đánh giá khách hàng Ad Soyad</label>
+                                <input type="text" class="form-control" id="exampleInputName" asp-for="Name" placeholder="Nhập họ tên khách hàng">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputTitle">Chức danh khách hàng</label>
+                                <input type="text" class="form-control" id="exampleInputTitle" asp-for="Title" placeholder="Nhập chức danh khách hàng">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputImageUrl">Ảnh khách hàng</label>
+                                <input type="text" class="form-control" id="exampleInputImageUrl" asp-for="ImageUrl" placeholder="Chọn hình ảnh">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputImageUrl">Nội dung đánh giá của khách hàng</label>
+                                <textarea rows="5" asp-for="Comment" class="form-control" placeholder="Nhập nội dung đánh giá tại đây."></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Đánh giá khách hàng Thông tin Lưu</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

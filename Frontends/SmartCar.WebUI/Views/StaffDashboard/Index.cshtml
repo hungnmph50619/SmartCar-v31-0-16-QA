@@ -1,0 +1,181 @@
+@model StaffWorkQueueDto
+@{
+    ViewData["Title"] = "Hàng đợi công việc";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    var scope = (ViewBag.Scope as string ?? "pending").ToLowerInvariant();
+    string PriorityClass(string p) => p switch { "Khẩn cấp" => "danger", "Cao" => "warning", "Trung bình" => "info", _ => "secondary" };
+    string BucketClass(string b) => b switch { "Cần xử lý" => "primary", "Đang xử lý" => "info", "Quá hạn / lỗi" => "danger", "Đã hoàn tất" => "success", _ => "secondary" };
+    string Wait(int minutes) => minutes < 60 ? $"{minutes} phút" : minutes < 1440 ? $"{minutes / 60} giờ {minutes % 60} phút" : $"{minutes / 1440} ngày";
+    string ScopeTitle() => scope switch { "processing" => "Công việc đang xử lý", "errors" => "Công việc quá hạn hoặc lỗi", "completed" => "Lịch sử đã hoàn tất", "all" => "Tất cả công việc", _ => "Công việc cần xử lý" };
+}
+<div class="page-content"><div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Hàng đợi công việc</h2>
+            <p class="text-muted mb-0">Màn hình mặc định chỉ hiển thị việc còn cần hành động. Việc đã xong được chuyển sang lịch sử; việc lỗi được tách riêng để tránh gây nhiễu.</p>
+        </div>
+        <a href="/Account/Profile" class="btn btn-outline-secondary">Hồ sơ và đổi mật khẩu</a>
+    </div>
+
+    @if (TempData["StaffSuccess"] != null) { <div class="alert alert-success">@TempData["StaffSuccess"]</div> }
+    @if (TempData["OperationSuccess"] != null) { <div class="alert alert-success">@TempData["OperationSuccess"]</div> }
+    @if (TempData["StaffError"] != null) { <div class="alert alert-danger">@TempData["StaffError"]</div> }
+    @if (TempData["OperationError"] != null) { <div class="alert alert-danger">@TempData["OperationError"]</div> }
+    @if (!string.IsNullOrWhiteSpace(ViewBag.Error as string)) { <div class="alert alert-danger">@ViewBag.Error</div> }
+
+    <div class="queue-tabs mb-4">
+        <a href="?scope=pending" class="queue-tab @(scope == "pending" ? "active" : "")">
+            <span>Cần xử lý</span><strong>@Model.NeedActionCount</strong>
+        </a>
+        <a href="?scope=processing" class="queue-tab @(scope == "processing" ? "active" : "")">
+            <span>Đang xử lý</span><strong>@Model.InProgressCount</strong>
+        </a>
+        <a href="?scope=errors" class="queue-tab error @(scope == "errors" ? "active" : "")">
+            <span>Quá hạn / lỗi</span><strong>@Model.ErrorCount</strong>
+        </a>
+        <a href="?scope=completed" class="queue-tab completed @(scope == "completed" ? "active" : "")">
+            <span>Đã hoàn tất</span><strong>@Model.CompletedCount</strong>
+        </a>
+        <a href="?scope=all" class="queue-tab @(scope == "all" ? "active" : "")">
+            <span>Tất cả</span><strong>@(Model.NeedActionCount + Model.InProgressCount + Model.ErrorCount + Model.CompletedCount)</strong>
+        </a>
+    </div>
+
+    @if (scope == "pending" || scope == "processing")
+    {
+        <div class="row queue-kpis">
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Xác minh khách" class="queue-kpi"><span>Hồ sơ khách chờ duyệt</span><strong>@Model.PendingCustomerVerifications</strong></a></div>
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Hồ sơ chủ xe/xe" class="queue-kpi"><span>Hồ sơ đối tác/xe</span><strong>@Model.PendingVehicleApplications</strong></a></div>
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Thanh toán" class="queue-kpi"><span>Thanh toán cần kiểm tra</span><strong>@Model.PendingPayments</strong></a></div>
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Tranh chấp" class="queue-kpi critical"><span>Sự cố và tranh chấp</span><strong>@(Model.OpenIncidents + Model.OpenDisputes)</strong></a></div>
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Giấy tờ xe" class="queue-kpi"><span>Giấy tờ xe chờ duyệt</span><strong>@Model.PendingVehicleDocuments</strong></a></div>
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Phạt nguội" class="queue-kpi"><span>Phạt nguội quá hạn</span><strong>@Model.OverdueTrafficFines</strong></a></div>
+            <div class="col-xl-3 col-md-6"><a href="?scope=@scope&type=Đối soát" class="queue-kpi"><span>Đối soát chờ lập</span><strong>@Model.PendingSettlements</strong></a></div>
+            <div class="col-xl-3 col-md-6"><div class="queue-kpi"><span>Tổng việc đang hoạt động</span><strong>@(Model.NeedActionCount + Model.InProgressCount)</strong></div></div>
+        </div>
+    }
+
+    @if (scope == "errors")
+    {
+        <div class="alert alert-warning border-0 shadow-sm">
+            <strong>Khu vực kiểm tra riêng:</strong> các dòng ở đây không được trộn vào hàng đợi mặc định. Công việc quá hạn vẫn có thể tiếp tục hoặc trả hàng đợi; lỗi đồng bộ cần quản trị kiểm tra dữ liệu nguồn trước khi thao tác.
+        </div>
+    }
+    else if (scope == "completed")
+    {
+        <div class="alert alert-success border-0 shadow-sm">
+            <strong>Lịch sử kiểm toán:</strong> công việc đã xử lý được giữ lại để truy vết, nhưng không còn tính vào số việc cần làm.
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm mt-4"><div class="card-body">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-1">@ScopeTitle()</h4>
+                <small class="text-muted">Đang hiển thị @Model.Items.Count công việc theo bộ lọc hiện tại.</small>
+            </div>
+            <div class="queue-filter-buttons">
+                <a href="?scope=@scope&priority=Khẩn cấp" class="btn btn-sm btn-outline-danger">Khẩn cấp</a>
+                <a href="?scope=@scope&priority=Cao" class="btn btn-sm btn-outline-warning">Cao</a>
+                <a href="?scope=@scope" class="btn btn-sm btn-outline-secondary">Bỏ lọc</a>
+            </div>
+        </div>
+
+        <div class="table-responsive"><table class="table table-hover align-middle">
+            <thead><tr><th>Ưu tiên</th><th>Công việc</th><th>Thời gian</th><th>Người xử lý / hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                var claimedByMe = item.AssignedStaffAppUserID == Model.CurrentStaffAppUserID;
+                <tr class="@(item.Bucket == "Quá hạn / lỗi" ? "queue-error-row" : item.Bucket == "Đã hoàn tất" ? "queue-completed-row" : "")">
+                    <td><span class="badge badge-@PriorityClass(item.Priority)">@item.Priority</span></td>
+                    <td>
+                        <strong>@item.QueueType · @item.Title</strong><br />
+                        <small class="text-muted">@item.Description</small>
+                        @if (!string.IsNullOrWhiteSpace(item.IssueReason))
+                        {
+                            <div class="queue-issue"><i class="fas fa-exclamation-triangle"></i> @item.IssueReason</div>
+                        }
+                    </td>
+                    <td>
+                        <span>@Wait(item.WaitingMinutes)</span>
+                        @if (item.IsOverdue) { <br /><small class="text-danger font-weight-bold">Đã quá hạn</small> }
+                    </td>
+                    <td>
+                        @if (item.AssignedStaffAppUserID.HasValue)
+                        {
+                            <strong>@(claimedByMe ? "Bạn" : item.AssignedStaffName)</strong><br />
+                            <small>Hạn: @(item.DueAt?.ToString("dd/MM HH:mm") ?? "Chưa đặt")</small>
+                        }
+                        else
+                        {
+                            <span class="text-muted">Chưa có người nhận</span>
+                        }
+                    </td>
+                    <td><span class="badge badge-@BucketClass(item.Bucket)">@item.Status</span><br /><small class="text-muted">@item.Bucket</small></td>
+                    <td>
+                        @if (item.Bucket == "Đã hoàn tất")
+                        {
+                            <span class="text-success"><i class="fas fa-check-circle"></i> Đã lưu lịch sử</span>
+                        }
+                        else if (!item.IsActionable)
+                        {
+                            @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                            {
+                                <a href="@item.ActionUrl" class="btn btn-sm btn-outline-danger">Xem dữ liệu</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Không còn thao tác</span>
+                            }
+                        }
+                        else if (!item.AssignedStaffAppUserID.HasValue)
+                        {
+                            <form asp-action="Claim" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="queueType" value="@item.QueueType" />
+                                <input type="hidden" name="entityId" value="@item.EntityID" />
+                                <input type="hidden" name="returnUrl" value="@item.ActionUrl" />
+                                <button class="btn btn-sm btn-primary">Nhận xử lý</button>
+                            </form>
+                        }
+                        else if (claimedByMe)
+                        {
+                            @if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                            {
+                                <a href="@item.ActionUrl" class="btn btn-sm btn-success">Tiếp tục</a>
+                            }
+                            @if (item.WorkItemClaimID.HasValue)
+                            {
+                                <form asp-action="Release" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@item.WorkItemClaimID" />
+                                    <button class="btn btn-sm btn-outline-secondary">Trả hàng đợi</button>
+                                </form>
+                            }
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-light" disabled>Đang được xử lý</button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (Model.Items.Count == 0)
+            {
+                <tr><td colspan="6" class="text-center text-muted py-5">
+                    <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                    Không có công việc trong nhóm này.
+                </td></tr>
+            }
+            </tbody>
+        </table></div>
+    </div></div>
+
+    <div class="alert alert-light border mt-4">
+        <strong>Nguyên tắc vận hành:</strong> công việc hoàn tất không bị xóa cứng mà chuyển sang lịch sử; việc lỗi không xuất hiện ở màn hình mặc định; nhân viên không được sửa trực tiếp số tiền, CCCD/bằng lái, giao dịch hoặc audit log.
+    </div>
+</div></div>
+<style>
+.queue-tabs{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}.queue-tab{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;background:#fff;border:1px solid #e4eaf0;border-radius:12px;color:#334e68;box-shadow:0 5px 18px rgba(30,50,70,.05)}.queue-tab strong{font-size:22px}.queue-tab:hover,.queue-tab.active{border-color:#168cf2;color:#168cf2;background:#f4faff}.queue-tab.error strong{color:#dc3545}.queue-tab.completed strong{color:#28a745}.queue-kpis>div{margin-bottom:18px}.queue-kpi{display:flex;justify-content:space-between;align-items:center;height:100%;padding:20px;border-radius:14px;background:#fff;border:1px solid #e6edf3;color:#334e68;box-shadow:0 8px 24px rgba(30,50,70,.06)}.queue-kpi:hover{color:#168cf2;border-color:#b8dcff}.queue-kpi strong{font-size:28px}.queue-kpi.critical{border-left:5px solid #dc3545}.table td{vertical-align:middle}.badge{padding:.5rem .65rem}.queue-issue{margin-top:8px;padding:8px 10px;border-radius:6px;background:#fff3cd;color:#856404;font-size:12px;max-width:650px}.queue-error-row{background:#fffafb}.queue-completed-row{background:#f8fcf9;color:#64748b}.queue-filter-buttons .btn{margin-left:4px}@@media(max-width:1100px){.queue-tabs{grid-template-columns:repeat(2,1fr)}}@@media(max-width:600px){.queue-tabs{grid-template-columns:1fr}.queue-filter-buttons{margin-top:10px}}
+</style>

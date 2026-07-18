@@ -1,0 +1,67 @@
+@model CreateCarDto
+@{
+    ViewData["Title"] = "CreateCar";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Thêm xe mới</h4>
+                        <p class="card-subtitle mb-4">Vui lòng nhập đầy đủ thông tin cơ bản của xe, sau đó nhấn nút lưu để hoàn tất.</p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <label for="exampleInputBrand">Hãng xe</label>
+                                @Html.DropDownListFor(x=>x.BrandID,(List<SelectListItem>)ViewBag.BrandValues,new {@class="form-control"})
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputModel">Model</label>
+                                <input type="text" class="form-control" id="exampleInputModel" asp-for="Model" placeholder="Nhập mẫu xe">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputCoverImage">Ảnh bìa</label>
+                                <input type="text" class="form-control" id="exampleInputCoverImage" asp-for="CoverImageUrl" placeholder="Nhập liên kết ảnh bìa">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputKm">Km</label>
+                                <input type="text" class="form-control" id="exampleInputKm" asp-for="Km" placeholder="Km Thông tin Hãy nhập">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputTransmission">Loại hộp số</label>
+                                <input type="text" class="form-control" id="exampleInputTransmission" asp-for="Transmission" placeholder="Nhập loại hộp số">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputSeat">Số chỗ ngồi</label>
+                                <input type="number" class="form-control" id="exampleInputSeat" asp-for="Seat" placeholder="Chọn số chỗ ngồi">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputLuggage">Số hành lý</label>
+                                <input type="number" class="form-control" id="exampleInputLuggage" asp-for="Luggage" placeholder="Nhập số hành lý">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputFuel">Loại nhiên liệu</label>
+                                <input type="text" class="form-control" id="exampleInputFuel" asp-for="Fuel" placeholder="Nhập loại nhiên liệu">
+                            </div>
+                            <div class="form-group">
+                                <label for="exampleInputBigImageUrl">Ảnh bìa lớn</label>
+                                <input type="text" class="form-control" id="exampleInputBigImageUrl" asp-for="BigImageUrl" placeholder="Liên kết ảnh bìa hiển thị trong chi tiết xe">
+                            </div>
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Lưu xe</button>
+                        </form>
+
+                    </div> <!-- end card-body-->
+                </div>
+
+            </div>
+            <!-- end card-body-->
+        </div>
+        <!-- end card -->
+
+    </div>
+    <!-- end col -->
+
+</div>
+<!-- end page title -->

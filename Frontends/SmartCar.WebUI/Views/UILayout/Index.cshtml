@@ -1,0 +1,37 @@
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+
+@await Component.InvokeAsync("_HeadUILayoutComponentPartial")
+
+<body>
+    @await Component.InvokeAsync("_NavbarUILayoutComponentPartial")
+    
+    @await Component.InvokeAsync("_MainCoverUILayoutComponentPartial")
+
+    @RenderBody() 
+    
+    @await Component.InvokeAsync("_FooterUILayoutComponentPartial")
+
+    @await Component.InvokeAsync("_ScriptUILayoutComponentPartial")
+
+    <div id="smartCookieBanner" class="smart-cookie-backdrop" style="display:none" role="dialog" aria-modal="true" aria-labelledby="cookieTitle" aria-describedby="cookieDescription">
+        <div class="smart-cookie-box" tabindex="-1">
+            <button type="button" class="smart-cookie-close" aria-label="Đóng">&times;</button>
+            <h5 id="cookieTitle">Sử dụng cookie</h5>
+            <p id="cookieDescription">SmartCar sử dụng cookie cần thiết để duy trì đăng nhập và bảo vệ phiên làm việc. Cookie tùy chọn chỉ được bật khi bạn đồng ý.</p>
+            <div class="d-flex flex-wrap justify-content-end">
+                <button type="button" id="cookieNecessary" class="btn btn-outline-secondary mr-2 mb-2">Chỉ cookie cần thiết</button>
+                <button type="button" id="cookieAcceptAll" class="btn btn-success mb-2">Chấp nhận tất cả</button>
+            </div>
+        </div>
+    </div>
+    <style>.smart-cookie-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;align-items:center;justify-content:center;padding:20px}.smart-cookie-box{position:relative;max-width:620px;background:#fff;border-radius:8px;padding:28px;box-shadow:0 18px 60px rgba(0,0,0,.3)}.smart-cookie-close{position:absolute;right:12px;top:6px;border:0;background:transparent;font-size:28px}</style>
+    <script>(function(){var key='smartcar_cookie_consent',box=document.getElementById('smartCookieBanner'),panel=box.querySelector('.smart-cookie-box'),previous=document.activeElement;function open(){box.style.display='flex';setTimeout(function(){panel.focus();},0);}if(!localStorage.getItem(key))open();function save(v){localStorage.setItem(key,v);box.style.display='none';if(previous&&previous.focus)previous.focus();}document.getElementById('cookieNecessary').addEventListener('click',function(){save('necessary')});document.getElementById('cookieAcceptAll').addEventListener('click',function(){save('all')});document.querySelector('.smart-cookie-close').addEventListener('click',function(){save('necessary')});box.addEventListener('keydown',function(e){if(e.key==='Escape')save('necessary');if(e.key==='Tab'){var focusable=box.querySelectorAll('button:not([disabled]),a[href]');if(!focusable.length)return;var first=focusable[0],last=focusable[focusable.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus();}}});})();</script>
+
+</body>
+</html>

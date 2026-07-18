@@ -1,0 +1,35 @@
+@model List<ResultCarPricingWithCarDto>
+@{
+    ViewData["Title"] = "Index";
+    Layout = "~/Views/UILayout/Index.cshtml";
+}
+
+<section class="ftco-section bg-light">
+    <div class="container">
+        @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage as string))
+        {
+            <div class="alert alert-danger">@ViewBag.ErrorMessage</div>
+        }
+        <div class="row">
+            @foreach(var item in Model ?? new List<ResultCarPricingWithCarDto>())
+            {
+                <div class="col-md-4">
+                    <div class="car-wrap rounded ftco-animate">
+                        <div class="img rounded d-flex align-items-end" style="background-image: url(@item.CoverImageUrl);">
+                        </div>
+                        <div class="text">
+                            <h2 class="mb-0"><a href="/Car/CarDetail/@item.CarId">@item.Model</a></h2>
+                            <div class="d-flex mb-3">
+                                <span class="cat">@item.Brand</span>
+                                <p class="price ml-auto">@item.Amount.ToString("#,0", CultureInfo.InvariantCulture) VNĐ <span>/ngày</span></p>
+                            </div>
+                            <p class="d-flex mb-0 d-block">
+                                <a href="/Reservation/Index/@item.CarId" class="btn btn-primary py-2 mr-1">Thuê ngay</a>
+                                <a href="/Car/CarDetail/@item.CarId" class="btn btn-secondary py-2 ml-1">Chi tiết</a></p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>       
+    </div>
+</section>

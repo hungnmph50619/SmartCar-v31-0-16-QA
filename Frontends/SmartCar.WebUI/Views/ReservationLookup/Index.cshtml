@@ -1,0 +1,59 @@
+@model List<ResultReservationDto>
+@{
+    ViewData["Title"] = "Đơn thuê của tôi";
+    Layout = "~/Views/UILayout/Index.cshtml";
+    var currentGroup = ViewBag.Group as string ?? "Tất cả";
+    var groups = new[] { "Tất cả", "Chờ xử lý", "Sắp tới", "Đang thuê", "Hoàn thành", "Đã hủy", "Tranh chấp" };
+}
+<style>
+.order-card{border:0;border-radius:14px;transition:.2s}.order-card:hover{transform:translateY(-2px)}.status-dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:7px}.next-action{border-left:4px solid #1089ff;background:#f6faff;padding:12px;border-radius:6px}.order-meta{color:#5f6b76}.filter-scroll{overflow-x:auto;white-space:nowrap;padding-bottom:5px}.filter-scroll .btn{border-radius:20px;margin-right:6px}.price-highlight{font-size:1.15rem;font-weight:700}
+</style>
+<section class="ftco-section bg-light py-5">
+<div class="container" style="max-width:1100px">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div><h2 class="mb-1">Đơn thuê của tôi</h2><p class="text-muted mb-0">Theo dõi tiến trình và xử lý đúng việc cần làm tiếp theo.</p></div>
+        <a href="/Default/Index#rental-form" class="btn btn-primary mt-3 mt-md-0">Tìm xe</a>
+    </div>
+    @if (TempData["ReservationSuccess"] != null){<div class="alert alert-success">@TempData["ReservationSuccess"]</div>}
+    @if (TempData["OperationError"] != null){<div class="alert alert-danger">@TempData["OperationError"]</div>}
+    @if (!string.IsNullOrWhiteSpace(ViewBag.ErrorMessage as string)){<div class="alert alert-danger">@ViewBag.ErrorMessage</div>}
+    <div class="filter-scroll mb-4">
+        @foreach(var group in groups){<a class="btn @(currentGroup==group?"btn-primary":"btn-outline-secondary")" href="?group=@Uri.EscapeDataString(group)">@group</a>}
+    </div>
+    @if(Model.Count==0){<div class="bg-white rounded shadow-sm p-5 text-center"><h4>Không có đơn phù hợp</h4><p class="text-muted">Hãy đổi bộ lọc hoặc tìm một chiếc xe phù hợp.</p></div>}
+    @foreach(var item in Model)
+    {
+        var statusClass = item.Status switch { "Hoàn thành"=>"success", "Đã hủy"=>"danger", "Đang tranh chấp"=>"danger", "Đang thuê"=>"warning", "Chờ khách đặt cọc"=>"info", "Chờ khách thanh toán giữ chỗ"=>"info", "Chờ nhân viên xác nhận cọc"=>"warning", "Chờ nhân viên xác nhận thanh toán"=>"warning", _=>"primary" };
+        var nextAction = item.Status switch
+        {
+            "Chờ chủ xe xác nhận" => "Chờ chủ xe phản hồi. Bạn có thể hủy nếu thay đổi kế hoạch.",
+            "Chờ khách đặt cọc" => "Chuyển khoản tiền cọc trong thời gian giữ xe và nhập đúng nội dung theo mã đơn.",
+            "Chờ khách thanh toán giữ chỗ" => "Chuyển khoản tiền thuê giữ chỗ trong thời gian quy định và nhập đúng nội dung theo mã đơn.",
+            "Chờ nhân viên xác nhận cọc" or "Chờ nhân viên xác nhận thanh toán" => "Bạn đã báo chuyển khoản. SmartCar đang kiểm tra sao kê; không cần gửi lại.",
+            "Đã xác nhận" or "Đã đặt cọc" or "Chờ giao xe" => "Theo dõi lịch giao xe và kiểm tra biên bản trước khi nhập OTP.",
+            "Đang thuê" => "Giữ xe đúng thỏa thuận; báo sự cố ngay khi phát sinh.",
+            "Chờ trả xe" => "Kiểm tra biên bản trả xe, kilomet, nhiên liệu và phụ kiện.",
+            "Chờ đối soát" => "Theo dõi phụ phí, tiền cọc và kết quả đối soát.",
+            "Đang tranh chấp" => "Theo dõi phản hồi và kết luận của nhân viên xử lý.",
+            "Hoàn thành" => "Đơn đã hoàn tất. Bạn có thể xem lại toàn bộ chứng từ.",
+            _ => "Mở chi tiết để xem tiến trình và thao tác phù hợp."
+        };
+        <div class="card order-card shadow-sm mb-4"><div class="card-body p-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start">
+                <div><div class="text-muted mb-1">Mã đơn #@item.ReservationID · @item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div><h4 class="mb-2">@item.CarName</h4></div>
+                <span class="badge badge-@statusClass p-2"><span class="status-dot bg-white"></span>@item.Status</span>
+            </div>
+            <div class="row order-meta mt-3">
+                <div class="col-md-5 mb-2"><strong>Nhận:</strong> @item.PickUpDate.ToString("dd/MM/yyyy") @item.PickUpTime.ToString(@"hh\:mm")<br/><small>@item.PickUpLocation</small></div>
+                <div class="col-md-5 mb-2"><strong>Trả:</strong> @item.DropOffDate.ToString("dd/MM/yyyy") @item.DropOffTime.ToString(@"hh\:mm")<br/><small>@item.DropOffLocation</small></div>
+                <div class="col-md-2 mb-2 text-md-right"><div class="price-highlight">@item.TotalPrice.ToString("#,0", CultureInfo.InvariantCulture) đ</div><small>Cọc @item.DepositAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</small></div>
+            </div>
+            <div class="next-action mt-3"><strong>Việc cần làm:</strong> @nextAction</div>
+            <div class="d-flex flex-wrap justify-content-between align-items-center mt-3">
+                <div class="text-muted">Chủ xe: @(string.IsNullOrWhiteSpace(item.OwnerName)?"Đang cập nhật":item.OwnerName)</div>
+                <a href="/ReservationLookup/Details/@item.ReservationID" class="btn btn-primary mt-2 mt-md-0">Xem chi tiết và thao tác</a>
+            </div>
+        </div></div>
+    }
+</div>
+</section>

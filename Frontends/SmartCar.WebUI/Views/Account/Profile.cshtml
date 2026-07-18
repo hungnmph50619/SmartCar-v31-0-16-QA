@@ -1,0 +1,300 @@
+@model AccountProfileViewModel
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    var isStaff = User.IsInRole("Staff");
+    var isAdmin = User.IsInRole("Admin");
+    Layout = isStaff || isAdmin
+        ? "~/Views/AdminLayout/Index.cshtml"
+        : Model.Profile.IsVehiclePartner
+            ? "~/Views/UILayout/Partner.cshtml"
+            : "~/Views/UILayout/Index.cshtml";
+
+    var firstInitial = string.IsNullOrWhiteSpace(Model.Profile.Name) ? "T" : Model.Profile.Name.Trim()[0].ToString();
+    var secondInitial = string.IsNullOrWhiteSpace(Model.Profile.Surname) ? "K" : Model.Profile.Surname.Trim()[0].ToString();
+    var initials = (firstInitial + secondInitial).ToUpperInvariant();
+
+    var readiness = Model.CustomerReadiness;
+    var verificationStatus = readiness?.VerificationStatus ?? "Chưa xác minh";
+    var verificationBadgeClass = verificationStatus == "Đã xác minh"
+        ? "verification-badge-success"
+        : verificationStatus == "Bị từ chối"
+            ? "verification-badge-danger"
+            : verificationStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+                ? "verification-badge-danger"
+                : "verification-badge-warning";
+    var verificationButtonText = verificationStatus == "Đã xác minh"
+        ? "Xem hồ sơ xác minh"
+        : verificationStatus == "Chờ duyệt"
+            ? "Xem trạng thái hồ sơ"
+            : verificationStatus == "Bị từ chối" || verificationStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+                ? "Bổ sung hồ sơ"
+                : "Xác minh ngay";
+    var verificationDescription = verificationStatus == "Đã xác minh"
+        ? "Hồ sơ của bạn đã được nhân viên SmartCar duyệt. Bạn có thể sử dụng tài khoản này để đặt xe."
+        : verificationStatus == "Chờ duyệt"
+            ? "Hồ sơ đã được gửi và đang chờ nhân viên kiểm tra. Bạn có thể mở trang xác minh để theo dõi phản hồi."
+            : verificationStatus == "Bị từ chối" || verificationStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+                ? "Hồ sơ chưa đạt yêu cầu. Hãy xem phản hồi của nhân viên và gửi lại giấy tờ cần bổ sung."
+                : "Hoàn tất CCCD, bằng lái và ảnh chân dung một lần trước khi đặt xe.";
+}
+
+<style>
+    .profile-page { padding: 34px 0; }
+    .profile-shell { max-width: 1080px; margin: auto; }
+    .profile-card { border: 0; border-radius: 18px; box-shadow: 0 12px 35px rgba(25,45,70,.09); }
+    .profile-avatar { width: 86px; height: 86px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg,#168cf2,#01d28e); color: #fff; font-size: 30px; font-weight: 700; }
+    .readonly-input { background: #f4f6f8 !important; color: #425466; cursor: not-allowed; }
+    .profile-note { border-left: 4px solid #01d28e; background: #eefbf6; padding: 14px 16px; border-radius: 8px; line-height: 1.65; }
+    .staff-profile-note { border-left-color: #168cf2; background: #eef6ff; }
+    .role-pill { display: inline-flex; align-items: center; padding: 6px 11px; border-radius: 999px; background: #eaf4ff; color: #1769aa; font-size: 12px; font-weight: 700; }
+    .verification-card { overflow: hidden; }
+    .verification-card::before { content: ""; display: block; height: 5px; background: linear-gradient(90deg,#168cf2,#01d28e); }
+    .verification-icon { width: 58px; height: 58px; border-radius: 16px; display: flex; align-items: center; justify-content: center; background: #eef7ff; color: #168cf2; font-size: 27px; font-weight: 800; flex: 0 0 auto; }
+    .verification-badge { display: inline-flex; align-items: center; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+    .verification-badge-success { background: #e8f8f1; color: #087a52; }
+    .verification-badge-warning { background: #fff5d9; color: #9a6700; }
+    .verification-badge-danger { background: #fdeaea; color: #b42318; }
+    .verification-meta { color: #52606d; font-size: 14px; }
+    .verification-missing { margin-top: 12px; padding: 11px 13px; border-radius: 9px; background: #fff8e7; color: #7a5600; }
+    .verification-feedback { margin-top: 12px; padding: 11px 13px; border-radius: 9px; background: #fff0f0; color: #a61b1b; }
+</style>
+
+@if (isStaff || isAdmin)
+{
+    <div class="page-content">
+        <div class="container-fluid">
+            <div class="profile-shell">
+                @if (TempData["AccountSuccess"] != null) { <div class="alert alert-success">@TempData["AccountSuccess"]</div> }
+                @if (TempData["AccountError"] != null) { <div class="alert alert-danger">@TempData["AccountError"]</div> }
+
+                <div class="card profile-card mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex align-items-center flex-wrap">
+                            <div class="profile-avatar">@initials</div>
+                            <div class="ml-4 mt-2 mt-sm-0">
+                                <h2 class="mb-1">@Model.Profile.FullName</h2>
+                                <div class="text-muted mb-2">@@@Model.Profile.Username</div>
+                                <span class="role-pill">@(isStaff ? "Nhân viên vận hành" : "Quản trị viên")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-7 mb-4">
+                        <div class="card profile-card h-100">
+                            <div class="card-body p-4">
+                                @if (isStaff)
+                                {
+                                    <h4>Thông tin nhân viên</h4>
+                                    <p class="profile-note staff-profile-note">Thông tin nhân viên do quản trị viên quản lý và chỉ được xem tại đây. Khi cần cập nhật họ tên, email hoặc số điện thoại, vui lòng liên hệ quản trị viên. Nhân viên chỉ được phép đổi mật khẩu.</p>
+                                    <div class="row">
+                                        <div class="col-md-6 form-group"><label>Họ và tên</label><input value="@Model.Profile.FullName" class="form-control readonly-input" readonly /></div>
+                                        <div class="col-md-6 form-group"><label>Tên đăng nhập</label><input value="@Model.Profile.Username" class="form-control readonly-input" readonly /></div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 form-group"><label>Email</label><input value="@Model.Profile.Email" class="form-control readonly-input" readonly /></div>
+                                        <div class="col-md-6 form-group"><label>Số điện thoại</label><input value="@Model.Profile.Phone" class="form-control readonly-input" readonly /></div>
+                                    </div>
+                                    <div class="form-group"><label>Vai trò</label><input value="Nhân viên" class="form-control readonly-input" readonly /></div>
+                                }
+                                else
+                                {
+                                    <h4>Cập nhật thông tin quản trị viên</h4>
+                                    <form method="post" asp-action="UpdateProfile">
+                                        @Html.AntiForgeryToken()
+                                        <div class="row">
+                                            <div class="col-md-6 form-group"><label>Tên</label><input name="Name" value="@Model.Profile.Name" class="form-control" required /></div>
+                                            <div class="col-md-6 form-group"><label>Họ</label><input name="Surname" value="@Model.Profile.Surname" class="form-control" required /></div>
+                                        </div>
+                                        <div class="form-group"><label>Email hiện tại</label><input name="Email" type="email" value="@Model.Profile.Email" class="form-control readonly-input" readonly /></div>
+                                        <div class="form-group"><label>Số điện thoại</label><input name="Phone" value="@Model.Profile.Phone" class="form-control" placeholder="09xxxxxxxx" /></div>
+                                        <button class="btn btn-primary">Lưu thay đổi</button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-5 mb-4">
+                        <div class="card profile-card h-100">
+                            <div class="card-body p-4">
+                                <h4>Đổi mật khẩu</h4>
+                                <p class="text-muted">Sau khi đổi mật khẩu, hệ thống sẽ yêu cầu đăng nhập lại.</p>
+                                <form method="post" asp-action="ChangePassword">
+                                    @Html.AntiForgeryToken()
+                                    <div class="form-group"><label>Mật khẩu hiện tại</label><input name="CurrentPassword" type="password" class="form-control" required /></div>
+                                    <div class="form-group"><label>Mật khẩu mới</label><input name="NewPassword" type="password" class="form-control" minlength="6" required /></div>
+                                    <div class="form-group"><label>Nhập lại mật khẩu mới</label><input name="ConfirmPassword" type="password" class="form-control" minlength="6" required /></div>
+                                    <button class="btn btn-outline-dark">Đổi mật khẩu</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card profile-card mb-4">
+                    <div class="card-body p-4">
+                        <h4>Đổi email có xác minh</h4>
+                        <p class="text-muted">Email hiện tại chỉ được thay sau khi OTP gửi tới email mới được xác nhận. Trong thời gian chờ, hệ thống vẫn sử dụng email cũ.</p>
+                        @if (!string.IsNullOrWhiteSpace(Model.Profile.PendingEmail))
+                        {
+                            <div class="alert alert-info">Đang chờ xác nhận email mới: <strong>@Model.Profile.PendingEmail</strong></div>
+                            <form method="post" asp-action="ConfirmEmailChange" class="mb-3">
+                                @Html.AntiForgeryToken()
+                                <div class="form-group"><label>OTP 6 số</label><input name="Otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" class="form-control" required /></div>
+                                <button class="btn btn-success">Xác nhận email mới</button>
+                            </form>
+                        }
+                        <form method="post" asp-action="RequestEmailChange">
+                            @Html.AntiForgeryToken()
+                            <div class="row">
+                                <div class="col-md-6 form-group"><label>Email mới</label><input name="NewEmail" type="email" class="form-control" required /></div>
+                                <div class="col-md-6 form-group"><label>Mật khẩu hiện tại</label><input name="CurrentPassword" type="password" class="form-control" required /></div>
+                            </div>
+                            <button class="btn btn-outline-primary">Gửi OTP đến email mới</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <section class="ftco-section bg-light profile-page">
+        <div class="container profile-shell">
+            @if (TempData["AccountSuccess"] != null) { <div class="alert alert-success">@TempData["AccountSuccess"]</div> }
+            @if (TempData["AccountError"] != null) { <div class="alert alert-danger">@TempData["AccountError"]</div> }
+
+            <div class="card profile-card mb-4">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex align-items-center flex-wrap">
+                        <div class="profile-avatar">@initials</div>
+                        <div class="ml-4 mt-2 mt-sm-0">
+                            <h2 class="mb-1">@Model.Profile.FullName</h2>
+                            <div class="text-muted">@@@Model.Profile.Username · @(Model.Profile.IsVehiclePartner ? "Đối tác chủ xe" : "Khách hàng")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (!Model.Profile.IsVehiclePartner)
+            {
+                <div class="card profile-card verification-card mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex flex-wrap align-items-start justify-content-between">
+                            <div class="d-flex align-items-start mr-3" style="min-width:0;max-width:760px">
+                                <div class="verification-icon mr-3">✓</div>
+                                <div>
+                                    <h4 class="mb-1">Xác minh khách hàng</h4>
+                                    <p class="text-muted mb-2">@verificationDescription</p>
+
+                                    @if (readiness?.DriverLicenseExpiry != null)
+                                    {
+                                        <div class="verification-meta">
+                                            Bằng lái có hiệu lực đến <strong>@readiness.DriverLicenseExpiry.Value.ToString("dd/MM/yyyy")</strong>
+                                        </div>
+                                    }
+
+                                    @if (readiness?.MissingItems?.Count > 0)
+                                    {
+                                        <div class="verification-missing">
+                                            <strong>Cần bổ sung:</strong> @string.Join(" · ", readiness.MissingItems)
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(readiness?.VerificationNote))
+                                    {
+                                        <div class="verification-feedback">
+                                            <strong>Phản hồi của nhân viên:</strong> @readiness.VerificationNote
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="text-md-right mt-3 mt-md-0">
+                                <span class="verification-badge @verificationBadgeClass">@verificationStatus</span>
+                                <div class="mt-3">
+                                    <a asp-controller="Verification" asp-action="Index" asp-route-returnUrl="/Account/Profile" class="btn btn-primary px-4">
+                                        @verificationButtonText
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-lg-7 mb-4">
+                    <div class="card profile-card h-100">
+                        <div class="card-body p-4">
+                            @if (Model.Profile.IsVehiclePartner)
+                            {
+                                <h4>Hồ sơ đối tác đã xác minh</h4>
+                                <p class="profile-note">Thông tin đối tác được đặt ở chế độ chỉ đọc để bảo đảm dữ liệu xác minh không bị tự ý thay đổi. Khi cần điều chỉnh, vui lòng liên hệ SmartCar. Bạn vẫn có thể đổi mật khẩu ở khung bên phải.</p>
+                                <div class="row"><div class="col-md-6 form-group"><label>Họ và tên</label><input value="@Model.Profile.FullName" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Tên đăng nhập</label><input value="@Model.Profile.Username" class="form-control readonly-input" readonly /></div></div>
+                                <div class="row"><div class="col-md-6 form-group"><label>Email</label><input value="@Model.Profile.Email" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Số điện thoại</label><input value="@Model.Profile.Phone" class="form-control readonly-input" readonly /></div></div>
+                                <div class="form-group"><label>Địa chỉ</label><input value="@Model.Profile.Address" class="form-control readonly-input" readonly /></div>
+                                <div class="row"><div class="col-md-6 form-group"><label>Số CCCD</label><input value="@Model.Profile.CitizenIdentityNumber" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Ngân hàng</label><input value="@Model.Profile.BankName" class="form-control readonly-input" readonly /></div></div>
+                                <div class="row"><div class="col-md-6 form-group"><label>Số tài khoản</label><input value="@Model.Profile.BankAccountNumber" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Chủ tài khoản</label><input value="@Model.Profile.BankAccountHolder" class="form-control readonly-input" readonly /></div></div>
+                            }
+                            else
+                            {
+                                <h4>Cập nhật thông tin khách hàng</h4>
+                                <form method="post" asp-action="UpdateProfile">
+                                    @Html.AntiForgeryToken()
+                                    <div class="row"><div class="col-md-6 form-group"><label>Tên</label><input name="Name" value="@Model.Profile.Name" class="form-control" required /></div><div class="col-md-6 form-group"><label>Họ</label><input name="Surname" value="@Model.Profile.Surname" class="form-control" required /></div></div>
+                                    <div class="form-group"><label>Email hiện tại</label><input name="Email" type="email" value="@Model.Profile.Email" class="form-control readonly-input" readonly /></div>
+                                    <div class="form-group"><label>Số điện thoại</label><input name="Phone" value="@Model.Profile.Phone" class="form-control" placeholder="09xxxxxxxx" /></div>
+                                    <button class="btn btn-primary">Lưu thay đổi</button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-5 mb-4">
+                    <div class="card profile-card h-100">
+                        <div class="card-body p-4">
+                            <h4>Đổi mật khẩu</h4>
+                            <p class="text-muted">Sau khi đổi mật khẩu, hệ thống sẽ yêu cầu đăng nhập lại.</p>
+                            <form method="post" asp-action="ChangePassword">
+                                @Html.AntiForgeryToken()
+                                <div class="form-group"><label>Mật khẩu hiện tại</label><input name="CurrentPassword" type="password" class="form-control" required /></div>
+                                <div class="form-group"><label>Mật khẩu mới</label><input name="NewPassword" type="password" class="form-control" minlength="6" required /></div>
+                                <div class="form-group"><label>Nhập lại mật khẩu mới</label><input name="ConfirmPassword" type="password" class="form-control" minlength="6" required /></div>
+                                <button class="btn btn-outline-dark">Đổi mật khẩu</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <div class="card profile-card mb-4">
+                    <div class="card-body p-4">
+                        <h4>Đổi email có xác minh</h4>
+                        <p class="text-muted">Email hiện tại chỉ được thay sau khi OTP gửi tới email mới được xác nhận. Trong thời gian chờ, hệ thống vẫn sử dụng email cũ.</p>
+                        @if (!string.IsNullOrWhiteSpace(Model.Profile.PendingEmail))
+                        {
+                            <div class="alert alert-info">Đang chờ xác nhận email mới: <strong>@Model.Profile.PendingEmail</strong></div>
+                            <form method="post" asp-action="ConfirmEmailChange" class="mb-3">
+                                @Html.AntiForgeryToken()
+                                <div class="form-group"><label>OTP 6 số</label><input name="Otp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" class="form-control" required /></div>
+                                <button class="btn btn-success">Xác nhận email mới</button>
+                            </form>
+                        }
+                        <form method="post" asp-action="RequestEmailChange">
+                            @Html.AntiForgeryToken()
+                            <div class="row">
+                                <div class="col-md-6 form-group"><label>Email mới</label><input name="NewEmail" type="email" class="form-control" required /></div>
+                                <div class="col-md-6 form-group"><label>Mật khẩu hiện tại</label><input name="CurrentPassword" type="password" class="form-control" required /></div>
+                            </div>
+                            <button class="btn btn-outline-primary">Gửi OTP đến email mới</button>
+                        </form>
+                    </div>
+                </div>
+        </div>
+    </section>
+}

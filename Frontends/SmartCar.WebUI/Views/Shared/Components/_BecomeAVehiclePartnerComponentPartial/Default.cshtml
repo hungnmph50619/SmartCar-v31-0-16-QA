@@ -1,0 +1,123 @@
+<style>
+    .smart-partner-cta {
+        position: relative;
+        overflow: hidden;
+        margin: 70px 0;
+        padding: 72px 0;
+        background-image:
+            linear-gradient(90deg, rgba(10, 25, 43, .95) 0%, rgba(10, 25, 43, .84) 48%, rgba(10, 25, 43, .42) 100%),
+            url('/carbook-master/images/bg_3.jpg');
+        background-size: cover;
+        background-position: center;
+    }
+
+    .smart-partner-cta::after {
+        content: "";
+        position: absolute;
+        right: -90px;
+        top: -120px;
+        width: 360px;
+        height: 360px;
+        border-radius: 50%;
+        border: 70px solid rgba(1, 210, 142, .14);
+    }
+
+    .smart-partner-card {
+        position: relative;
+        z-index: 2;
+        max-width: 760px;
+        padding: 38px 42px;
+        border: 1px solid rgba(255,255,255,.14);
+        border-radius: 22px;
+        background: rgba(255,255,255,.08);
+        box-shadow: 0 20px 55px rgba(0,0,0,.22);
+        backdrop-filter: blur(8px);
+    }
+
+    .smart-partner-label {
+        display: inline-block;
+        margin-bottom: 14px;
+        padding: 7px 13px;
+        border-radius: 999px;
+        background: rgba(1, 210, 142, .18);
+        color: #7ff0c7;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: .08em;
+    }
+
+    .smart-partner-card h2 {
+        color: #fff;
+        font-size: 38px;
+        line-height: 1.2;
+        font-weight: 700;
+    }
+
+    .smart-partner-card p {
+        color: rgba(255,255,255,.82);
+        font-size: 17px;
+    }
+
+    .smart-partner-benefits {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 22px;
+        margin: 22px 0 28px;
+        color: #fff;
+    }
+
+    .smart-partner-benefits span::before {
+        content: "✓";
+        margin-right: 8px;
+        color: #01d28e;
+        font-weight: 800;
+    }
+
+    .smart-partner-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .smart-partner-actions .btn-primary {
+        border-color: #01d28e;
+        background: #01d28e;
+    }
+
+    .smart-partner-note {
+        color: rgba(255,255,255,.72);
+        font-size: 14px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .smart-partner-cta { padding: 45px 0; margin: 45px 0; }
+        .smart-partner-card { padding: 28px 24px; }
+        .smart-partner-card h2 { font-size: 30px; }
+    }
+</style>
+
+<section class="smart-partner-cta">
+    <div class="container">
+        <div class="smart-partner-card">
+            <span class="smart-partner-label">SÀN XE ĐỐI TÁC SMART CAR</span>
+            <h2>Bạn có xe nhàn rỗi? Hãy đưa xe lên Smart Car để tạo thêm thu nhập.</h2>
+            <p>
+                Smart Car kết nối chủ xe với khách thuê, hỗ trợ kiểm duyệt hồ sơ,
+                quản lý lịch đặt, tính phí nền tảng và đối soát sau mỗi đơn hoàn thành.
+            </p>
+
+            <div class="smart-partner-benefits">
+                <span>Tự đề xuất giá thuê</span>
+                <span>Chủ động duyệt yêu cầu</span>
+                <span>Theo dõi doanh thu minh bạch</span>
+            </div>
+
+            <div class="smart-partner-actions">
+                <a href="/VehiclePartner/BecomeOwner" class="btn btn-primary btn-lg px-4">Tìm hiểu chương trình</a>
+                <a href="/VehiclePartner/RegisterAccount" class="btn btn-outline-light btn-lg px-4">Đăng ký chủ xe</a>
+                <span class="smart-partner-note">Phí nền tảng mặc định 20%, có thể điều chỉnh bởi quản trị viên.</span>
+            </div>
+        </div>
+    </div>
+</section>

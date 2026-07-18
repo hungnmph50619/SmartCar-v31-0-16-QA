@@ -1,0 +1,611 @@
+@using System.Globalization
+@model CreateReservationDto
+@{
+    ViewData["Title"] = "Đặt xe";
+    Layout = "~/Views/UILayout/Index.cshtml";
+    var readiness = ViewBag.Readiness as CustomerReadinessDto;
+    var quote = ViewBag.Quote as ReservationQuoteDto;
+    var car = ViewBag.CarDetail as EnhancedCarDetailDto;
+    var offeredRentalMode = string.IsNullOrWhiteSpace(car?.RentalMode) ? "Tự lái" : car.RentalMode;
+    var offeredDeliveryMethod = string.IsNullOrWhiteSpace(car?.DeliveryMethod) ? "Nhận tại điểm giao xe" : car.DeliveryMethod;
+    var canBookSelfDrive = readiness?.CanBook == true;
+    var canBookWithDriver = readiness?.CanBookWithDriver == true;
+    var canBookSelectedMode = Model.RentalMode == "Có tài xế" ? canBookWithDriver : canBookSelfDrive;
+    var serverErrorMessages = ViewData.ModelState.Values
+        .SelectMany(x => x.Errors)
+        .Select(x => string.IsNullOrWhiteSpace(x.ErrorMessage) ? "Thông tin đặt xe chưa hợp lệ." : x.ErrorMessage)
+        .Distinct()
+        .ToList();
+    var hasServerErrors = serverErrorMessages.Count > 0;
+    string Money(decimal value) => value.ToString("#,0", CultureInfo.InvariantCulture) + " đồng";
+}
+
+<style>
+    .booking-shell{max-width:1180px;margin:auto}.booking-step{display:flex;align-items:center;gap:.6rem;color:#6c757d;font-size:.9rem}.booking-step span{width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#e9ecef;font-weight:700}.booking-step.active{color:#1089ff}.booking-step.active span{background:#1089ff;color:#fff}.summary-card{position:sticky;top:1rem;border:0;border-radius:14px}.profile-chip{border:1px solid #e5e9ef;border-radius:12px;padding:14px;height:100%}.profile-chip small{display:block;color:#6c757d}.price-row{display:flex;justify-content:space-between;gap:15px;padding:.45rem 0}.price-total{border-top:1px solid #dee2e6;margin-top:.35rem;padding-top:.8rem;font-weight:700}.deposit-note{background:#f7fbff;border-left:4px solid #1089ff;padding:12px;border-radius:6px}.car-cover{height:190px;object-fit:cover;width:100%;border-radius:12px}.required-mark{color:#dc3545}.mode-card{border:1px solid #e3e8ef;border-radius:12px;padding:14px;background:#fff}.rule-note{font-size:.92rem}.booking-map{height:330px;width:100%;border:0;border-radius:12px;background:#eef3f7}.booking-map-empty{height:330px;border-radius:12px;background:linear-gradient(135deg,#eef6ff,#f8fbff);display:flex;align-items:center;justify-content:center;text-align:center;color:#697b8b;padding:25px}.map-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}.map-address-note{font-size:12px;color:#6c7d8e;margin-top:9px}.exact-address-box{border:1px solid #e7edf3;border-radius:12px;padding:15px;background:#fbfdff}.mobile-action{display:none}@@media(max-width:991px){.summary-card{position:static}.mobile-action{display:block;position:sticky;bottom:0;background:#fff;padding:12px;box-shadow:0 -3px 15px rgba(0,0,0,.08);z-index:10}.booking-map,.booking-map-empty{height:280px}}
+</style>
+
+<section class="ftco-section bg-light py-5">
+    <div class="container booking-shell">
+        <div class="bg-white rounded shadow-sm p-3 p-md-4 mb-4">
+            <div class="row text-center">
+                <div class="col-3 booking-step active"><span>1</span><strong class="d-none d-md-inline">Chọn dịch vụ</strong></div>
+                <div class="col-3 booking-step active"><span>2</span><strong class="d-none d-md-inline">Kiểm tra điều kiện</strong></div>
+                <div class="col-3 booking-step active"><span>3</span><strong class="d-none d-md-inline">Xem giá</strong></div>
+                <div class="col-3 booking-step"><span>4</span><strong class="d-none d-md-inline">Gửi yêu cầu</strong></div>
+            </div>
+        </div>
+
+        <div id="readinessAlert" class="alert @(canBookSelectedMode ? "alert-info" : "alert-warning") shadow-sm border-0 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h5 id="readinessTitle" class="mb-2">
+                        @if (Model.RentalMode == "Có tài xế")
+                        {
+                            <text><i class="fa fa-user mr-2"></i>Điều kiện đặt xe có tài xế</text>
+                        }
+                        else
+                        {
+                            <text><i class="fa fa-shield mr-2"></i>Điều kiện thuê xe tự lái</text>
+                        }
+                    </h5>
+                    <p id="readinessText" class="mb-2">
+                        @(Model.RentalMode == "Có tài xế"
+                            ? "Khách chỉ cần email đã xác minh OTP và số điện thoại liên hệ; không bắt buộc CCCD hoặc bằng lái của khách."
+                            : "Khách phải có hồ sơ CCCD và giấy phép lái xe đã được SmartCar phê duyệt, còn hiệu lực đến hết chuyến.")
+                    </p>
+                    <div id="readinessStatus">
+                        @if (!canBookSelectedMode)
+                        {
+                            if (Model.RentalMode == "Có tài xế")
+                            {
+                                <strong>Cần bổ sung:</strong> <span>Email OTP đã xác minh và số điện thoại.</span>
+                            }
+                            else
+                            {
+                                <strong>Cần bổ sung:</strong> <span>@string.Join(" · ", readiness?.MissingItems ?? new List<string> { "Hồ sơ CCCD và GPLX" })</span>
+                            }
+                        }
+                        else
+                        {
+                            <strong>Đủ điều kiện để gửi yêu cầu theo hình thức đã chọn.</strong>
+                        }
+                    </div>
+                </div>
+                <a id="verificationLink" href="/Verification/Index?returnUrl=@Uri.EscapeDataString(Context.Request.Path + Context.Request.QueryString)" class="btn btn-warning mt-3 mt-md-0 @(Model.RentalMode == "Có tài xế" || canBookSelfDrive ? "d-none" : "")">Đến trang xác minh</a>
+            </div>
+        </div>
+
+        <div id="serverValidationSummary" asp-validation-summary="ModelOnly" class="alert alert-danger @(hasServerErrors ? "" : "d-none")" role="alert" tabindex="-1"></div>
+        <form asp-controller="Reservation" asp-action="Index" method="post" id="bookingForm" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CarID" />
+            <input type="hidden" asp-for="Name" />
+            <input type="hidden" asp-for="Surname" />
+            <input type="hidden" asp-for="Email" />
+            <input type="hidden" asp-for="Phone" />
+            <input type="hidden" asp-for="Age" />
+            <input type="hidden" asp-for="DriverLicenseYear" />
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="bg-white rounded shadow-sm p-4 mb-4">
+                        <h4 class="mb-3">1. Chọn hình thức thuê và giao nhận</h4>
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label asp-for="RentalMode">Hình thức thuê <span class="required-mark">*</span></label>
+                                <select asp-for="RentalMode" id="RentalMode" class="form-control quote-input">
+                                    @if (offeredRentalMode == "Tự lái" || offeredRentalMode == "Tự lái hoặc có tài xế")
+                                    {
+                                        <option value="Tự lái">Tự lái</option>
+                                    }
+                                    @if (offeredRentalMode == "Có tài xế" || offeredRentalMode == "Tự lái hoặc có tài xế")
+                                    {
+                                        <option value="Có tài xế">Có tài xế</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="RentalMode" class="text-danger"></span>
+                                <small class="text-muted">Xe đăng ký: @offeredRentalMode.</small>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label asp-for="DeliveryMethod">Hình thức giao nhận <span class="required-mark">*</span></label>
+                                <select asp-for="DeliveryMethod" id="DeliveryMethod" class="form-control quote-input">
+                                    @if (offeredDeliveryMethod == "Nhận tại điểm giao xe" || offeredDeliveryMethod == "Nhận tại điểm hoặc giao tận nơi")
+                                    {
+                                        <option value="Nhận tại điểm giao xe">Nhận tại điểm giao xe — phí giao xe 0 đồng</option>
+                                    }
+                                    @if (offeredDeliveryMethod == "Giao xe tận nơi" || offeredDeliveryMethod == "Nhận tại điểm hoặc giao tận nơi")
+                                    {
+                                        <option value="Giao xe tận nơi">Giao xe tận nơi</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="DeliveryMethod" class="text-danger"></span>
+                                <small class="text-muted">Nếu nhận tại điểm giao xe, hệ thống bắt buộc phí giao xe bằng 0.</small>
+                            </div>
+                        </div>
+                        <div id="modeRuleBox" class="alert alert-secondary rule-note mb-0"></div>
+                    </div>
+
+                    <div class="bg-white rounded shadow-sm p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0">2. Thông tin người đặt</h4>
+                            <span id="profileBadge" class="badge @(canBookSelectedMode ? "badge-success" : "badge-warning") p-2">@(Model.RentalMode == "Có tài xế" ? (readiness?.ContactReady == true ? "Đã đủ liên hệ" : "Thiếu thông tin liên hệ") : readiness?.VerificationStatus ?? "Chưa xác minh")</span>
+                        </div>
+                        <p class="text-muted">Dữ liệu được lấy từ tài khoản. Email và số điện thoại có thể trùng với tài khoản vai trò khác; mỗi tài khoản vẫn có tên đăng nhập riêng.</p>
+                        <div class="row">
+                            <div class="col-md-6 mb-3"><div class="profile-chip"><small>Họ và tên người đặt</small><strong>@(readiness?.FullName ?? "Chưa cập nhật")</strong></div></div>
+                            <div class="col-md-6 mb-3"><div class="profile-chip"><small>Số điện thoại</small><strong>@(string.IsNullOrWhiteSpace(readiness?.Phone) ? "Chưa cập nhật" : readiness.Phone)</strong></div></div>
+                            <div class="col-md-6 mb-3"><div class="profile-chip"><small>Email</small><strong>@(readiness?.Email ?? "Chưa cập nhật")</strong></div></div>
+                            <div class="col-md-6 mb-3" id="licenseChip"><div class="profile-chip"><small>Bằng lái còn hạn đến</small><strong>@(readiness?.DriverLicenseExpiry?.ToString("dd/MM/yyyy") ?? "Chưa cập nhật")</strong></div></div>
+                        </div>
+
+                        <div id="withDriverFields" class="border-top pt-3 @(Model.RentalMode == "Có tài xế" ? "" : "d-none")">
+                            <h5 class="mb-3">Thông tin chuyến có tài xế</h5>
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label asp-for="BookingHolderDateOfBirth">Ngày sinh người đứng tên <span class="required-mark">*</span></label>
+                                    <input type="date" asp-for="BookingHolderDateOfBirth" class="form-control with-driver-required" />
+                                    <span asp-validation-for="BookingHolderDateOfBirth" class="text-danger"></span>
+                                    <small class="text-muted">Người đứng tên phải từ đủ 18 tuổi tại ngày bắt đầu chuyến.</small>
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label asp-for="PassengerCount">Số hành khách <span class="required-mark">*</span></label>
+                                    <input type="number" asp-for="PassengerCount" min="1" max="60" class="form-control with-driver-required" />
+                                    <span asp-validation-for="PassengerCount" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-8 form-group">
+                                    <label asp-for="Itinerary">Lịch trình hoặc điểm dừng dự kiến <span class="required-mark">*</span></label>
+                                    <textarea asp-for="Itinerary" rows="3" class="form-control with-driver-required" placeholder="Ví dụ: Hà Nội → Ninh Bình; dừng tại Tràng An và Bái Đính"></textarea>
+                                    <span asp-validation-for="Itinerary" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-4 form-group">
+                                    <label asp-for="EstimatedDistanceKm">Quãng đường dự kiến (km)</label>
+                                    <input type="number" asp-for="EstimatedDistanceKm" min="0" max="100000" step="0.1" class="form-control quote-input" />
+                                    <span asp-validation-for="EstimatedDistanceKm" class="text-danger"></span>
+                                </div>
+                                <div class="col-12 form-group mb-0">
+                                    <label asp-for="SpecialLuggage">Hành lý hoặc yêu cầu đặc biệt <small class="text-muted">(nếu có)</small></label>
+                                    <textarea asp-for="SpecialLuggage" rows="2" class="form-control" placeholder="Ví dụ: 2 vali lớn, ghế trẻ em, xe lăn..."></textarea>
+                                    <span asp-validation-for="SpecialLuggage" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded shadow-sm p-4 mb-4">
+                        <h4 class="mb-3">3. Thời gian và địa điểm</h4>
+                        <div class="row">
+                            <div class="col-md-6 form-group">
+                                <label asp-for="PickUpLocationID">Địa điểm nhận/đón <span class="required-mark">*</span></label>
+                                @Html.DropDownListFor(x => x.PickUpLocationID, (List<SelectListItem>)ViewBag.v, "Chọn địa điểm nhận/đón", new { @class = "form-control" })
+                                <span asp-validation-for="PickUpLocationID" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 form-group">
+                                <label asp-for="DropOffLocationID">Địa điểm trả/kết thúc <span class="required-mark">*</span></label>
+                                @Html.DropDownListFor(x => x.DropOffLocationID, (List<SelectListItem>)ViewBag.v, "Chọn địa điểm trả/kết thúc", new { @class = "form-control" })
+                                <span asp-validation-for="DropOffLocationID" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div id="exactAddressSection" class="exact-address-box mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h5 class="mb-0">Địa chỉ giao nhận chi tiết</h5>
+                                <button type="button" id="copyPickupToDropoff" class="btn btn-sm btn-outline-secondary">Trả cùng điểm nhận</button>
+                            </div>
+                            <p id="addressRequirementText" class="text-muted mb-3">Nhập số nhà, tên đường, tòa nhà hoặc điểm hẹn. Với nhận tại điểm giao xe, hệ thống sẽ gợi ý địa chỉ của điểm đã chọn.</p>
+                            <div class="row">
+                                <div class="col-md-6 form-group mb-md-0">
+                                    <label asp-for="PickUpAddressText" id="pickupAddressLabel">Địa chỉ nhận/đón cụ thể <span class="required-mark address-required-mark">*</span></label>
+                                    <input asp-for="PickUpAddressText" class="form-control exact-address-input" placeholder="Số nhà, đường, tòa nhà hoặc điểm hẹn" />
+                                    <span asp-validation-for="PickUpAddressText" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6 form-group mb-0">
+                                    <label asp-for="DropOffAddressText" id="dropoffAddressLabel">Địa chỉ trả/kết thúc cụ thể <span class="required-mark address-required-mark">*</span></label>
+                                    <input asp-for="DropOffAddressText" class="form-control exact-address-input" placeholder="Số nhà, đường, tòa nhà hoặc điểm đến" />
+                                    <span asp-validation-for="DropOffAddressText" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="map-toolbar">
+                                <button type="button" id="showPickupMap" class="btn btn-sm btn-primary"><i class="ion-ios-pin"></i> Xem điểm nhận</button>
+                                <button type="button" id="showDropoffMap" class="btn btn-sm btn-outline-primary"><i class="ion-ios-flag"></i> Xem điểm trả</button>
+                                <span id="bookingMapTitle" class="text-muted small">Chọn địa điểm để xem bản đồ.</span>
+                            </div>
+                            <div id="bookingMapEmpty" class="booking-map-empty"><div><i class="ion-ios-map" style="font-size:42px;color:#1089ff"></i><br/>Bản đồ khu vực giao nhận sẽ hiển thị tại đây.</div></div>
+                            <iframe id="bookingMapFrame" class="booking-map d-none" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Bản đồ giao nhận xe"></iframe>
+                            <div class="map-address-note"><i class="ion-ios-lock"></i> Trước khi đơn được xác nhận, bản đồ chỉ hiển thị điểm giao nhận công khai; địa chỉ riêng của chủ xe không được công bố.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3 form-group">
+                                <label asp-for="PickUpDate">Ngày nhận</label>
+                                <input type="date" asp-for="PickUpDate" class="form-control quote-input" min="@VietnamTime.Today.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="PickUpDate" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <label asp-for="PickUpTime">Giờ nhận</label>
+                                <select asp-for="PickUpTime" class="form-control quote-input">
+                                    @for (var minute = 0; minute < 24 * 60; minute += 30)
+                                    {
+                                        var time = TimeSpan.FromMinutes(minute);
+                                        <option value="@time.ToString(@"hh\:mm\:ss")">@time.ToString(@"hh\:mm")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <label asp-for="DropOffDate">Ngày trả</label>
+                                <input type="date" asp-for="DropOffDate" class="form-control quote-input" min="@VietnamTime.Today.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="DropOffDate" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-3 form-group">
+                                <label asp-for="DropOffTime">Giờ trả</label>
+                                <select asp-for="DropOffTime" class="form-control quote-input">
+                                    @for (var minute = 0; minute < 24 * 60; minute += 30)
+                                    {
+                                        var time = TimeSpan.FromMinutes(minute);
+                                        <option value="@time.ToString(@"hh\:mm\:ss")">@time.ToString(@"hh\:mm")</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div id="availabilityBox" class="alert @(quote?.IsAvailable == false ? "alert-danger" : "alert-success") mb-3">
+                            <strong id="availabilityText">@(quote?.AvailabilityMessage ?? "Xe còn trống; khi gửi yêu cầu, lịch được giữ tối đa 120 phút chờ chủ xe phản hồi.")</strong>
+                            <span id="durationText" class="d-block mt-1">@(quote is null ? "" : $"Thời lượng tính giá: {quote.Price.RentalDays} ngày")</span>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label asp-for="Description">Ghi chú giao nhận <small class="text-muted">(không bắt buộc)</small></label>
+                            <textarea asp-for="Description" rows="3" class="form-control" placeholder="Ví dụ: giao xe tại sảnh tòa nhà, cần ghế trẻ em..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded shadow-sm p-4 mb-4">
+                        <h4 class="mb-3">4. Xác nhận điều khoản</h4>
+                        <div class="custom-control custom-checkbox">
+                            <input asp-for="AcceptTerms" type="checkbox" class="custom-control-input" id="AcceptTerms" />
+                            <label class="custom-control-label" for="AcceptTerms">Tôi đã đọc và đồng ý với <a href="/Policy/OperatingRules" target="_blank" rel="noopener noreferrer">điều khoản thuê xe</a>, <a href="/Policy/PaymentAndRefund" target="_blank" rel="noopener noreferrer">chính sách hủy và hoàn tiền</a>, cơ chế giữ lịch và quy định xử lý tiền cọc.</label>
+                        </div>
+                        <span asp-validation-for="AcceptTerms" class="text-danger d-block mt-2"></span>
+                        <div class="alert alert-light border mt-3 mb-0">
+                            <strong>Cơ chế giữ lịch:</strong> Khi gửi yêu cầu hợp lệ, xe được giữ lịch tối đa 120 phút chờ chủ xe phản hồi. Sau khi chủ xe chấp nhận, khách có 15 phút để thanh toán. Khoảng đệm là 2 giờ với xe tự lái và 1 giờ với xe có tài xế.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card summary-card shadow-sm mb-4">
+                        <div class="card-body">
+                            @if (!string.IsNullOrWhiteSpace(car?.CoverImageUrl))
+                            {
+                                <img src="@car.CoverImageUrl" alt="@ViewBag.CarName" class="car-cover mb-3" />
+                            }
+                            <h4>@ViewBag.CarName</h4>
+                            @if (car != null)
+                            {
+                                <div class="text-muted mb-2">@car.Seat chỗ · @car.Transmission · @car.Fuel</div>
+                                <div class="mb-3"><span id="selectedModeBadge" class="badge badge-primary">@Model.RentalMode</span> <span id="selectedDeliveryBadge" class="badge badge-secondary">@Model.DeliveryMethod</span></div>
+                            }
+                            <h5 class="mb-3">Chi tiết giá</h5>
+                            <div class="price-row"><span>Tiền thuê xe <small id="rentalDays">(@(quote?.Price.RentalDays ?? 0) ngày)</small></span><strong id="rentalAmount">@Money(quote?.Price.RentalAmount ?? 0)</strong></div>
+                            <div class="price-row"><span>Phí giao xe</span><span id="deliveryFee">@Money(quote?.Price.DeliveryFee ?? 0)</span></div>
+                            <div class="price-row"><span>Phí bảo hiểm</span><span id="insuranceFee">@Money(quote?.Price.InsuranceFee ?? 0)</span></div>
+                            <div class="price-row"><span>Phí nền tảng</span><span id="platformFee">@Money(quote?.Price.CustomerPlatformFee ?? 0)</span></div>
+                            <div class="price-row"><span>Khuyến mãi</span><span id="discountAmount">-@Money(quote?.Price.DiscountAmount ?? 0)</span></div>
+                            <div class="price-row price-total"><span>Tổng tiền thuê</span><strong id="totalRental">@Money(quote?.Price.TotalRental ?? 0)</strong></div>
+                            <div class="price-row"><span>Cọc giữ chỗ <small>(cấn trừ vào tiền thuê)</small></span><strong id="reservationDepositAmount">@Money(quote?.Price.ReservationDepositAmount ?? 0)</strong></div>
+                            <div class="price-row"><span>Cọc bảo đảm tài sản <small>(có thể hoàn)</small></span><strong id="securityDepositAmount">@Money(quote?.Price.SecurityDepositAmount ?? car?.DepositAmount ?? 0)</strong></div>
+                            <div class="price-row price-total"><span>Tổng tiền thuê và cọc bảo đảm</span><strong class="text-primary" id="totalDue">@Money(quote?.Price.TotalDue ?? car?.DepositAmount ?? 0)</strong></div>
+                            <div id="depositNote" class="deposit-note mt-3"><strong>Xe tự lái có thể yêu cầu cọc bảo đảm.</strong><br /><small>Xe có tài xế mặc định không thu cọc bảo đảm tài sản của khách trong phiên bản đồ án này.</small></div>
+                            <div id="bookingActionAlert" class="alert alert-danger mt-3 mb-0 d-none" role="alert" tabindex="-1"></div>
+                            <button type="submit" id="submitBooking" class="btn btn-primary btn-block py-3 mt-4" aria-disabled="@((!canBookSelectedMode || quote?.IsAvailable == false).ToString().ToLowerInvariant())">Gửi yêu cầu thuê xe</button>
+                            <small id="submitHelp" class="text-muted d-block mt-2">Khi chưa đủ điều kiện, bấm nút để xem lý do cụ thể.</small>
+                            <a href="/Car/CarDetail/@Model.CarID" class="btn btn-outline-secondary btn-block">Quay lại xem xe</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</section>
+
+<script>
+(function(){
+    const carId = @Model.CarID;
+    const canBookSelfDrive = @canBookSelfDrive.ToString().ToLowerInvariant();
+    const canBookWithDriver = @canBookWithDriver.ToString().ToLowerInvariant();
+    const missingSelfDrive = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(readiness?.MissingItems ?? new List<string>()));
+    const serverErrors = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(serverErrorMessages));
+    const initialQuoteAvailable = @((quote?.IsAvailable != false).ToString().ToLowerInvariant());
+    const formatMoney = value => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(value || 0));
+    const fields = ['PickUpDate','DropOffDate','PickUpTime','DropOffTime','RentalMode','DeliveryMethod','EstimatedDistanceKm'];
+    const box = document.getElementById('availabilityBox');
+    const submit = document.getElementById('submitBooking');
+    const form = document.getElementById('bookingForm');
+    const actionAlert = document.getElementById('bookingActionAlert');
+    const serverSummary = document.getElementById('serverValidationSummary');
+    const rentalMode = document.getElementById('RentalMode');
+    const deliveryMethod = document.getElementById('DeliveryMethod');
+    const withDriverFields = document.getElementById('withDriverFields');
+    const bookingHolderDob = document.getElementById('BookingHolderDateOfBirth');
+    const acceptTerms = document.getElementById('AcceptTerms');
+    const locations = @Html.Raw(ViewBag.LocationsJson ?? "[]");
+    const pickupLocation = document.getElementById('PickUpLocationID');
+    const dropoffLocation = document.getElementById('DropOffLocationID');
+    const pickupAddress = document.getElementById('PickUpAddressText');
+    const dropoffAddress = document.getElementById('DropOffAddressText');
+    const copyPickupToDropoff = document.getElementById('copyPickupToDropoff');
+    const mapFrame = document.getElementById('bookingMapFrame');
+    const mapEmpty = document.getElementById('bookingMapEmpty');
+    const mapTitle = document.getElementById('bookingMapTitle');
+    const showPickupMap = document.getElementById('showPickupMap');
+    const showDropoffMap = document.getElementById('showDropoffMap');
+    let activeMapMode = 'pickup';
+    let quoteAvailable = initialQuoteAvailable;
+    let quoteMessage = document.getElementById('availabilityText')?.textContent?.trim() || '';
+    let timer;
+
+    function setText(id, value){ const el=document.getElementById(id); if(el) el.textContent=value; }
+    function selectedCanBook(){ return rentalMode?.value === 'Có tài xế' ? canBookWithDriver : canBookSelfDrive; }
+    function selectedReadinessMessage(){
+        if(selectedCanBook()) return '';
+        if(rentalMode?.value === 'Có tài xế')
+            return 'Bạn chưa đủ điều kiện đặt xe có tài xế. Hãy xác minh email OTP và cập nhật số điện thoại liên hệ.';
+        return 'Bạn chưa đủ điều kiện thuê xe tự lái. Cần bổ sung: ' + (missingSelfDrive.length ? missingSelfDrive.join(' · ') : 'hồ sơ CCCD và giấy phép lái xe đã được duyệt, còn hiệu lực.');
+    }
+    function setButtonState(){
+        const blocked = !selectedCanBook() || !quoteAvailable;
+        submit.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+        submit.classList.toggle('btn-primary', !blocked);
+        submit.classList.toggle('btn-warning', blocked);
+        submit.title = blocked ? 'Bấm để xem lý do chưa thể gửi yêu cầu.' : '';
+    }
+    function hideActionError(){
+        actionAlert?.classList.add('d-none');
+        if(actionAlert) actionAlert.textContent='';
+    }
+    function showActionError(message, target){
+        if(!actionAlert) return;
+        actionAlert.textContent = message;
+        actionAlert.classList.remove('d-none');
+        actionAlert.focus({preventScroll:true});
+        actionAlert.scrollIntoView({behavior:'smooth', block:'center'});
+        if(target && typeof target.focus === 'function') setTimeout(() => target.focus({preventScroll:true}), 350);
+    }
+    function localDateTime(dateValue, timeValue){
+        if(!dateValue || !timeValue) return null;
+        const normalizedTime = timeValue.length === 5 ? timeValue + ':00' : timeValue;
+        const value = new Date(dateValue + 'T' + normalizedTime);
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    function findLocation(id){ return locations.find(x => String(x.id) === String(id)); }
+    function buildMapUrl(latitude, longitude){
+        const lat=Number(latitude), lng=Number(longitude), delta=.025;
+        const bbox=[lng-delta,lat-delta,lng+delta,lat+delta].join(',');
+        return 'https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent(bbox)+'&layer=mapnik&marker='+encodeURIComponent(lat+','+lng);
+    }
+    function showMap(mode){
+        activeMapMode=mode;
+        const select = mode === 'pickup' ? pickupLocation : dropoffLocation;
+        const selected = findLocation(select?.value);
+        showPickupMap?.classList.toggle('btn-primary', mode === 'pickup');
+        showPickupMap?.classList.toggle('btn-outline-primary', mode !== 'pickup');
+        showDropoffMap?.classList.toggle('btn-primary', mode === 'dropoff');
+        showDropoffMap?.classList.toggle('btn-outline-primary', mode !== 'dropoff');
+        if(!selected){
+            mapFrame?.classList.add('d-none');
+            mapEmpty?.classList.remove('d-none');
+            if(mapTitle) mapTitle.textContent='Chọn địa điểm để xem bản đồ.';
+            return;
+        }
+        if(mapTitle) mapTitle.textContent=(mode==='pickup'?'Điểm nhận/đón: ':'Điểm trả/kết thúc: ')+(selected.displayName||selected.name);
+        if(selected.latitude != null && selected.longitude != null){
+            mapFrame.src=buildMapUrl(selected.latitude,selected.longitude);
+            mapFrame.classList.remove('d-none');
+            mapEmpty.classList.add('d-none');
+        }else{
+            mapFrame?.classList.add('d-none');
+            mapEmpty?.classList.remove('d-none');
+            mapEmpty.innerHTML='<div><i class="ion-ios-map" style="font-size:42px;color:#1089ff"></i><br/>Địa điểm này chưa có tọa độ bản đồ.</div>';
+        }
+    }
+    function fillSuggestedAddress(select, input){
+        const selected=findLocation(select?.value);
+        if(!selected || !input) return;
+        if(!input.value.trim() || input.dataset.autoFilled==='true'){
+            input.value=selected.fullAddress || selected.displayName || selected.name || '';
+            input.dataset.autoFilled='true';
+        }
+    }
+    function refreshAddressRules(){
+        const withDriver=rentalMode?.value==='Có tài xế';
+        const delivery=deliveryMethod?.value==='Giao xe tận nơi';
+        const required=withDriver || delivery;
+        [pickupAddress,dropoffAddress].forEach(input=>{ if(input) input.required=required; });
+        document.querySelectorAll('.address-required-mark').forEach(mark=>mark.classList.toggle('d-none',!required));
+        setText('addressRequirementText', withDriver
+            ? 'Xe có tài xế bắt buộc nhập điểm đón và điểm đến cụ thể.'
+            : (delivery ? 'Giao xe tận nơi bắt buộc nhập địa chỉ nhận và trả cụ thể.' : 'Hệ thống đã gợi ý địa chỉ điểm giao xe. Bạn có thể bổ sung cổng, sảnh hoặc điểm hẹn.'));
+        fillSuggestedAddress(pickupLocation,pickupAddress);
+        fillSuggestedAddress(dropoffLocation,dropoffAddress);
+    }
+
+    function refreshRules(){
+        const withDriver = rentalMode?.value === 'Có tài xế';
+        const ready = selectedCanBook();
+        withDriverFields?.classList.toggle('d-none', !withDriver);
+        document.querySelectorAll('.with-driver-required').forEach(el => el.required = withDriver);
+        const alert = document.getElementById('readinessAlert');
+        alert.className = 'alert ' + (ready ? 'alert-info' : 'alert-warning') + ' shadow-sm border-0 mb-4';
+        setText('readinessTitle', withDriver ? 'Điều kiện đặt xe có tài xế' : 'Điều kiện thuê xe tự lái');
+        setText('readinessText', withDriver
+            ? 'Khách chỉ cần email đã xác minh OTP và số điện thoại liên hệ; không bắt buộc CCCD hoặc bằng lái của khách.'
+            : 'Khách phải có hồ sơ CCCD và giấy phép lái xe đã được SmartCar phê duyệt, còn hiệu lực đến hết chuyến.');
+        const status = document.getElementById('readinessStatus');
+        if(status){
+            status.innerHTML = ready
+                ? '<strong>Đủ điều kiện để gửi yêu cầu theo hình thức đã chọn.</strong>'
+                : (withDriver
+                    ? '<strong>Cần bổ sung:</strong> Email OTP đã xác minh và số điện thoại.'
+                    : '<strong>Cần bổ sung:</strong> ' + (missingSelfDrive.length ? missingSelfDrive.join(' · ') : 'Hồ sơ CCCD và GPLX.'));
+        }
+        document.getElementById('verificationLink')?.classList.toggle('d-none', withDriver || canBookSelfDrive);
+        document.getElementById('licenseChip')?.classList.toggle('d-none', withDriver);
+        setText('profileBadge', withDriver ? (canBookWithDriver ? 'Đã đủ liên hệ' : 'Thiếu thông tin liên hệ') : (canBookSelfDrive ? 'Đã xác minh' : 'Chưa đủ điều kiện'));
+        document.getElementById('profileBadge')?.classList.toggle('badge-success', ready);
+        document.getElementById('profileBadge')?.classList.toggle('badge-warning', !ready);
+        setText('selectedModeBadge', rentalMode?.value || '');
+        setText('selectedDeliveryBadge', deliveryMethod?.value || '');
+        setText('modeRuleBox', withDriver
+            ? 'Xe có tài xế: người đứng tên phải từ đủ 18 tuổi, nhập điểm đón/trả, số hành khách và lịch trình. Khách không cần GPLX; tài xế do đối tác phân công và phải được xác minh.'
+            : 'Xe tự lái: khách phải được xác minh CCCD và GPLX. Cọc, giới hạn kilomet và các biên bản giao/trả áp dụng theo chính sách của xe.');
+        const depositNote = document.getElementById('depositNote');
+        if(depositNote){
+            depositNote.innerHTML = withDriver
+                ? '<strong>Không thu cọc bảo đảm tài sản của khách.</strong><br><small>Khách vẫn có thể phải thanh toán trước để xác nhận chuyến theo chính sách đặt chỗ.</small>'
+                : '<strong>Tiền cọc là khoản có thể hoàn.</strong><br><small>Được hoàn sau khi trả xe và xử lý phụ phí hợp lệ.</small>';
+        }
+        refreshAddressRules();
+        setButtonState();
+    }
+
+    async function refreshQuote(){
+        const data = {};
+        fields.forEach(id => data[id] = document.getElementById(id)?.value || '');
+        if(!data.PickUpDate || !data.DropOffDate || !data.PickUpTime || !data.DropOffTime || !data.RentalMode || !data.DeliveryMethod){
+            quoteAvailable=false;
+            quoteMessage='Vui lòng chọn đầy đủ ngày, giờ và hình thức thuê.';
+            setButtonState();
+            return;
+        }
+        const query = new URLSearchParams({
+            carId,
+            pickUpDate:data.PickUpDate,
+            dropOffDate:data.DropOffDate,
+            pickUpTime:data.PickUpTime,
+            dropOffTime:data.DropOffTime,
+            rentalMode:data.RentalMode,
+            deliveryMethod:data.DeliveryMethod,
+            estimatedDistanceKm:data.EstimatedDistanceKm || ''
+        });
+        try{
+            const response = await fetch('/Reservation/Quote?' + query.toString(), {headers:{'Accept':'application/json'}});
+            const raw = await response.text();
+            let result; try{ result = JSON.parse(raw); }catch{ result = {message: raw.replace(/^"|"$/g,'')}; }
+            if(!response.ok) throw new Error(result.message || result.title || raw || 'Không thể tính giá.');
+            quoteAvailable = !!result.isAvailable;
+            quoteMessage = result.availabilityMessage || (quoteAvailable ? 'Xe còn trống.' : 'Xe không còn trống trong khoảng thời gian đã chọn.');
+            box.className = 'alert ' + (quoteAvailable ? 'alert-success' : 'alert-danger') + ' mb-3';
+            setText('availabilityText', quoteMessage);
+            setText('durationText', 'Thời lượng tính giá: ' + result.price.rentalDays + ' ngày');
+            setText('rentalDays', '(' + result.price.rentalDays + ' ngày)');
+            setText('rentalAmount', formatMoney(result.price.rentalAmount));
+            setText('deliveryFee', formatMoney(result.price.deliveryFee));
+            setText('insuranceFee', formatMoney(result.price.insuranceFee));
+            setText('platformFee', formatMoney(result.price.customerPlatformFee));
+            setText('discountAmount', '-' + formatMoney(result.price.discountAmount));
+            setText('totalRental', formatMoney(result.price.totalRental));
+            setText('reservationDepositAmount', formatMoney(result.price.reservationDepositAmount));
+            setText('securityDepositAmount', formatMoney(result.price.securityDepositAmount));
+            setText('totalDue', formatMoney(result.price.totalDue));
+            setButtonState();
+        }catch(error){
+            quoteAvailable=false;
+            quoteMessage=error.message || 'Không kiểm tra được lịch xe.';
+            box.className='alert alert-danger mb-3';
+            setText('availabilityText', quoteMessage);
+            setText('durationText','');
+            setButtonState();
+        }
+    }
+
+    pickupLocation?.addEventListener('change',()=>{ fillSuggestedAddress(pickupLocation,pickupAddress); showMap('pickup'); hideActionError(); });
+    dropoffLocation?.addEventListener('change',()=>{ fillSuggestedAddress(dropoffLocation,dropoffAddress); showMap('dropoff'); hideActionError(); });
+    pickupAddress?.addEventListener('input',()=>pickupAddress.dataset.autoFilled='false');
+    dropoffAddress?.addEventListener('input',()=>dropoffAddress.dataset.autoFilled='false');
+    copyPickupToDropoff?.addEventListener('click',()=>{
+        if(dropoffLocation && pickupLocation) dropoffLocation.value=pickupLocation.value;
+        if(dropoffAddress && pickupAddress){ dropoffAddress.value=pickupAddress.value; dropoffAddress.dataset.autoFilled=pickupAddress.dataset.autoFilled || 'false'; }
+        showMap('dropoff');
+    });
+    showPickupMap?.addEventListener('click',()=>showMap('pickup'));
+    showDropoffMap?.addEventListener('click',()=>showMap('dropoff'));
+
+    document.querySelectorAll('.quote-input').forEach(el => el.addEventListener('change', () => {
+        hideActionError();
+        refreshRules();
+        clearTimeout(timer);
+        timer=setTimeout(refreshQuote,150);
+    }));
+    const pickDate=document.getElementById('PickUpDate'), dropDate=document.getElementById('DropOffDate');
+    function updateDobLimit(){
+        if(!bookingHolderDob || !pickDate?.value) return;
+        const pickup = new Date(pickDate.value + 'T00:00:00');
+        pickup.setFullYear(pickup.getFullYear() - 18);
+        bookingHolderDob.max = pickup.toISOString().slice(0,10);
+    }
+    pickDate?.addEventListener('change',()=>{
+        if(dropDate && dropDate.value < pickDate.value) dropDate.value=pickDate.value;
+        if(dropDate) dropDate.min=pickDate.value;
+        updateDobLimit();
+    });
+    acceptTerms?.addEventListener('change', hideActionError);
+
+    form?.addEventListener('submit', function(event){
+        hideActionError();
+        const readinessMessage = selectedReadinessMessage();
+        if(readinessMessage){
+            event.preventDefault();
+            showActionError(readinessMessage, document.getElementById('readinessAlert'));
+            return;
+        }
+        if(!quoteAvailable){
+            event.preventDefault();
+            showActionError(quoteMessage || 'Xe không khả dụng trong thời gian đã chọn. Vui lòng chọn lịch khác.', box);
+            return;
+        }
+        if(!acceptTerms?.checked){
+            event.preventDefault();
+            showActionError('Bạn phải tích chọn đồng ý với điều khoản thuê xe trước khi gửi yêu cầu.', acceptTerms);
+            return;
+        }
+        const pickup = localDateTime(document.getElementById('PickUpDate')?.value, document.getElementById('PickUpTime')?.value);
+        const dropoff = localDateTime(document.getElementById('DropOffDate')?.value, document.getElementById('DropOffTime')?.value);
+        if(!pickup || !dropoff){
+            event.preventDefault();
+            showActionError('Vui lòng chọn đầy đủ ngày và giờ nhận/trả xe hợp lệ.', document.getElementById('PickUpDate'));
+            return;
+        }
+        if(pickup.getTime() < Date.now() - 60000){
+            event.preventDefault();
+            showActionError('Thời gian nhận xe không được nằm trong quá khứ. Vui lòng chọn thời gian khác.', document.getElementById('PickUpDate'));
+            return;
+        }
+        if(dropoff.getTime() <= pickup.getTime()){
+            event.preventDefault();
+            showActionError('Thời gian trả xe phải sau thời gian nhận xe.', document.getElementById('DropOffDate'));
+            return;
+        }
+        if(!form.checkValidity()){
+            event.preventDefault();
+            const invalid = form.querySelector(':invalid');
+            showActionError('Thông tin đặt xe chưa đầy đủ hoặc chưa hợp lệ. Vui lòng kiểm tra trường được đánh dấu.', invalid);
+            invalid?.reportValidity();
+            return;
+        }
+        submit.disabled=true;
+        submit.textContent='Đang gửi yêu cầu...';
+    });
+
+    updateDobLimit();
+    refreshRules();
+    showMap('pickup');
+    if(serverErrors.length){
+        const message=serverErrors.join(' ');
+        if(actionAlert){
+            actionAlert.textContent=message;
+            actionAlert.classList.remove('d-none');
+        }
+        serverSummary?.classList.remove('d-none');
+        setTimeout(() => (serverSummary || actionAlert)?.scrollIntoView({behavior:'smooth', block:'center'}), 100);
+    }
+})();
+</script>

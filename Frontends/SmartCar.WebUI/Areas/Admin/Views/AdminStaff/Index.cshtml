@@ -1,0 +1,50 @@
+@model List<ResultStaffDto>
+@{
+    ViewData["Title"] = "Quản lý nhân viên";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-5">
+                <div class="card"><div class="card-body">
+                    <h4 class="card-title">Tạo tài khoản nhân viên</h4>
+                    <p class="text-muted">Nhân viên chỉ được xử lý đơn thuê, hỗ trợ kiểm duyệt xe đối tác và đối soát giao dịch.</p>
+                    <form method="post" action="/Admin/AdminStaff/Create">
+                        @Html.AntiForgeryToken()
+                        <div class="form-group"><label>Họ và tên</label><input name="FullName" class="form-control" required /></div>
+                        <div class="form-group"><label>Email</label><input name="Email" type="email" class="form-control" required /></div>
+                        <div class="form-group"><label>Tên đăng nhập</label><input name="Username" class="form-control" minlength="4" required /></div>
+                        <div class="form-group"><label>Mật khẩu ban đầu</label><input name="Password" type="password" class="form-control" minlength="6" required /></div>
+                        <button class="btn btn-primary">Tạo nhân viên</button>
+                    </form>
+                </div></div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card"><div class="card-body">
+                    <h4 class="card-title">Danh sách nhân viên</h4>
+                    @if (TempData["StaffSuccess"] != null) { <div class="alert alert-success">@TempData["StaffSuccess"]</div> }
+                    @if (TempData["StaffError"] != null) { <div class="alert alert-danger">@TempData["StaffError"]</div> }
+                    <div class="table-responsive">
+                        <table class="table table-bordered"><thead><tr><th>Nhân viên</th><th>Tài khoản</th><th>Đặt lại mật khẩu</th></tr></thead><tbody>
+                        @if (Model.Count == 0) { <tr><td colspan="3" class="text-center">Chưa có nhân viên.</td></tr> }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr><td><strong>@item.FullName</strong><br /><small>@item.Email</small></td><td>@item.Username</td><td>
+                                    <form method="post" action="/Admin/AdminStaff/ResetPassword" class="d-flex">
+                                        @Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.AppUserId" />
+                                        <input name="newPassword" type="password" minlength="6" class="form-control form-control-sm mr-1" placeholder="Mật khẩu mới" required />
+                                        <button class="btn btn-sm btn-warning">Đặt lại</button>
+                                    </form>
+                                </td></tr>
+                            }
+                        }
+                        </tbody></table>
+                    </div>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,61 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# Visual Studio Code / JetBrains
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Test results
+TestResults/
+*.trx
+
+# Local databases and backups
+*.mdf
+*.ldf
+*.bak
+*.bacpac
+
+# Environment and secrets
+.env
+.env.*
+appsettings.Local.json
+appsettings.Production.json
+secrets.json
+
+# NuGet
+packages/
+*.nupkg
+
+# Operating system files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+~$*
+**/PrivateUploads/
+**/appsettings.Local.json
+**/appsettings.Development.json
+
+# Coverage and generated test artifacts
+coverage/
+**/coverage.cobertura.xml
+**/coverage.opencover.xml
+Database/KICH_HOAT_TAI_KHOAN_DEMO_GENERATED.sql

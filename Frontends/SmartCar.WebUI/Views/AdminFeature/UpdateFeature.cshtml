@@ -1,0 +1,29 @@
+﻿@model UpdateFeatureDto
+
+@{
+    ViewData["Title"] = "UpdateFeature";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title">Trang cập nhật tính năng xe</h4>
+                        <p class="card-subtitle mb-4">Bạn có thể nhập tính năng của xe vào ô bên dưới, sau đó nhấn nút lưu để hoàn tất.</p>
+                        <form method="post">@Html.AntiForgeryToken()
+                            <div class="form-group">
+                                <input type="hidden" asp-for="FeatureID" />
+                                <label for="exampleInputName">Tên tính năng</label>
+                                <input type="text" class="form-control" id="exampleInputName" asp-for="Name" placeholder="Nhập tên tính năng">
+                            </div>
+                            <button type="submit" class="btn btn-primary waves-effect waves-light">Lưu tính năng</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

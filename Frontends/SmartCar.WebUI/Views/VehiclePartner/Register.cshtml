@@ -1,0 +1,448 @@
+@using System.Globalization
+@model VehiclePartnerRegisterViewModel
+@{
+    ViewData["Title"] = "Đăng xe đối tác";
+    Layout = "~/Views/UILayout/Partner.cshtml";
+}
+<style>
+    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.summary-row{border-bottom:1px solid #eee;padding:9px 0}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
+</style>
+<section class="ftco-section bg-light py-5">
+    <div class="container wizard-shell">
+        <div class="text-center mb-4">
+            <span class="subheading text-success font-weight-bold">KHU VỰC CHỦ XE</span>
+            <h2>Đăng xe theo từng bước</h2>
+            <p class="text-muted mb-1">Hồ sơ được kiểm tra trước khi xe xuất hiện trên SmartCar. Phí nền tảng hiện tại: <strong>@Model.CurrentCommissionRate.ToString("0.##")%</strong> trên đơn hoàn thành.</p>
+            <span id="draftState" class="draft-state text-muted">Dữ liệu văn bản sẽ được tự động lưu tạm trên trình duyệt.</span>
+        </div>
+
+        <div class="wizard-steps" aria-label="Các bước đăng xe">
+            <button type="button" class="wizard-step active" data-step="1">1. Thông tin xe</button>
+            <button type="button" class="wizard-step" data-step="2">2. Giá & cọc</button>
+            <button type="button" class="wizard-step" data-step="3">3. Giao nhận</button>
+            <button type="button" class="wizard-step" data-step="4">4. Giấy tờ</button>
+            <button type="button" class="wizard-step" data-step="5">5. Hình ảnh</button>
+            <button type="button" class="wizard-step" data-step="6">6. Tiện ích</button>
+            <button type="button" class="wizard-step" data-step="7">7. Kiểm tra</button>
+        </div>
+
+        <div class="bg-white shadow-sm rounded p-4 p-md-5">
+            <form id="partnerVehicleForm" method="post" enctype="multipart/form-data" asp-controller="VehiclePartner" asp-action="Register" novalidate>
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <input asp-for="Form.OwnerFullName" type="hidden" />
+                <input asp-for="Form.Email" type="hidden" />
+                <input asp-for="Form.Phone" type="hidden" />
+                <input asp-for="Form.Address" type="hidden" />
+                <input asp-for="Form.CitizenIdentityNumber" type="hidden" />
+                <input asp-for="Form.BankName" type="hidden" />
+                <input asp-for="Form.BankAccountNumber" type="hidden" />
+                <input asp-for="Form.BankAccountHolder" type="hidden" />
+
+                <section class="wizard-panel active" data-panel="1">
+                    <h4>Thông tin cơ bản của xe</h4>
+                    <p class="text-muted">Nhập đúng theo đăng ký xe. Biển số sẽ được chuẩn hóa, số khung/số máy dùng để đối chiếu giấy tờ xe.</p>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label class="required">Hãng xe</label>
+                            <select asp-for="Form.BrandName" id="brandSelect" class="form-control draft-field" required>
+                                <option value="">Chọn hãng xe</option>
+                                <option>Toyota</option><option>Honda</option><option>Mazda</option><option>Kia</option><option>Hyundai</option><option>Mitsubishi</option><option>Ford</option><option>VinFast</option><option>Nissan</option><option>Suzuki</option><option>Mercedes-Benz</option><option>BMW</option>
+                            </select>
+                            <span asp-validation-for="Form.BrandName" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Dòng xe</label>
+                            <select asp-for="Form.Model" id="modelSelect" class="form-control draft-field" required>
+                                <option value="">Chọn hãng xe trước</option>
+                            </select>
+                            <span asp-validation-for="Form.Model" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Phiên bản</label>
+                            <input asp-for="Form.VehicleVersion" class="form-control draft-field" maxlength="100" placeholder="Ví dụ: Vios G, Luxury..." />
+                            <span asp-validation-for="Form.VehicleVersion" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Năm sản xuất</label>
+                            <input asp-for="Form.ManufactureYear" type="number" min="1990" max="2100" class="form-control draft-field" required />
+                            <span asp-validation-for="Form.ManufactureYear" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label class="required">Biển số</label>
+                            <input asp-for="Form.LicensePlate" id="licensePlateInput" class="form-control draft-field text-uppercase" placeholder="30A-123.45" maxlength="20" required />
+                            <small class="text-muted">Hệ thống lưu chuẩn dạng không dấu cách/ký tự phân tách.</small>
+                            <span asp-validation-for="Form.LicensePlate" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Màu xe</label>
+                            <select asp-for="Form.Color" class="form-control draft-field" required>
+                                <option value="">Chọn màu xe</option>
+                                <option>Trắng</option><option>Đen</option><option>Bạc</option><option>Xám</option><option>Đỏ</option><option>Xanh</option><option>Vàng</option><option>Nâu</option><option>Cam</option>
+                            </select>
+                            <span asp-validation-for="Form.Color" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Hộp số</label>
+                            <select asp-for="Form.Transmission" class="form-control draft-field" required>
+                                <option value="Số tự động">Số tự động</option>
+                                <option value="Số sàn">Số sàn</option>
+                            </select>
+                            <span asp-validation-for="Form.Transmission" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Nhiên liệu</label>
+                            <select asp-for="Form.Fuel" class="form-control draft-field" required>
+                                <option value="Xăng">Xăng</option>
+                                <option value="Dầu">Dầu</option>
+                                <option value="Điện">Điện</option>
+                                <option value="Hybrid">Hybrid</option>
+                            </select>
+                            <span asp-validation-for="Form.Fuel" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label class="required">Số chỗ</label>
+                            <select asp-for="Form.Seat" class="form-control draft-field" required>
+                                <option value="">Chọn số chỗ</option>
+                                <option value="4">4</option><option value="5">5</option><option value="7">7</option><option value="9">9</option><option value="16">16</option><option value="29">29</option><option value="45">45</option>
+                            </select>
+                            <span asp-validation-for="Form.Seat" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label>Số km hiện tại</label>
+                            <input asp-for="Form.Km" type="number" min="0" class="form-control draft-field" />
+                            <small class="text-muted">Dùng để đối chiếu ảnh đồng hồ kilomet.</small>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Số khung</label>
+                            <input asp-for="Form.ChassisNumber" class="form-control draft-field text-uppercase" maxlength="50" required />
+                            <span asp-validation-for="Form.ChassisNumber" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="required">Số máy</label>
+                            <input asp-for="Form.EngineNumber" class="form-control draft-field text-uppercase" maxlength="50" required />
+                            <span asp-validation-for="Form.EngineNumber" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="required">Hình thức thuê</label>
+                            <select asp-for="Form.RentalMode" class="form-control draft-field" required>
+                                <option value="Tự lái">Tự lái</option>
+                                <option value="Có tài xế">Có tài xế</option>
+                                <option value="Tự lái hoặc có tài xế">Tự lái hoặc có tài xế</option>
+                            </select>
+                            <small class="text-muted">Chọn khả năng cung cấp dịch vụ của xe. Nếu chọn “Tự lái hoặc có tài xế”, khách sẽ chọn hình thức phù hợp khi đặt xe.</small>
+                            <span asp-validation-for="Form.RentalMode" class="text-danger"></span>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="required">Điểm hoạt động</label>
+                            <select asp-for="Form.LocationID" class="form-control draft-field" required>
+                                <option value="">Chọn địa điểm</option>
+                                @foreach (var location in Model.Locations){<option value="@location.LocationID">@location.DisplayName</option>}
+                            </select>
+                            <span asp-validation-for="Form.LocationID" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div id="driverProfileSection" class="border rounded p-3 mt-3 d-none">
+                        <h5>Hồ sơ tài xế của đối tác</h5>
+                        <p class="text-muted">Bắt buộc khi xe cung cấp dịch vụ “Có tài xế”. Hồ sơ này chỉ dùng để nhân viên SmartCar kiểm tra, không hiển thị công khai cho khách.</p>
+                        <div class="form-row">
+                            <div class="form-group col-md-4">
+                                <label class="required">Họ tên tài xế</label>
+                                <input asp-for="Form.DriverFullName" class="form-control draft-field driver-required" maxlength="120" />
+                                <span asp-validation-for="Form.DriverFullName" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="required">Số điện thoại tài xế</label>
+                                <input asp-for="Form.DriverPhone" class="form-control draft-field driver-required" maxlength="20" />
+                                <span asp-validation-for="Form.DriverPhone" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="required">Số CCCD tài xế</label>
+                                <input asp-for="Form.DriverCitizenIdentityNumber" class="form-control draft-field driver-required" maxlength="20" inputmode="numeric" />
+                                <span asp-validation-for="Form.DriverCitizenIdentityNumber" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group col-md-3">
+                                <label class="required">Số GPLX tài xế</label>
+                                <input asp-for="Form.DriverLicenseNumber" class="form-control draft-field driver-required" maxlength="50" />
+                                <span asp-validation-for="Form.DriverLicenseNumber" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-2">
+                                <label class="required">Hạng GPLX</label>
+                                <input asp-for="Form.DriverLicenseClass" class="form-control draft-field driver-required" maxlength="20" placeholder="B, C1..." />
+                                <span asp-validation-for="Form.DriverLicenseClass" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="required">GPLX hết hạn</label>
+                                <input asp-for="Form.DriverLicenseExpiryDate" type="date" min="@VietnamTime.Today.AddDays(1).ToString("yyyy-MM-dd")" class="form-control draft-field driver-required" />
+                                <span asp-validation-for="Form.DriverLicenseExpiryDate" class="text-danger"></span>
+                            </div>
+                            <div class="form-group col-md-4">
+                                <label class="required">Ảnh GPLX tài xế</label>
+                                <input asp-for="DriverLicenseImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file driver-file" />
+                                <span asp-validation-for="DriverLicenseImage" class="text-danger"></span>
+                                <small class="text-muted">Ảnh rõ số GPLX, hạng và ngày hết hạn; tối đa 6 MB.</small>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="wizard-panel" data-panel="2">
+                    <h4>Giá thuê và tiền đặt cọc</h4>
+                    <p class="text-muted">SmartCar có thể điều chỉnh giá khi duyệt. Mọi khoản thu sẽ được thể hiện rõ trên đơn.</p>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label class="required">Giá thuê đề xuất/ngày</label>
+                            <input asp-for="Form.ProposedDailyPrice" type="hidden" class="draft-field money-raw" />
+                            <div class="input-group"><input id="ProposedDailyPriceDisplay" type="text" inputmode="numeric" class="form-control money-display" data-target="Form_ProposedDailyPrice" value="@Model.Form.ProposedDailyPrice.ToString("#,0", CultureInfo.InvariantCulture)" required /><div class="input-group-append"><span class="input-group-text">đồng</span></div></div>
+                            <small class="text-muted">Ví dụ: 10,000,000 đồng.</small>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Tiền đặt cọc</label>
+                            <input asp-for="Form.ProposedDepositAmount" type="hidden" class="draft-field money-raw" />
+                            <div class="input-group"><input id="ProposedDepositAmountDisplay" type="text" inputmode="numeric" class="form-control money-display" data-target="Form_ProposedDepositAmount" value="@Model.Form.ProposedDepositAmount.ToString("#,0", CultureInfo.InvariantCulture)" /><div class="input-group-append"><span class="input-group-text">đồng</span></div></div>
+                            <small class="text-muted">Chỉ áp dụng cho phần tự lái; chuyến có tài xế mặc định không thu cọc bảo đảm tài sản của khách.</small>
+                        </div>
+                        <div class="form-group col-md-4"><label>Giới hạn km/ngày</label><div class="input-group"><input asp-for="Form.KmLimitPerDay" type="number" min="0" max="5000" class="form-control draft-field" /><div class="input-group-append"><span class="input-group-text">km</span></div></div></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4">
+                            <label>Phí vượt kilomet</label>
+                            <input asp-for="Form.ExtraKmFee" type="hidden" class="draft-field money-raw" />
+                            <div class="input-group"><input id="ExtraKmFeeDisplay" type="text" inputmode="numeric" class="form-control money-display" data-target="Form_ExtraKmFee" value="@Model.Form.ExtraKmFee.ToString("#,0", CultureInfo.InvariantCulture)" /><div class="input-group-append"><span class="input-group-text">đ/km</span></div></div>
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label>Phí giao xe</label>
+                            <input asp-for="Form.DeliveryFee" type="hidden" class="draft-field money-raw" />
+                            <div class="input-group"><input id="DeliveryFeeDisplay" type="text" inputmode="numeric" class="form-control money-display" data-target="Form_DeliveryFee" value="@Model.Form.DeliveryFee.ToString("#,0", CultureInfo.InvariantCulture)" /><div class="input-group-append"><span class="input-group-text">đồng</span></div></div>
+                            <small id="deliveryFeeRule" class="text-muted">Nếu chọn nhận tại điểm giao xe, phí này bắt buộc bằng 0.</small>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">Ước tính chủ xe nhận sau phí nền tảng: <strong id="ownerEstimate">0 đồng/ngày</strong>. Chưa gồm phí cổng thanh toán, hoàn tiền hoặc bồi thường.</div>
+                </section>
+
+                <section class="wizard-panel" data-panel="3">
+                    <h4>Địa điểm và hình thức giao xe</h4>
+                    <div class="form-row">
+                        <div class="form-group col-md-5"><label class="required">Hình thức giao nhận</label><select asp-for="Form.DeliveryMethod" class="form-control draft-field" required><option>Nhận tại điểm giao xe</option><option>Giao xe tận nơi</option><option>Nhận tại điểm hoặc giao tận nơi</option></select></div>
+                        <div class="form-group col-md-7"><label>Địa chỉ giao xe chi tiết</label><input asp-for="Form.DeliveryAddress" class="form-control draft-field" placeholder="Bãi xe, số nhà, phường/xã..." /></div>
+                    </div>
+                    <div class="form-group"><label>Điều kiện thuê</label><textarea asp-for="Form.RentalConditions" rows="4" class="form-control draft-field" placeholder="Yêu cầu độ tuổi, bằng lái, đặt cọc, phạm vi sử dụng..."></textarea></div>
+                    <div class="form-group"><label>Chính sách hủy</label><textarea asp-for="Form.CancellationPolicy" rows="4" class="form-control draft-field" placeholder="Mốc thời gian hủy, khoản được hoàn, khoản không được hoàn..."></textarea></div>
+                </section>
+
+                <section class="wizard-panel" data-panel="4">
+                    <h4>Giấy tờ xe</h4>
+                    <p class="file-note">Ảnh JPG, PNG hoặc WEBP; tối đa 6 MB/ảnh. Thông tin, biển số và ngày hết hạn phải đọc được.</p>
+                    <div class="form-row">
+                        <div class="form-group col-md-4"><label class="required">Đăng ký xe</label><input asp-for="RegistrationImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" required /><span asp-validation-for="RegistrationImage" class="text-danger"></span></div>
+                        <div class="form-group col-md-4"><label class="required">Đăng kiểm còn hiệu lực</label><input asp-for="InspectionImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" required /><span asp-validation-for="InspectionImage" class="text-danger"></span></div>
+                        <div class="form-group col-md-4"><label class="required">Bảo hiểm xe</label><input asp-for="InsuranceImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" required /><span asp-validation-for="InsuranceImage" class="text-danger"></span></div>
+                    </div>
+                    <div class="alert alert-warning">Nhân viên chỉ xem và duyệt; không sửa trực tiếp thông tin giấy tờ. Hồ sơ sai sẽ được trả lại kèm lý do.</div>
+                </section>
+
+                <section class="wizard-panel" data-panel="5">
+                    <h4>Ảnh ngoại thất và nội thất</h4>
+                    <p class="file-note">Chụp cùng thời điểm, đủ sáng, không dùng ảnh mạng. Các ảnh này là căn cứ khi giao nhận và xử lý tranh chấp.</p>
+                    <div class="form-row">
+                        <div class="form-group col-md-4"><label class="required">Ảnh tổng thể</label><input asp-for="VehicleImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvOverview" required /><img id="pvOverview" class="preview-image mt-2" alt="Xem trước ảnh tổng thể" /></div>
+                        <div class="form-group col-md-4"><label class="required">Đầu xe</label><input asp-for="FrontImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvFront" required /><img id="pvFront" class="preview-image mt-2" alt="Xem trước đầu xe" /></div>
+                        <div class="form-group col-md-4"><label class="required">Đuôi xe</label><input asp-for="RearImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvRear" required /><img id="pvRear" class="preview-image mt-2" alt="Xem trước đuôi xe" /></div>
+                        <div class="form-group col-md-4"><label class="required">Bên trái</label><input asp-for="LeftImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvLeft" required /><img id="pvLeft" class="preview-image mt-2" alt="Xem trước bên trái" /></div>
+                        <div class="form-group col-md-4"><label class="required">Bên phải</label><input asp-for="RightImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvRight" required /><img id="pvRight" class="preview-image mt-2" alt="Xem trước bên phải" /></div>
+                        <div class="form-group col-md-4"><label class="required">Nội thất</label><input asp-for="InteriorImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvInterior" required /><img id="pvInterior" class="preview-image mt-2" alt="Xem trước nội thất" /></div>
+                        <div class="form-group col-md-4"><label class="required">Đồng hồ kilomet</label><input asp-for="DashboardImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvDashboard" required /><img id="pvDashboard" class="preview-image mt-2" alt="Xem trước đồng hồ" /></div>
+                    </div>
+                </section>
+
+                <section class="wizard-panel" data-panel="6">
+                    <h4>Tiện ích và phụ kiện bàn giao</h4>
+                    <div class="form-group"><label>Tiện ích trên xe</label><textarea asp-for="Form.Amenities" rows="4" class="form-control draft-field" placeholder="Bluetooth, camera lùi, bản đồ, ghế trẻ em, cửa sổ trời..."></textarea><small class="text-muted">Mỗi mục cách nhau bằng dấu phẩy.</small></div>
+                    <div class="form-group"><label>Phụ kiện sẽ bàn giao</label><textarea asp-for="Form.Accessories" rows="4" class="form-control draft-field" placeholder="Đăng ký xe bản sao, bảo hiểm, lốp dự phòng, kích, camera hành trình..."></textarea></div>
+                    <div class="alert alert-light border">Danh sách phụ kiện sẽ được đưa vào checklist biên bản giao xe. Thiếu hoặc sai phải được hai bên ghi nhận, không tự động khấu trừ tiền cọc.</div>
+                </section>
+
+                <section class="wizard-panel" data-panel="7">
+                    <h4>Kiểm tra và gửi duyệt</h4>
+                    <p class="text-muted">Đối chiếu thông tin trước khi gửi. Sau khi gửi, thay đổi phải qua hồ sơ bổ sung.</p>
+                    <div id="reviewSummary" class="border rounded p-3 mb-3"></div>
+                    <div class="alert alert-secondary">
+                        <strong>Thông tin chủ xe đã xác minh</strong><br />
+                        @Model.Form.OwnerFullName · @Model.Form.Phone · @Model.Form.Email<br />
+                        Ngân hàng: @Model.Form.BankName – @Model.Form.BankAccountNumber – @Model.Form.BankAccountHolder
+                    </div>
+                    <div class="custom-control custom-checkbox mb-3">
+                        <input type="checkbox" class="custom-control-input" id="confirmTruth" required />
+                        <label class="custom-control-label" for="confirmTruth">Tôi xác nhận xe thuộc quyền sở hữu/quyền cho thuê hợp pháp, hình ảnh và giấy tờ là đúng sự thật.</label>
+                    </div>
+                    <div class="alert alert-info">Sau khi gửi, hồ sơ có trạng thái <strong>Chờ duyệt</strong>. Xe chỉ nhận đơn khi được duyệt và giấy tờ còn hiệu lực.</div>
+                </section>
+
+                <div class="sticky-actions d-flex flex-wrap justify-content-between align-items-center mt-4">
+                    <div>
+                        <button id="prevStep" type="button" class="btn btn-outline-secondary px-4" disabled>Quay lại</button>
+                        <button id="nextStep" type="button" class="btn btn-primary px-4 ml-2">Tiếp tục</button>
+                    </div>
+                    <div>
+                        <button id="clearDraft" type="button" class="btn btn-outline-danger mr-2">Xóa bản nháp</button>
+                        <a href="/VehiclePartner/Dashboard" class="btn btn-outline-secondary mr-2">Về Dashboard</a>
+                        <button id="submitApplication" type="submit" class="btn btn-success px-5 d-none">Gửi hồ sơ duyệt</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+<script>
+(function(){
+    const form=document.getElementById('partnerVehicleForm');
+    const panels=[...document.querySelectorAll('.wizard-panel')];
+    const stepButtons=[...document.querySelectorAll('.wizard-step')];
+    const prev=document.getElementById('prevStep'), next=document.getElementById('nextStep'), submit=document.getElementById('submitApplication');
+    const draftKey='smartcar.partnerVehicleDraft.v3';
+    let step=1;
+    const money=v=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(v||0))+' đồng';
+    const moneyDigits=v=>String(v??'').replace(/[^0-9]/g,'');
+    function syncMoneyDisplay(display){
+        const raw=document.getElementById(display.dataset.target);
+        if(!raw) return;
+        const digits=moneyDigits(display.value);
+        raw.value=digits||'0';
+        display.value=new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(raw.value||0));
+    }
+    function syncAllMoneyDisplays(){document.querySelectorAll('.money-display').forEach(display=>{const raw=document.getElementById(display.dataset.target);if(raw)display.value=new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(raw.value||0));});}
+    function applyDeliveryFeeRule(){
+        const method=document.querySelector('[name="Form.DeliveryMethod"]')?.value;
+        const raw=document.getElementById('Form_DeliveryFee');
+        const display=document.getElementById('DeliveryFeeDisplay');
+        const fixedPoint=method==='Nhận tại điểm giao xe';
+        if(fixedPoint&&raw&&display){raw.value='0';display.value='0';}
+        if(display){display.readOnly=fixedPoint;display.classList.toggle('bg-light',fixedPoint);}
+        const note=document.getElementById('deliveryFeeRule');
+        if(note)note.textContent=fixedPoint?'Nhận tại điểm giao xe: phí giao xe đã được khóa ở 0 đồng.':'Chỉ nhập phí khi có hỗ trợ giao xe tận nơi; mức phí phải nằm trong giới hạn SmartCar.';
+    }
+    function applyRentalModeRule(){
+        const mode=document.querySelector('[name="Form.RentalMode"]')?.value||'Tự lái';
+        const needsDriver=mode==='Có tài xế'||mode==='Tự lái hoặc có tài xế';
+        const pureDriver=mode==='Có tài xế';
+        const section=document.getElementById('driverProfileSection');
+        section?.classList.toggle('d-none',!needsDriver);
+        document.querySelectorAll('.driver-required').forEach(el=>{el.required=needsDriver;el.disabled=!needsDriver;});
+        document.querySelectorAll('.driver-file').forEach(el=>{el.required=needsDriver;el.disabled=!needsDriver;});
+
+        const raw=document.getElementById('Form_ProposedDepositAmount');
+        const display=document.getElementById('ProposedDepositAmountDisplay');
+        if(raw&&display){
+            if(pureDriver){
+                if(Number(raw.value||0)>0)raw.dataset.previousValue=raw.value;
+                raw.value='0';display.value='0';display.readOnly=true;display.classList.add('bg-light');
+            }else{
+                if(Number(raw.value||0)===0&&raw.dataset.previousValue)raw.value=raw.dataset.previousValue;
+                display.value=new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(raw.value||0));
+                display.readOnly=false;display.classList.remove('bg-light');
+            }
+        }
+    }
+    const modelMap={
+        'Toyota':['Vios','Camry','Corolla Cross','Fortuner','Innova','Raize','Yaris Cross','Veloz Cross'],
+        'Honda':['City','Civic','CR-V','HR-V','Accord','BR-V'],
+        'Mazda':['Mazda 2','Mazda 3','Mazda 6','CX-3','CX-5','CX-8'],
+        'Kia':['Morning','Soluto','K3','K5','Seltos','Sonet','Carnival'],
+        'Hyundai':['Grand i10','Accent','Elantra','Creta','Tucson','Santa Fe','Stargazer'],
+        'Mitsubishi':['Attrage','Xpander','Outlander','Triton','Pajero Sport'],
+        'Ford':['Ranger','Everest','Territory','Transit','EcoSport'],
+        'VinFast':['Fadil','VF 3','VF 5','VF 6','VF 7','VF 8','VF 9','Lux A2.0','Lux SA2.0'],
+        'Nissan':['Almera','Navara','Terra','X-Trail'],
+        'Suzuki':['Swift','Ertiga','XL7','Ciaz','Carry'],
+        'Mercedes-Benz':['C-Class','E-Class','S-Class','GLC','GLE'],
+        'BMW':['3 Series','5 Series','7 Series','X3','X5']
+    };
+    function populateModels(preserve=true){
+        const brand=document.getElementById('brandSelect');
+        const model=document.getElementById('modelSelect');
+        if(!brand||!model) return;
+        const current=preserve?model.value:'';
+        const values=modelMap[brand.value]||[];
+        model.innerHTML='<option value="">Chọn dòng xe</option>'+values.map(v=>`<option value="${v}">${v}</option>`).join('');
+        if(current&&values.includes(current)) model.value=current;
+    }
+    function fieldsForStep(n){return [...document.querySelector(`[data-panel="${n}"]`).querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden');}
+    function validateStep(n){
+        let ok=true;
+        fieldsForStep(n).forEach(el=>{ if(!el.checkValidity()){el.classList.add('is-invalid');ok=false}else el.classList.remove('is-invalid'); });
+        if(!ok){const first=document.querySelector(`[data-panel="${n}"] .is-invalid`); first?.focus(); first?.reportValidity();}
+        return ok;
+    }
+    function showStep(n){
+        step=Math.max(1,Math.min(7,n));
+        panels.forEach(x=>x.classList.toggle('active',Number(x.dataset.panel)===step));
+        stepButtons.forEach(x=>{const v=Number(x.dataset.step);x.classList.toggle('active',v===step);x.classList.toggle('done',v<step)});
+        prev.disabled=step===1; next.classList.toggle('d-none',step===7); submit.classList.toggle('d-none',step!==7);
+        if(step===7) buildSummary();
+        window.scrollTo({top:document.querySelector('.wizard-shell').offsetTop-20,behavior:'smooth'});
+    }
+    prev.addEventListener('click',()=>showStep(step-1));
+    next.addEventListener('click',()=>{if(validateStep(step))showStep(step+1)});
+    stepButtons.forEach(b=>b.addEventListener('click',()=>{const target=Number(b.dataset.step);if(target<step||validateStep(step))showStep(target)}));
+    function saveDraft(){
+        const data={}; document.querySelectorAll('.draft-field').forEach(el=>data[el.name]=el.value);
+        localStorage.setItem(draftKey,JSON.stringify(data)); document.getElementById('draftState').textContent='Đã lưu bản nháp lúc '+new Date().toLocaleTimeString('vi-VN'); updateEstimate();
+    }
+    function loadDraft(){
+        try{
+            const data=JSON.parse(localStorage.getItem(draftKey)||'{}');
+            document.querySelectorAll('.draft-field').forEach(el=>{
+                if(data[el.name]!==undefined&&data[el.name]!==null&&data[el.name]!=='' )el.value=data[el.name]
+            });
+            populateModels(true);
+            const model=document.getElementById('modelSelect');
+            if(model&&data['Form.Model']) model.value=data['Form.Model'];
+        }catch{populateModels(true)}
+        syncAllMoneyDisplays();
+        applyDeliveryFeeRule();
+        applyRentalModeRule();
+        updateEstimate();
+    }
+    let timer;
+    const scheduleSave=()=>{clearTimeout(timer);timer=setTimeout(saveDraft,300)};
+    document.querySelectorAll('.draft-field').forEach(el=>{el.addEventListener('input',scheduleSave);el.addEventListener('change',scheduleSave);});
+    document.querySelectorAll('.money-display').forEach(el=>el.addEventListener('input',()=>{syncMoneyDisplay(el);applyDeliveryFeeRule();scheduleSave();updateEstimate();}));
+    document.querySelector('[name="Form.DeliveryMethod"]')?.addEventListener('change',()=>{applyDeliveryFeeRule();saveDraft();});
+    document.querySelector('[name="Form.RentalMode"]')?.addEventListener('change',()=>{applyRentalModeRule();saveDraft();});
+    document.getElementById('brandSelect')?.addEventListener('change',()=>{populateModels(false);saveDraft();});
+    document.getElementById('licensePlateInput')?.addEventListener('blur',e=>{e.target.value=(e.target.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');saveDraft();});
+    document.getElementById('clearDraft').addEventListener('click',()=>{if(confirm('Xóa toàn bộ bản nháp văn bản trên trình duyệt?')){localStorage.removeItem(draftKey);location.reload()}});
+    document.querySelectorAll('.preview-input').forEach(input=>input.addEventListener('change',()=>{const file=input.files?.[0],img=document.getElementById(input.dataset.preview);if(file&&img){img.src=URL.createObjectURL(file)}}));
+    function updateEstimate(){const price=Number(document.querySelector('[name="Form.ProposedDailyPrice"]')?.value||0);const fee=@Model.CurrentCommissionRate.ToString(System.Globalization.CultureInfo.InvariantCulture);document.getElementById('ownerEstimate').textContent=money(price*(100-fee)/100)+'/ngày';}
+    function value(name){return document.querySelector(`[name="${name}"]`)?.value||'Chưa nhập'}
+    function selected(name){const e=document.querySelector(`[name="${name}"]`);return e?.selectedOptions?.[0]?.text||value(name)}
+    function buildSummary(){
+        document.getElementById('reviewSummary').innerHTML=`
+            <div class="summary-row"><strong>Xe:</strong> ${value('Form.BrandName')} ${value('Form.Model')} ${value('Form.VehicleVersion')==='Chưa nhập'?'':value('Form.VehicleVersion')} · ${value('Form.ManufactureYear')} · ${value('Form.LicensePlate')}</div>
+            <div class="summary-row"><strong>Cấu hình:</strong> ${value('Form.Seat')} chỗ · ${value('Form.Transmission')} · ${value('Form.Fuel')} · ${value('Form.RentalMode')}</div>
+            ${(value('Form.RentalMode')==='Có tài xế'||value('Form.RentalMode')==='Tự lái hoặc có tài xế')?`<div class="summary-row"><strong>Tài xế:</strong> ${value('Form.DriverFullName')} · GPLX ${value('Form.DriverLicenseClass')} · hết hạn ${value('Form.DriverLicenseExpiryDate')}</div>`:''}
+            <div class="summary-row"><strong>Số khung/số máy:</strong> ${value('Form.ChassisNumber')} · ${value('Form.EngineNumber')}</div>
+            <div class="summary-row"><strong>Địa điểm:</strong> ${selected('Form.LocationID')} · ${value('Form.DeliveryMethod')} · ${value('Form.DeliveryAddress')}</div>
+            <div class="summary-row"><strong>Giá:</strong> ${money(value('Form.ProposedDailyPrice'))}/ngày · Cọc ${money(value('Form.ProposedDepositAmount'))}</div>
+            <div class="summary-row"><strong>Giới hạn:</strong> ${value('Form.KmLimitPerDay')} km/ngày · Vượt km ${money(value('Form.ExtraKmFee'))}/km · Giao xe ${money(value('Form.DeliveryFee'))}</div>
+            <div class="summary-row"><strong>Tiện ích:</strong> ${value('Form.Amenities')}</div>
+            <div class="summary-row border-0"><strong>Phụ kiện:</strong> ${value('Form.Accessories')}</div>`;
+    }
+    form.addEventListener('submit',e=>{
+        for(let i=1;i<=6;i++){if(!validateStep(i)){e.preventDefault();showStep(i);return}}
+        if(!document.getElementById('confirmTruth').checked){e.preventDefault();showStep(7);document.getElementById('confirmTruth').reportValidity();return}
+        localStorage.removeItem(draftKey); submit.disabled=true; submit.textContent='Đang gửi hồ sơ...';
+    });
+    loadDraft(); applyDeliveryFeeRule(); applyRentalModeRule(); showStep(1);
+})();
+</script>

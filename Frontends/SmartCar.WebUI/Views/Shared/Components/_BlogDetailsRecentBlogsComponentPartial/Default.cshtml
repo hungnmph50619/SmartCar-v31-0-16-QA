@@ -1,0 +1,25 @@
+@model List<ResultLast3BlogsWithAuthors>
+
+<div class="sidebar-box ftco-animate">
+    <h3>Bài viết mới nhất</h3>
+    @if (Model == null || Model.Count == 0)
+    {
+        <p class="text-muted">Chưa có bài viết mới.</p>
+    }
+    else
+    {
+        foreach (var item in Model)
+        {
+            <div class="block-21 mb-4 d-flex">
+                <a href="/Blog/BlogDetail/@item.BlogID" class="blog-img mr-4" style="background-image: url('@item.CoverImageUrl');"></a>
+                <div class="text">
+                    <h3 class="heading"><a href="/Blog/BlogDetail/@item.BlogID">@item.Title</a></h3>
+                    <div class="meta">
+                        <div><span><span class="icon-calendar"></span> @item.CreatedDate.ToString("dd/MM/yyyy")</span></div>
+                        <div><span><span class="icon-person"></span> @item.AuthorName</span></div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

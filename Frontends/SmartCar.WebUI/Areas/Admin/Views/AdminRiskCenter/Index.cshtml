@@ -1,0 +1,48 @@
+@using SmartCar.Dto.AdminDashboardDtos
+@model AdminRiskCenterDto
+@{
+    ViewData["Title"]="Trung tâm rủi ro";
+    Layout="~/Views/AdminLayout/Index.cshtml";
+    string Badge(string level)=>level switch{"Khẩn cấp"=>"badge-danger","Cao"=>"badge-warning","Trung bình"=>"badge-info",_=>"badge-secondary"};
+}
+<div class="page-content"><div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-start flex-wrap mb-4">
+        <div><h2>Trung tâm rủi ro và kiểm toán</h2><p class="text-muted">Cảnh báo gian lận, audit log và dữ liệu đã xóa được tách khỏi quản trị nội dung.</p></div>
+        <a href="/Admin/AdminDashboard/Index" class="btn btn-outline-secondary">Về Dashboard</a>
+    </div>
+    @if(TempData["RiskSuccess"] is string ok){<div class="alert alert-success">@ok</div>}
+    @if(TempData["RiskError"] is string err){<div class="alert alert-danger">@err</div>}
+    <div class="row mb-4">
+        <div class="col-md"><div class="card"><div class="card-body"><small>Cảnh báo mới</small><h3 class="text-danger">@Model.NewFraudFlags</h3></div></div></div>
+        <div class="col-md"><div class="card"><div class="card-body"><small>Tranh chấp mở</small><h3>@Model.OpenDisputes</h3></div></div></div>
+        <div class="col-md"><div class="card"><div class="card-body"><small>Xe trong thùng rác</small><h3>@Model.DeletedCars</h3></div></div></div>
+        <div class="col-md"><div class="card"><div class="card-body"><small>Tài khoản đã xóa</small><h3>@Model.DeletedUsers</h3></div></div></div>
+        <div class="col-md"><div class="card"><div class="card-body"><small>Audit hôm nay</small><h3>@Model.AuditEventsToday</h3></div></div></div>
+    </div>
+
+    <div class="card mb-4"><div class="card-header"><h4 class="mb-0">Cảnh báo gian lận</h4></div><div class="card-body p-0"><div class="table-responsive">
+        <table class="table mb-0"><thead><tr><th>Mức độ</th><th>Bằng chứng</th><th>Liên quan</th><th>Trạng thái</th><th style="min-width:330px">Kết luận</th></tr></thead><tbody>
+        @if(Model.FraudFlags.Count==0){<tr><td colspan="5" class="text-center text-muted py-4">Chưa có cảnh báo.</td></tr>}
+        @foreach(var item in Model.FraudFlags){<tr>
+            <td><span class="badge @Badge(item.Severity)">@item.Severity</span><br/><small>Điểm @item.RiskScore</small></td>
+            <td><strong>@item.RuleCode</strong><br/>@item.Description<br/><small>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</small></td>
+            <td>@(item.AppUserID.HasValue?$"Tài khoản #{item.AppUserID}":"")<br/>@(item.ReservationID.HasValue?$"Đơn #{item.ReservationID}":"")</td>
+            <td>@item.Status</td>
+            <td><form method="post" asp-action="ReviewFraud"><input type="hidden" name="id" value="@item.FraudFlagID"/><div class="input-group mb-2"><select name="status" class="form-control"><option>Đang xem xét</option><option>Đã xác nhận</option><option>Bỏ qua</option><option>Đã khóa liên quan</option></select><div class="input-group-append"><button class="btn btn-danger">Lưu</button></div></div><input name="reason" class="form-control" maxlength="1000" placeholder="Lý do kết luận bắt buộc" required/></form></td>
+        </tr>}
+        </tbody></table>
+    </div></div></div>
+
+    <div class="card mb-4"><div class="card-header"><h4 class="mb-0">Thùng rác và khôi phục</h4></div><div class="card-body p-0"><div class="table-responsive">
+        <table class="table mb-0"><thead><tr><th>Loại</th><th>Dữ liệu</th><th>Thời gian xóa</th><th>Lý do</th><th>Khả năng khôi phục</th></tr></thead><tbody>
+        @if(Model.TrashItems.Count==0){<tr><td colspan="5" class="text-center text-muted py-4">Thùng rác trống.</td></tr>}
+        @foreach(var item in Model.TrashItems){<tr><td>@item.EntityType</td><td><strong>@item.DisplayName</strong><br/><small>#@item.EntityID</small></td><td>@item.DeletedAt?.ToString("dd/MM/yyyy HH:mm")</td><td>@(item.DeleteReason??"Không ghi lý do")</td><td>@if(item.CanRestore){<form method="post" asp-action="Restore" onsubmit="return confirm('Khôi phục dữ liệu này?')"><input type="hidden" name="entityType" value="@item.EntityType"/><input type="hidden" name="id" value="@item.EntityID"/><button class="btn btn-sm btn-success">Khôi phục</button></form>}else{<span class="text-danger">Không thể – dữ liệu đã ẩn danh</span>}</td></tr>}
+        </tbody></table>
+    </div></div></div>
+
+    <div class="card"><div class="card-header"><h4 class="mb-0">Audit log gần nhất</h4><small>Không có nút sửa hoặc xóa.</small></div><div class="card-body p-0"><div class="table-responsive">
+        <table class="table mb-0"><thead><tr><th>Thời gian</th><th>Người thao tác</th><th>Hành động</th><th>Đối tượng</th><th>IP/thiết bị</th><th>Lý do – thay đổi</th></tr></thead><tbody>
+        @foreach(var item in Model.AuditLogs){<tr><td>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm:ss")</td><td>@item.ActorName</td><td><strong>@item.Action</strong></td><td>@item.EntityName #@item.EntityID</td><td>@(item.IpAddress??"Không ghi nhận")</td><td>@(item.Note??"—")</td></tr>}
+        </tbody></table>
+    </div></div></div>
+</div></div>

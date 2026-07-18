@@ -1,0 +1,39 @@
+@model List<SmartCar.Dto.ReviewDtos.ResultReviewByCarIdDto>
+@{
+    var reviews = Model ?? new List<SmartCar.Dto.ReviewDtos.ResultReviewByCarIdDto>();
+    var average = reviews.Count == 0 ? 0 : reviews.Average(x => Math.Clamp(x.RaytingValue, 1, 5));
+}
+<div class="tab-pane fade" id="pills-review" role="tabpanel" aria-labelledby="pills-review-tab">
+    <div class="row">
+        <div class="col-md-8">
+            <h3 class="head">@reviews.Count đánh giá</h3>
+            @if (reviews.Count == 0)
+            {
+                <div class="alert alert-light border">Xe này chưa có đánh giá. Đánh giá chỉ được hiển thị sau khi đơn thuê đã hoàn thành.</div>
+            }
+            @foreach (var item in reviews)
+            {
+                <div class="review d-flex mb-4">
+                    <div class="user-img" style="background-image:url('@(string.IsNullOrWhiteSpace(item.CustomerImage) ? "/images/person_1.jpg" : item.CustomerImage)')"></div>
+                    <div class="desc">
+                        <h4><span class="text-left">@item.CustomerName</span><span class="text-right">@item.ReviewDate.ToString("dd/MM/yyyy")</span></h4>
+                        <p class="star"><span>
+                            @for (var i = 1; i <= 5; i++)
+                            {
+                                <i class="ion-ios-star@(i > item.RaytingValue ? "-outline" : "")"></i>
+                            }
+                        </span></p>
+                        <p>@item.Comment</p>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col-md-4">
+            <div class="rating-wrap border rounded p-4">
+                <h3 class="head">Tổng quan</h3>
+                <div class="display-4 font-weight-bold">@average.ToString("0.0")/5</div>
+                <p>@reviews.Count lượt đánh giá thực tế</p>
+            </div>
+        </div>
+    </div>
+</div>

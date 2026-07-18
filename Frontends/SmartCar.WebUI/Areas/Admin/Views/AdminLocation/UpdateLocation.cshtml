@@ -1,0 +1,35 @@
+@model UpdateLocationDto
+@{
+    ViewData["Title"] = "Cập nhật địa điểm";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+}
+<div class="page-content"><div class="container-fluid"><div class="row"><div class="col-xl-12"><div class="card"><div class="card-body">
+    <h4 class="card-title">Cập nhật điểm giao nhận chi tiết</h4>
+    <p class="card-subtitle mb-4">Khai báo tỉnh/thành, quận/huyện, xã/phường, địa chỉ mô tả và tọa độ để khách xem bản đồ, tìm xe gần nhất.</p>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <form method="post" id="locationForm">@Html.AntiForgeryToken()
+        <input type="hidden" asp-for="LocationID" />
+        <div class="row">
+            <div class="col-md-6 form-group"><label asp-for="Name">Tên điểm giao nhận *</label><input asp-for="Name" class="form-control" placeholder="Ví dụ: Điểm giao xe Cầu Giấy"><span asp-validation-for="Name" class="text-danger"></span></div>
+            <div class="col-md-6 form-group"><label asp-for="ProvinceCity">Tỉnh/Thành phố *</label><input asp-for="ProvinceCity" class="form-control" placeholder="Hà Nội"><span asp-validation-for="ProvinceCity" class="text-danger"></span></div>
+            <div class="col-md-6 form-group"><label asp-for="District">Quận/Huyện</label><input asp-for="District" class="form-control" placeholder="Cầu Giấy"></div>
+            <div class="col-md-6 form-group"><label asp-for="Ward">Xã/Phường</label><input asp-for="Ward" class="form-control" placeholder="Dịch Vọng"></div>
+            <div class="col-12 form-group"><label asp-for="AddressDetail">Địa chỉ/điểm mốc chi tiết</label><input asp-for="AddressDetail" class="form-control" placeholder="Khu vực Công viên Cầu Giấy, cổng phía đường Thành Thái"></div>
+            <div class="col-md-3 form-group"><label asp-for="Latitude">Vĩ độ</label><input asp-for="Latitude" class="form-control map-coordinate" step="0.0000001" placeholder="21.0285110"><span asp-validation-for="Latitude" class="text-danger"></span></div>
+            <div class="col-md-3 form-group"><label asp-for="Longitude">Kinh độ</label><input asp-for="Longitude" class="form-control map-coordinate" step="0.0000001" placeholder="105.7909930"><span asp-validation-for="Longitude" class="text-danger"></span></div>
+            <div class="col-md-3 form-group"><label asp-for="SearchRadiusKm">Bán kính tìm mặc định (km)</label><input asp-for="SearchRadiusKm" class="form-control" min="1" max="100"></div>
+            <div class="col-md-3 form-group d-flex align-items-end"><div class="custom-control custom-switch mb-2"><input asp-for="IsActive" class="custom-control-input"><label class="custom-control-label" asp-for="IsActive">Đang hoạt động</label></div></div>
+        </div>
+        <div class="mb-3"><button type="button" id="previewMap" class="btn btn-outline-info mr-2">Xem trước bản đồ</button><a class="btn btn-outline-secondary" target="_blank" id="openMapLink">Mở OpenStreetMap</a></div>
+        <iframe id="adminMapFrame" style="width:100%;height:340px;border:0;border-radius:10px;background:#eef3f7" class="d-none" loading="lazy" title="Bản đồ địa điểm"></iframe>
+        <button type="submit" class="btn btn-primary mt-3">Cập nhật địa điểm</button>
+        <a href="/Admin/AdminLocation/Index" class="btn btn-light mt-3">Quay lại</a>
+    </form>
+</div></div></div></div></div></div>
+<script>
+(function(){
+ const lat=document.getElementById('Latitude'),lng=document.getElementById('Longitude'),frame=document.getElementById('adminMapFrame'),link=document.getElementById('openMapLink');
+ function refresh(){if(!lat.value.trim()||!lng.value.trim()){alert('Hãy nhập đủ vĩ độ và kinh độ hợp lệ.');return;}const a=Number(lat.value),b=Number(lng.value);if(!Number.isFinite(a)||!Number.isFinite(b)){alert('Hãy nhập đủ vĩ độ và kinh độ hợp lệ.');return;}const d=.025,bbox=[b-d,a-d,b+d,a+d].join(',');frame.src='https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent(bbox)+'&layer=mapnik&marker='+encodeURIComponent(a+','+b);frame.classList.remove('d-none');link.href='https://www.openstreetmap.org/?mlat='+a+'&mlon='+b+'#map=15/'+a+'/'+b;}
+ document.getElementById('previewMap').addEventListener('click',refresh);[lat,lng].forEach(x=>x.addEventListener('change',()=>{if(lat.value&&lng.value)refresh();}));if(lat.value&&lng.value)refresh();
+})();
+</script>

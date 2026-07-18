@@ -1,0 +1,135 @@
+@model List<ResultReservationDto>
+
+@{
+    ViewData["Title"] = "Quản lý đơn thuê xe đối tác";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    var filterStatuses = new[]
+    {
+        "Chờ chủ xe xác nhận", "Chờ khách đặt cọc", "Chờ nhân viên xác nhận cọc", "Đã thanh toán", "Đã xác nhận",
+        "Đã đặt cọc", "Chờ giao xe", "Đang thuê", "Chờ trả xe", "Chờ đối soát",
+        "Hoàn thành", "Đã hủy", "Đang tranh chấp", "Đang xử lý sự cố"
+    };
+    var staffStatuses = new[]
+    {
+        "Đã đặt cọc", "Chờ giao xe", "Đang thuê", "Chờ trả xe", "Chờ đối soát",
+        "Hoàn thành", "Đã hủy", "Đang tranh chấp", "Đang xử lý sự cố"
+    };
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="card-title mb-1">Đơn thuê xe trên sàn</h4>
+                        <p class="card-subtitle">Chủ xe quyết định chấp nhận yêu cầu; nhân viên theo dõi đặt cọc, giao xe, trả xe và hoàn tất đối soát.</p>
+                    </div>
+                    <a href="/Admin/AdminReservation/Index" class="btn btn-light">Tải lại</a>
+                </div>
+
+                @if (TempData["AdminReservationSuccess"] != null)
+                {
+                    <div class="alert alert-success">@TempData["AdminReservationSuccess"]</div>
+                }
+                @if (TempData["AdminReservationError"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["AdminReservationError"]</div>
+                }
+
+                <div class="mb-3 d-flex flex-wrap" style="gap:6px">
+                    <a href="/Admin/AdminReservation/Index" class="btn btn-sm btn-outline-secondary">Tất cả</a>
+                    @foreach (var status in filterStatuses)
+                    {
+                        <a asp-area="Admin" asp-controller="AdminReservation" asp-action="Index" asp-route-status="@status"
+                           class="btn btn-sm @(ViewBag.SelectedStatus == status ? "btn-primary" : "btn-outline-primary")">@status</a>
+                    }
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Mã</th>
+                                <th>Khách thuê</th>
+                                <th>Xe / Chủ xe</th>
+                                <th>Lịch thuê</th>
+                                <th>Tài chính</th>
+                                <th>Trạng thái</th>
+                                <th style="min-width:230px">Xử lý nghiệp vụ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @if (Model == null || Model.Count == 0)
+                        {
+                            <tr><td colspan="7" class="text-center">Chưa có đơn phù hợp.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                var badgeClass = item.Status switch
+                                {
+                                    "Hoàn thành" => "badge-success",
+                                    "Đã hủy" => "badge-danger",
+                                    "Đang tranh chấp" => "badge-danger",
+                                    "Đang thuê" => "badge-warning",
+                                    "Chờ trả xe" => "badge-warning",
+                                    "Chờ đối soát" => "badge-info",
+                                    "Đã đặt cọc" => "badge-primary",
+                                    "Chờ giao xe" => "badge-primary",
+                                    "Đã xác nhận" => "badge-info",
+                                    _ => "badge-secondary"
+                                };
+                                <tr>
+                                    <td>#@item.ReservationID</td>
+                                    <td><strong>@item.CustomerName</strong><br/><small>@item.Phone</small><br/><small>@item.Email</small></td>
+                                    <td><strong>@item.CarName</strong><br/><small>Chủ xe: @item.OwnerName</small><br/><small>@item.OwnerPhone</small></td>
+                                    <td>
+                                        <small>Nhận: @item.PickUpDate.ToString("dd/MM/yyyy") @item.PickUpTime.ToString(@"hh\:mm")</small><br/>
+                                        <small>Trả: @item.DropOffDate.ToString("dd/MM/yyyy") @item.DropOffTime.ToString(@"hh\:mm")</small><br/>
+                                        <small>@item.PickUpLocation → @item.DropOffLocation</small>
+                                    </td>
+                                    <td>
+                                        <strong>@item.TotalPrice.ToString("#,0", CultureInfo.InvariantCulture) VNĐ</strong><br/>
+                                        <small>Phí sàn @item.CommissionRateSnapshot.ToString("0.##")%: @item.PlatformFeeAmount.ToString("#,0", CultureInfo.InvariantCulture)</small><br/>
+                                        <small>Chủ xe nhận: @item.PartnerReceivableAmount.ToString("#,0", CultureInfo.InvariantCulture)</small><br/>
+                                        <small>Cọc: @item.DepositAmount.ToString("#,0", CultureInfo.InvariantCulture) (@item.DepositStatus)</small>
+                                    </td>
+                                    <td><span class="badge @badgeClass p-2">@item.Status</span></td>
+                                    <td>
+                                        @if (item.Status == "Chờ chủ xe xác nhận")
+                                        {
+                                            <small class="text-muted">Đang chờ chủ xe xử lý trong Khu vực chủ xe. Nhân viên không xác nhận thay.</small>
+                                        }
+                                        else if (item.Status is "Hoàn thành" or "Đã hủy")
+                                        {
+                                            <small class="text-muted">Đơn đã kết thúc. Không cập nhật tiếp.</small>
+                                        }
+                                        else
+                                        {
+                                            <form method="post" action="/Admin/AdminReservation/UpdateStatus">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.ReservationID" />
+                                                <select name="status" class="form-control form-control-sm mb-2" required>
+                                                    <option value="">-- Chọn trạng thái tiếp theo --</option>
+                                                    @foreach (var status in staffStatuses)
+                                                    {
+                                                        <option value="@status">@status</option>
+                                                    }
+                                                </select>
+                                                <input name="note" class="form-control form-control-sm mb-2" placeholder="Ghi chú xử lý" />
+                                                <button type="submit" class="btn btn-sm btn-primary">Cập nhật</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

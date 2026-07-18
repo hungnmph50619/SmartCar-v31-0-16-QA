@@ -1,0 +1,23 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+@await Component.InvokeAsync("_HeadUILayoutComponentPartial")
+<body class="partner-body">
+    @await Component.InvokeAsync("_NavbarUILayoutComponentPartial")
+    <main class="partner-main">@RenderBody()</main>
+    <footer class="partner-footer">
+        <div class="container d-flex flex-wrap justify-content-between">
+            <span>© 2026 SmartCar</span>
+            <span>Nền tảng kết nối chủ xe và khách thuê xe</span>
+        </div>
+    </footer>
+    @await Component.InvokeAsync("_ScriptUILayoutComponentPartial")
+    <style>
+        .partner-body { background: #f4f7fa; }
+        .partner-main { min-height: calc(100vh - 150px); padding-top: 20px; }
+        .partner-footer { background: #102a43; color: #dce8f2; padding: 22px 0; font-size: 14px; }
+    </style>
+</body>
+</html>

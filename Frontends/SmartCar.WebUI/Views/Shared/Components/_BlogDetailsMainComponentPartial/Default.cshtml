@@ -1,0 +1,58 @@
+@model GetBlogById
+@using SmartCar.WebUI.Helpers
+
+<div class="col-md-8 ftco-animate">
+    @if (Model == null || Model.BlogID <= 0)
+    {
+        <div class="alert alert-danger">
+            @(ViewBag.ErrorMessage ?? "Không thể hiển thị bài viết.")
+        </div>
+    }
+    else
+    {
+        <h2 class="mb-2">@Model.Title</h2>
+        <p class="text-muted mb-4">
+            Ngày đăng: @Model.CreatedDate.ToString("dd/MM/yyyy")
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))
+        {
+            <p>
+                <img src="@Model.CoverImageUrl"
+                     alt="@Model.Title"
+                     class="img-fluid rounded"
+                     style="width:100%; max-height:430px; object-fit:cover;" />
+            </p>
+        }
+
+        <p class="lead" style="white-space:pre-line; line-height:1.9;">
+            @Model.Description
+        </p>
+
+        @if (ViewBag.ArticleSections is List<BlogArticleSection> articleSections)
+        {
+            foreach (var articleSection in articleSections)
+            {
+                <h3 class="mb-3 mt-5">@articleSection.Heading</h3>
+                <p style="line-height:1.9; text-align:justify;">@articleSection.Content</p>
+            }
+        }
+
+        <div class="alert alert-info mt-5">
+            <strong>Lưu ý:</strong> Khi cần hỗ trợ trong quá trình thuê hoặc sử dụng xe,
+            khách hàng nên liên hệ Smart Car và không tự ý tiếp tục vận hành khi xe có dấu hiệu mất an toàn.
+        </div>
+
+        @await Component.InvokeAsync("_BlogDetailCloudTagByBlogComponentPartial", new { id = ViewBag.blogid })
+
+        @await Component.InvokeAsync("_BlogDetailsAuthorAboutComponentPartial", new { id = ViewBag.blogid })
+
+        <div class="pt-5 mt-5">
+            <h3 class="mb-5">@ViewBag.commentCount bình luận</h3>
+
+            @await Component.InvokeAsync("_CommentListByBlogComponentPartial", new { id = ViewBag.blogid })
+
+            @await Html.PartialAsync("~/Views/Blog/AddComment.cshtml", new { id = ViewBag.blogid })
+        </div>
+    }
+</div>

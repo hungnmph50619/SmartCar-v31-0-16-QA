@@ -1,0 +1,103 @@
+name: SmartCar CI
+
+on:
+  push:
+    branches: [ main, develop, "fix/**", "release/**" ]
+  pull_request:
+    branches: [ main, develop ]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+          cache: true
+          cache-dependency-path: "**/*.csproj"
+
+      - name: Restore
+        run: dotnet restore CarBook.sln
+
+      - name: Build Release
+        run: dotnet build CarBook.sln -c Release --no-restore
+
+      - name: Test with coverage
+        run: dotnet test CarBook.sln -c Release --no-build --logger "trx;LogFileName=smartcar-tests.trx" --collect "XPlat Code Coverage" --results-directory TestResults
+
+      - name: Audit vulnerable packages
+        run: dotnet list CarBook.sln package --vulnerable --include-transitive
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartcar-test-results
+          path: TestResults/**
+          if-no-files-found: warn
+
+  sqlserver-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: SmartCar_CI_2026!Pass
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "bash -c 'if [ -x /opt/mssql-tools18/bin/sqlcmd ]; then /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P SmartCar_CI_2026!Pass -Q SELECT\ 1; else /opt/mssql-tools/bin/sqlcmd -C -S localhost -U sa -P SmartCar_CI_2026!Pass -Q SELECT\ 1; fi'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      SMARTCAR_TEST_SQLSERVER: "Server=localhost,1433;Database=SmartCarMarketplaceDb;User Id=sa;Password=SmartCar_CI_2026!Pass;TrustServerCertificate=True;Encrypt=False"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Provision SmartCar v30.9 database
+        shell: bash
+        run: |
+          CID="${{ job.services.sqlserver.id }}"
+          if docker exec "$CID" test -x /opt/mssql-tools18/bin/sqlcmd; then
+            SQLCMD=/opt/mssql-tools18/bin/sqlcmd
+          else
+            SQLCMD=/opt/mssql-tools/bin/sqlcmd
+          fi
+          cat Database/SmartCar_Full_Database_OneRun_2026_v30_9_ThuTien_DoiSoat_KhoaTrangThai.sql \
+            | docker exec -i "$CID" "$SQLCMD" -C -b -S localhost -U sa -P 'SmartCar_CI_2026!Pass'
+          cat Database/KIEM_TRA_SAU_KHI_CAI_V30_9.sql \
+            | docker exec -i "$CID" "$SQLCMD" -C -b -S localhost -U sa -P 'SmartCar_CI_2026!Pass'
+
+      - name: Restore
+        run: dotnet restore CarBook.sln
+
+      - name: Build integration tests
+        run: dotnet build Tests/SmartCar.IntegrationTests/SmartCar.IntegrationTests.csproj -c Release --no-restore
+
+      - name: Run SQL Server integration and concurrency tests
+        run: dotnet test Tests/SmartCar.IntegrationTests/SmartCar.IntegrationTests.csproj -c Release --no-build --logger "trx;LogFileName=smartcar-sqlserver-tests.trx" --results-directory TestResultsSql
+
+      - name: Upload SQL Server test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartcar-sqlserver-test-results
+          path: TestResultsSql/**
+          if-no-files-found: warn
