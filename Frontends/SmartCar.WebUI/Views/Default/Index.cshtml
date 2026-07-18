@@ -28,6 +28,12 @@
             -webkit-text-fill-color: #7b8794 !important;
         }
 
+        .search-start-hint { margin: -4px 0 18px; color: rgba(255,255,255,.92); font-size: 13px; line-height: 1.5; }
+        .search-start-hint b { color: #fff; }
+        .time-options { margin: 0 0 15px; border: 1px solid rgba(255,255,255,.35); border-radius: 8px; padding: 9px 11px; }
+        .time-options summary { cursor: pointer; color: #fff; font-size: 12px; font-weight: 700; }
+        .time-options .d-flex { margin-top: 12px; }
+        .help-strip { margin: 4px 0 16px; padding: 12px 14px; border-radius: 8px; background: rgba(255,255,255,.12); color: #fff; font-size: 12px; line-height: 1.55; }
         .advanced-filter-box {
             padding: 16px;
             margin-bottom: 16px;
@@ -469,7 +475,8 @@
                             <form method="post" asp-controller="Default" asp-action="Index"
                                   id="rentalSearchForm" novalidate
                                   class="request-form ftco-animate bg-primary">@Html.AntiForgeryToken()
-                                <h2>Thuê xe ngay</h2>
+                                <h2>Tìm xe phù hợp</h2>
+                                <p class="search-start-hint">Chỉ cần chọn <b>điểm nhận xe</b> và <b>ngày thuê</b>. Các lựa chọn khác là tùy chọn.</p>
                                 <div id="searchValidationError" class="alert alert-warning" style="display:none;"></div>
                                 @if (TempData["SearchError"] != null)
                                 {
@@ -536,14 +543,19 @@
                                         <input type="date" class="form-control" name="book_off_date" id="dropoff_date_native" min="@VietnamTime.Today.ToString("yyyy-MM-dd")" required>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="pickup_time_native" class="label">Giờ nhận xe</label>
-                                    <input type="time" class="form-control" name="time_pick" id="pickup_time_native" step="1800" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="dropoff_time_native" class="label">Giờ trả xe</label>
-                                    <input type="time" class="form-control" name="time_off" id="dropoff_time_native" step="1800" required>
-                                </div>
+                                <details class="time-options">
+                                    <summary>Thời gian nhận/trả xe — mặc định 09:00</summary>
+                                    <div class="d-flex">
+                                        <div class="form-group mr-2 mb-0">
+                                            <label for="pickup_time_native" class="label">Giờ nhận xe</label>
+                                            <input type="time" class="form-control" name="time_pick" id="pickup_time_native" step="1800" required>
+                                        </div>
+                                        <div class="form-group ml-2 mb-0">
+                                            <label for="dropoff_time_native" class="label">Giờ trả xe</label>
+                                            <input type="time" class="form-control" name="time_off" id="dropoff_time_native" step="1800" required>
+                                        </div>
+                                    </div>
+                                </details>
                                 <button class="btn btn-link text-white p-0 mb-3" type="button" data-toggle="collapse" data-target="#advancedFilters" aria-expanded="false">
                                     <i class="ion-ios-options mr-1"></i> Bộ lọc nâng cao
                                 </button>
@@ -581,8 +593,9 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="help-strip"><b>Gợi ý:</b> Bấm <b>Gần tôi</b> để dùng vị trí hiện tại, hoặc mở bản đồ khi muốn chọn chính xác điểm nhận.</div>
                                 <div class="form-group">
-                                    <button type="submit" class="btn btn-secondary py-3 px-4">Hiển thị xe phù hợp</button>
+                                    <button type="submit" class="btn btn-secondary py-3 px-4">Tìm xe phù hợp</button>
                                 </div>
                             </form>
                         </div>
@@ -683,6 +696,10 @@
 
             pickupDate.min = localToday;
             dropoffDate.min = localToday;
+
+            // Giờ mặc định giúp người mới chỉ cần chọn ngày; vẫn có thể mở mục thời gian để thay đổi.
+            if (pickupTime && !pickupTime.value) pickupTime.value = "09:00";
+            if (dropoffTime && !dropoffTime.value) dropoffTime.value = "09:00";
 
             pickupDate.addEventListener("change", function () {
                 dropoffDate.min = pickupDate.value || localToday;
