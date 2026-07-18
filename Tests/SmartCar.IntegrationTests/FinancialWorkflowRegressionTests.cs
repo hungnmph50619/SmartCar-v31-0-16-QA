@@ -85,7 +85,7 @@ public class FinancialWorkflowRegressionTests
     public async Task ReservationsGenericStatusEndpoint_CannotBypassHandoverOrSettlement()
     {
         await using var db = TestDatabase.Create();
-        var controller = new ReservationsController(null!, null!, db, new FakeCancellation());
+        var controller = new ReservationsController(null!, null!, db, new FakeCancellation(), new SystemSettingService(db));
         SetUser(controller, 1, "Admin");
 
         var result = await controller.UpdateStatus(99, new SmartCar.Dto.ReservationDtos.UpdateReservationStatusDto
