@@ -87,6 +87,20 @@ public sealed class CommunityController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("completed-trips")]
+    public async Task<IActionResult> CompletedTrips()
+    {
+        var userId = UserId();
+        var trips = await _db.Reservations.AsNoTracking()
+            .Where(x => x.CustomerAppUserID == userId && x.Status == "Hoàn thành")
+            .OrderByDescending(x => x.DropOffDate)
+            .Take(30)
+            .Select(x => new { x.ReservationID, x.PickUpDate, x.DropOffDate, carName = x.Car.Model })
+            .ToListAsync();
+        return Ok(trips);
+    }
+
+    [Authorize]
     [HttpGet("mine")]
     public async Task<IActionResult> Mine()
     {
