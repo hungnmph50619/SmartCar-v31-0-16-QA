@@ -14,7 +14,7 @@
     };
 }
 <style>
-.owner-kpi{display:block;background:#fff;border:1px solid #e7edf3;border-radius:14px;padding:20px;height:100%;color:#243b53;box-shadow:0 8px 24px rgba(30,50,70,.06)}.owner-kpi:hover{color:#1089ff;border-color:#b8dcff}.owner-kpi small{display:block;color:#718096;margin-bottom:8px}.owner-kpi strong{font-size:22px}.owner-card{border:0;border-radius:14px}.owner-alert{border-left:4px solid #dc3545}.vehicle-card{display:flex;border:1px solid #e5ebf0;border-radius:14px;overflow:hidden;height:100%;background:#fff}.vehicle-card img{width:190px;object-fit:cover}.finance-line{display:flex;justify-content:space-between;padding:.4rem 0}.finance-total{border-top:1px solid #ddd;padding-top:.8rem;font-weight:700}.order-row,.application-row{border:1px solid #e5ebf0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff}.status-tabs{overflow-x:auto;white-space:nowrap;padding-bottom:4px}.status-tabs .btn{border-radius:20px;margin-right:6px}.status-tabs .btn.active{color:#fff!important;background:#1089ff!important;border-color:#1089ff!important;box-shadow:0 0 0 .2rem rgba(16,137,255,.15)}.vehicle-actions{display:flex;flex-wrap:wrap;gap:8px}.vehicle-actions .btn{margin:0!important}.filter-empty{display:none}.section-anchor{scroll-margin-top:90px}
+.owner-kpi{display:block;background:#fff;border:1px solid #e7edf3;border-radius:14px;padding:20px;height:100%;color:#243b53;box-shadow:0 8px 24px rgba(30,50,70,.06)}.owner-kpi:hover{color:#1089ff;border-color:#b8dcff}.owner-kpi small{display:block;color:#718096;margin-bottom:8px}.owner-kpi strong{font-size:22px}.owner-card{border:0;border-radius:14px}.owner-alert{border-left:4px solid #dc3545}.vehicle-card{display:flex;border:1px solid #e5ebf0;border-radius:14px;overflow:hidden;height:100%;background:#fff}.vehicle-card img{width:190px;object-fit:cover}.finance-line{display:flex;justify-content:space-between;padding:.4rem 0}.finance-total{border-top:1px solid #ddd;padding-top:.8rem;font-weight:700}.order-row,.application-row{border:1px solid #e5ebf0;border-radius:12px;padding:16px;margin-bottom:12px;background:#fff}.status-tabs{overflow-x:auto;white-space:nowrap;padding-bottom:4px}.status-tabs .btn{border-radius:20px;margin-right:6px}.status-tabs .btn.active{color:#fff!important;background:#1089ff!important;border-color:#1089ff!important;box-shadow:0 0 0 .2rem rgba(16,137,255,.15)}.vehicle-actions{display:flex;flex-wrap:wrap;gap:8px}.vehicle-actions .btn{margin:0!important}.filter-empty{display:none}.section-anchor{scroll-margin-top:90px}.owner-tabs{display:flex;gap:8px;overflow-x:auto;padding:5px 0 12px}.owner-tab{flex:0 0 auto;border:1px solid #cfe0ee;border-radius:22px;background:#fff;color:#345;padding:9px 16px;font-weight:700}.owner-tab.active{background:#1089ff;border-color:#1089ff;color:#fff;box-shadow:0 0 0 .2rem rgba(16,137,255,.13)}.owner-panel[hidden]{display:none!important}
 @@media(max-width:575px){.vehicle-card{display:block}.vehicle-card img{width:100%;height:190px}.vehicle-actions form,.vehicle-actions .btn{width:100%}.vehicle-actions form .btn{width:100%}}
 </style>
 <section class="ftco-section bg-light py-5"><div class="container" style="max-width:1250px">
@@ -46,7 +46,14 @@
         <div class="col-xl-3 col-md-6 mb-3"><a href="#settlements" class="owner-kpi"><small>Tiền chờ đối soát</small><strong>@Model.PendingPayout.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></a></div>
     </div>
 
-    <div id="orders" class="card owner-card shadow-sm mt-4 mb-4 section-anchor"><div class="card-body p-4">
+    <div class="owner-tabs mt-3" role="tablist" aria-label="Khu vực quản lý đối tác">
+        <button type="button" class="owner-tab active" data-owner-panel="orders" role="tab" aria-selected="true">Việc cần làm & đơn thuê</button>
+        <button type="button" class="owner-tab" data-owner-panel="vehicles" role="tab" aria-selected="false">Xe của tôi</button>
+        <button type="button" class="owner-tab" data-owner-panel="settlements" role="tab" aria-selected="false">Tài chính</button>
+        <a href="/VehiclePartner/VerifyProfile" class="owner-tab">Hồ sơ đối tác</a>
+    </div>
+
+    <div id="orders" class="card owner-card owner-panel shadow-sm mt-4 mb-4 section-anchor"><div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-center"><div><h2 class="h4">Đơn thuê cần theo dõi</h2><p class="text-muted">Mở chi tiết từng đơn trước khi quyết định.</p></div><span class="badge badge-info p-2">@Model.Reservations.Count đơn</span></div>
         @foreach(var item in Model.Reservations)
         {
@@ -58,7 +65,7 @@
 
     @if(Model.Applications.Any())
     {
-        <div id="applications" class="card owner-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
+        <div id="applications" class="card owner-card owner-panel shadow-sm mb-4 section-anchor"><div class="card-body p-4">
             <div class="d-flex flex-wrap justify-content-between align-items-center"><div><h2 class="h4">Hồ sơ xe đã gửi duyệt</h2><p class="text-muted">Theo dõi kết quả duyệt và ghi chú của nhân viên.</p></div><span class="badge badge-info p-2">@Model.Applications.Count hồ sơ</span></div>
             @foreach(var app in Model.Applications.OrderByDescending(x=>x.CreatedDate))
             {
@@ -67,7 +74,7 @@
         </div></div>
     }
 
-    <div id="vehicles" class="card owner-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
+    <div id="vehicles" class="card owner-card owner-panel shadow-sm mb-4 section-anchor"><div class="card-body p-4">
         <div><h2 class="h4">Quản lý xe và cảnh báo</h2><p class="text-muted">Chọn trạng thái để lọc danh sách xe.</p></div>
         <div class="status-tabs mb-3" role="group" aria-label="Lọc xe theo trạng thái">
             <button type="button" class="btn btn-sm btn-primary active vehicle-status-filter" data-status="all" aria-pressed="true">Tất cả @Model.Vehicles.Count</button>
@@ -87,12 +94,38 @@
         @if(!Model.Vehicles.Any()){<div class="alert alert-light border mb-0">Bạn chưa có xe đã được duyệt.</div>}
     </div></div>
 
-    <div id="settlements" class="row section-anchor"><div class="col-lg-5 mb-4"><div class="card owner-card shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Tổng quan dòng tiền</h2><div class="finance-line"><span>Tổng tiền thuê</span><strong>@Model.TotalGrossRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-line"><span>- Hoa hồng SmartCar</span><span>@Model.TotalPlatformCommission.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-line finance-total"><span>Thu nhập sau phí sàn</span><strong>@Model.TotalOwnerNetRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-line"><span>Chờ thanh toán</span><strong class="text-warning">@Model.PendingPayout.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><small class="text-muted">Chi tiết phí, hoàn khách và bồi thường nằm trong từng đơn hoặc đối soát.</small></div></div></div>
+    <div id="settlements" class="row section-anchor owner-panel"><div class="col-lg-5 mb-4"><div class="card owner-card shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Tổng quan dòng tiền</h2><div class="finance-line"><span>Tổng tiền thuê</span><strong>@Model.TotalGrossRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-line"><span>- Hoa hồng SmartCar</span><span>@Model.TotalPlatformCommission.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-line finance-total"><span>Thu nhập sau phí sàn</span><strong>@Model.TotalOwnerNetRevenue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-line"><span>Chờ thanh toán</span><strong class="text-warning">@Model.PendingPayout.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><small class="text-muted">Chi tiết phí, hoàn khách và bồi thường nằm trong từng đơn hoặc đối soát.</small></div></div></div>
         <div class="col-lg-7 mb-4"><div class="card owner-card shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Đối soát gần đây</h2><div class="table-responsive"><table class="table"><thead><tr><th>Tham chiếu</th><th>Tiền thuê</th><th>Phí sàn</th><th>Thực nhận</th><th>Trạng thái</th></tr></thead><tbody>@foreach(var tx in Model.Transactions.Take(8)){<tr><td>@tx.Reference</td><td>@tx.GrossAmount.ToString("#,0", CultureInfo.InvariantCulture)</td><td>@tx.CommissionAmount.ToString("#,0", CultureInfo.InvariantCulture)</td><td><strong>@tx.PartnerNetAmount.ToString("#,0", CultureInfo.InvariantCulture)</strong></td><td>@tx.Status</td></tr>}@if(!Model.Transactions.Any()){<tr><td colspan="5" class="text-muted text-center">Chưa có đối soát.</td></tr>}</tbody></table></div></div></div></div>
     </div>
 </div></section>
 <script>
 (function(){
+    var ownerTabs=document.querySelectorAll('[data-owner-panel]');
+    var ownerPanels=document.querySelectorAll('.owner-panel');
+    function showOwnerPanel(panelId, updateHash){
+        ownerPanels.forEach(function(panel){
+            var show=panel.id===panelId || (panelId==='orders' && panel.id==='applications');
+            panel.hidden=!show;
+        });
+        ownerTabs.forEach(function(tab){
+            var active=tab.getAttribute('data-owner-panel')===panelId;
+            tab.classList.toggle('active',active);
+            tab.setAttribute('aria-selected',String(active));
+        });
+        if(updateHash && history.replaceState) history.replaceState(null,'','#'+panelId);
+    }
+    ownerTabs.forEach(function(tab){tab.addEventListener('click',function(){showOwnerPanel(tab.getAttribute('data-owner-panel'),true);});});
+    document.querySelectorAll('a[href="#orders"],a[href="#vehicles"],a[href="#settlements"]').forEach(function(link){
+        link.addEventListener('click',function(event){
+            event.preventDefault();
+            var panelId=link.getAttribute('href').slice(1);
+            showOwnerPanel(panelId,true);
+            document.querySelector('.owner-tabs')?.scrollIntoView({behavior:'smooth',block:'start'});
+        });
+    });
+    var initialPanel=['orders','vehicles','settlements'].includes(location.hash.slice(1))?location.hash.slice(1):'orders';
+    showOwnerPanel(initialPanel,false);
+
     var filters=document.querySelectorAll('.vehicle-status-filter');
     var items=document.querySelectorAll('.vehicle-filter-item');
     var empty=document.getElementById('vehicleFilterEmpty');
