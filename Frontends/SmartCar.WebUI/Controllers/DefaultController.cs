@@ -253,6 +253,7 @@ namespace SmartCar.WebUI.Controllers
             }
 
             ViewBag.Locations = locations;
+            // Escape HTML because this JSON is rendered inside a script element on the search page.
             ViewBag.LocationsJson = JsonConvert.SerializeObject(locations.Select(x => new
             {
                 id = x.LocationID,
@@ -265,7 +266,7 @@ namespace SmartCar.WebUI.Controllers
                 latitude = x.Latitude,
                 longitude = x.Longitude,
                 radiusKm = x.SearchRadiusKm
-            }));
+            }), new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeHtml });
             ViewBag.v = locations.Select(x => new SelectListItem
             {
                 Text = x.DisplayName,
