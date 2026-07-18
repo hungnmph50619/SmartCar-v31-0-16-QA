@@ -74,20 +74,24 @@
                 <h4 class="mb-1">@ScopeTitle()</h4>
                 <small class="text-muted">Đang hiển thị @Model.Items.Count công việc theo bộ lọc hiện tại.</small>
             </div>
-            <div class="queue-filter-buttons">
+            <div class="queue-tools d-flex flex-wrap align-items-center">
+                <label for="queueSearch" class="sr-only">Tìm công việc</label>
+                <input id="queueSearch" type="search" class="form-control form-control-sm mr-2 mb-2" style="min-width:280px" placeholder="Tìm mã đơn, khách hàng, số điện thoại, biển số..." autocomplete="off" />
+                <div class="queue-filter-buttons mb-2">
                 <a href="?scope=@scope&priority=Khẩn cấp" class="btn btn-sm btn-outline-danger">Khẩn cấp</a>
                 <a href="?scope=@scope&priority=Cao" class="btn btn-sm btn-outline-warning">Cao</a>
                 <a href="?scope=@scope" class="btn btn-sm btn-outline-secondary">Bỏ lọc</a>
+                </div>
             </div>
         </div>
 
-        <div class="table-responsive"><table class="table table-hover align-middle">
+        <div class="table-responsive"><table class="table table-hover align-middle queue-table">
             <thead><tr><th>Ưu tiên</th><th>Công việc</th><th>Thời gian</th><th>Người xử lý / hạn</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
-            <tbody>
+            <tbody id="queueTableBody">
             @foreach (var item in Model.Items)
             {
                 var claimedByMe = item.AssignedStaffAppUserID == Model.CurrentStaffAppUserID;
-                <tr class="@(item.Bucket == "Quá hạn / lỗi" ? "queue-error-row" : item.Bucket == "Đã hoàn tất" ? "queue-completed-row" : "")">
+                <tr class="queue-data-row @(item.Bucket == "Quá hạn / lỗi" ? "queue-error-row" : item.Bucket == "Đã hoàn tất" ? "queue-completed-row" : "")">
                     <td><span class="badge badge-@PriorityClass(item.Priority)">@item.Priority</span></td>
                     <td>
                         <strong>@item.QueueType · @item.Title</strong><br />
@@ -177,5 +181,26 @@
     </div>
 </div></div>
 <style>
-.queue-tabs{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}.queue-tab{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;background:#fff;border:1px solid #e4eaf0;border-radius:12px;color:#334e68;box-shadow:0 5px 18px rgba(30,50,70,.05)}.queue-tab strong{font-size:22px}.queue-tab:hover,.queue-tab.active{border-color:#168cf2;color:#168cf2;background:#f4faff}.queue-tab.error strong{color:#dc3545}.queue-tab.completed strong{color:#28a745}.queue-kpis>div{margin-bottom:18px}.queue-kpi{display:flex;justify-content:space-between;align-items:center;height:100%;padding:20px;border-radius:14px;background:#fff;border:1px solid #e6edf3;color:#334e68;box-shadow:0 8px 24px rgba(30,50,70,.06)}.queue-kpi:hover{color:#168cf2;border-color:#b8dcff}.queue-kpi strong{font-size:28px}.queue-kpi.critical{border-left:5px solid #dc3545}.table td{vertical-align:middle}.badge{padding:.5rem .65rem}.queue-issue{margin-top:8px;padding:8px 10px;border-radius:6px;background:#fff3cd;color:#856404;font-size:12px;max-width:650px}.queue-error-row{background:#fffafb}.queue-completed-row{background:#f8fcf9;color:#64748b}.queue-filter-buttons .btn{margin-left:4px}@@media(max-width:1100px){.queue-tabs{grid-template-columns:repeat(2,1fr)}}@@media(max-width:600px){.queue-tabs{grid-template-columns:1fr}.queue-filter-buttons{margin-top:10px}}
+.queue-tabs{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}.queue-tab{display:flex;align-items:center;justify-content:space-between;padding:15px 18px;background:#fff;border:1px solid #e4eaf0;border-radius:12px;color:#334e68;box-shadow:0 5px 18px rgba(30,50,70,.05)}.queue-tab strong{font-size:22px}.queue-tab:hover,.queue-tab.active{border-color:#168cf2;color:#168cf2;background:#f4faff}.queue-tab.error strong{color:#dc3545}.queue-tab.completed strong{color:#28a745}.queue-kpis>div{margin-bottom:18px}.queue-kpi{display:flex;justify-content:space-between;align-items:center;height:100%;padding:20px;border-radius:14px;background:#fff;border:1px solid #e6edf3;color:#334e68;box-shadow:0 8px 24px rgba(30,50,70,.06)}.queue-kpi:hover{color:#168cf2;border-color:#b8dcff}.queue-kpi strong{font-size:28px}.queue-kpi.critical{border-left:5px solid #dc3545}.table td{vertical-align:middle}.badge{padding:.5rem .65rem}.queue-issue{margin-top:8px;padding:8px 10px;border-radius:6px;background:#fff3cd;color:#856404;font-size:12px;max-width:650px}.queue-error-row{background:#fffafb}.queue-completed-row{background:#f8fcf9;color:#64748b}.queue-filter-buttons .btn{margin-left:4px}.queue-tools{justify-content:flex-end}@@media(max-width:1100px){.queue-tabs{grid-template-columns:repeat(2,1fr)}}@@media(max-width:767px){
+.queue-tabs{grid-template-columns:1fr}.queue-tools{justify-content:stretch;width:100%;margin-top:12px}.queue-tools #queueSearch{width:100%;min-width:0!important;margin-right:0!important}.queue-filter-buttons{display:flex;gap:6px;overflow-x:auto;width:100%}.queue-filter-buttons .btn{margin-left:0;white-space:nowrap}
+.queue-table thead{display:none}.queue-table,.queue-table tbody,.queue-table tr,.queue-table td{display:block;width:100%}.queue-table tr.queue-data-row{border:1px solid #e1e8ef;border-radius:12px;margin-bottom:14px;padding:10px;background:#fff;box-shadow:0 5px 16px rgba(30,50,70,.06)}.queue-table td{display:grid;grid-template-columns:105px 1fr;gap:10px;border:0!important;padding:.45rem .35rem!important;text-align:left!important}.queue-table td:before{font-size:.72rem;font-weight:800;color:#627d98;text-transform:uppercase}.queue-table td:nth-child(1):before{content:"Ưu tiên"}.queue-table td:nth-child(2):before{content:"Công việc"}.queue-table td:nth-child(3):before{content:"Thời gian"}.queue-table td:nth-child(4):before{content:"Người xử lý"}.queue-table td:nth-child(5):before{content:"Trạng thái"}.queue-table td:nth-child(6):before{content:"Thao tác"}.queue-table td:nth-child(6) .btn,.queue-table td:nth-child(6) form{margin:2px 0;width:100%}.queue-table td:nth-child(6) .btn{width:100%}
+}
 </style>
+<script>
+(function(){
+    var search=document.getElementById('queueSearch');
+    var rows=[...document.querySelectorAll('.queue-data-row')];
+    if(!search)return;
+    var empty=document.createElement('tr');
+    empty.id='queueSearchEmpty';
+    empty.innerHTML='<td colspan="6" class="text-center text-muted py-4">Không tìm thấy công việc phù hợp.</td>';
+    empty.style.display='none';
+    document.getElementById('queueTableBody')?.appendChild(empty);
+    search.addEventListener('input',function(){
+        var query=(search.value||'').trim().toLocaleLowerCase('vi');
+        var visible=0;
+        rows.forEach(function(row){var show=!query||row.textContent.toLocaleLowerCase('vi').includes(query);row.style.display=show?'':'none';if(show)visible++;});
+        empty.style.display=rows.length>0&&visible===0?'':'none';
+    });
+})();
+</script>
