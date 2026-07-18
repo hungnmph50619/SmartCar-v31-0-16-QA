@@ -22,9 +22,18 @@
     var paymentIsDemoQr = ViewBag.PaymentIsDemoQr == true;
     var cancellationPreview = ViewBag.CancellationPreview as CancellationPreviewDto;
     string Badge(string status) => status switch { "Hoàn thành" or "Thành công" or "Đã xác nhận" or "Đã chấp nhận" => "success", "Đã hủy" or "Đang tranh chấp" or "Bị từ chối" => "danger", "Chờ xác nhận" or "Mới tiếp nhận" => "warning", _ => "info" };
+    var nextActionTitle = "Theo dõi đơn thuê";
+    var nextActionDescription = "Kiểm tra timeline và các thông báo mới nhất của đơn.";
+    var nextActionHref = "#reservationSummary";
+    var nextActionButton = "Xem thông tin";
+    if (isOwner && Model.CanOwnerDecide) { nextActionTitle = "Phản hồi yêu cầu thuê xe"; nextActionDescription = "Kiểm tra thời gian, địa điểm và giá trước khi chấp nhận hoặc từ chối."; nextActionHref = "#ownerDecision"; nextActionButton = "Phản hồi ngay"; }
+    else if (isCustomer && (Model.CanSubmitDepositProof || Model.CanSubmitSecurityDepositProof || Model.CanSubmitRentalPaymentProof)) { nextActionTitle = "Hoàn tất thanh toán"; nextActionDescription = "Xem đúng số tiền, nội dung chuyển khoản và gửi chứng từ trước thời hạn."; nextActionHref = "#paymentSection"; nextActionButton = "Đến phần thanh toán"; }
+    else if (canManage && Model.CanCreateDeliveryReport) { nextActionTitle = "Lập biên bản giao xe"; nextActionDescription = "Đối chiếu tình trạng xe, ảnh và xác nhận của hai bên trước khi bàn giao."; nextActionHref = "#handoverSection"; nextActionButton = "Bắt đầu giao xe"; }
+    else if (canManage && Model.CanCreateReturnReport) { nextActionTitle = "Lập biên bản trả xe"; nextActionDescription = "Kiểm tra xe, quãng đường, nhiên liệu, hình ảnh và phụ phí trước khi kết thúc."; nextActionHref = "#handoverSection"; nextActionButton = "Bắt đầu trả xe"; }
+    else if (Model.Reservation.Status == "Hoàn thành") { nextActionTitle = "Đơn thuê đã hoàn thành"; nextActionDescription = "Bạn có thể xem lại thanh toán, bàn giao, phụ phí và lịch sử xử lý."; nextActionHref = "#reservationSummary"; nextActionButton = "Xem lại đơn"; }
 }
 <style>
-.detail-shell{max-width:1220px;margin:auto}.detail-card{border:0;border-radius:14px}.timeline{display:flex;overflow-x:auto;padding:12px 0 22px}.timeline-item{min-width:145px;position:relative;text-align:center;padding:0 8px}.timeline-item:before{content:"";position:absolute;top:18px;left:-50%;width:100%;height:3px;background:#dee2e6}.timeline-item:first-child:before{display:none}.timeline-dot{position:relative;z-index:2;width:38px;height:38px;border-radius:50%;margin:auto;display:flex;align-items:center;justify-content:center;background:#e9ecef;color:#6c757d;font-weight:700}.timeline-item.completed .timeline-dot,.timeline-item.completed:before{background:#28a745;color:#fff}.timeline-item.current .timeline-dot{background:#1089ff;color:#fff;box-shadow:0 0 0 6px rgba(16,137,255,.14)}.timeline-item.current:before{background:#28a745}.timeline-item.cancelled .timeline-dot{background:#dc3545;color:#fff}.timeline-label{font-size:.86rem;margin-top:9px;font-weight:600}.finance-row{display:flex;justify-content:space-between;padding:.45rem 0;gap:12px}.finance-total{border-top:1px solid #dee2e6;padding-top:.85rem;margin-top:.35rem;font-weight:700}.action-box{border:1px solid #e2e8ef;border-radius:12px;padding:18px;background:#fff}.handover-card{border-left:4px solid #1089ff}.comparison-table th{background:#f5f8fb}.comparison-mobile{display:none}.evidence-grid{display:flex;gap:8px;overflow-x:auto}.evidence-grid img,.evidence-grid video{width:115px;height:90px;object-fit:cover;border-radius:8px}.countdown{font-size:1.55rem;font-weight:800;color:#dc3545}.payment-qr{max-width:270px;width:100%;border:1px solid #dbe4ed;border-radius:14px;padding:10px;background:#fff}.payment-value{font-size:1.05rem;font-weight:700;word-break:break-all}.copy-btn{padding:.15rem .45rem;font-size:.78rem}.manual-payment-box{background:#f7fbff;border:1px solid #cfe6ff;border-radius:14px;padding:18px}.section-anchor{scroll-margin-top:20px}.mobile-summary{display:none}@@media(max-width:767px){.timeline-item{min-width:120px}.desktop-table{display:none}.mobile-summary,.comparison-mobile{display:block}.comparison-desktop{display:none}.action-box{padding:14px}.detail-card .card-body{padding:1rem}.countdown{font-size:1.25rem}}
+.detail-shell{max-width:1220px;margin:auto}.detail-card{border:0;border-radius:14px}.timeline{display:flex;overflow-x:auto;padding:12px 0 22px}.timeline-item{min-width:145px;position:relative;text-align:center;padding:0 8px}.timeline-item:before{content:"";position:absolute;top:18px;left:-50%;width:100%;height:3px;background:#dee2e6}.timeline-item:first-child:before{display:none}.timeline-dot{position:relative;z-index:2;width:38px;height:38px;border-radius:50%;margin:auto;display:flex;align-items:center;justify-content:center;background:#e9ecef;color:#6c757d;font-weight:700}.timeline-item.completed .timeline-dot,.timeline-item.completed:before{background:#28a745;color:#fff}.timeline-item.current .timeline-dot{background:#1089ff;color:#fff;box-shadow:0 0 0 6px rgba(16,137,255,.14)}.timeline-item.current:before{background:#28a745}.timeline-item.cancelled .timeline-dot{background:#dc3545;color:#fff}.timeline-label{font-size:.86rem;margin-top:9px;font-weight:600}.finance-row{display:flex;justify-content:space-between;padding:.45rem 0;gap:12px}.finance-total{border-top:1px solid #dee2e6;padding-top:.85rem;margin-top:.35rem;font-weight:700}.action-box{border:1px solid #e2e8ef;border-radius:12px;padding:18px;background:#fff}.handover-card{border-left:4px solid #1089ff}.comparison-table th{background:#f5f8fb}.comparison-mobile{display:none}.evidence-grid{display:flex;gap:8px;overflow-x:auto}.evidence-grid img,.evidence-grid video{width:115px;height:90px;object-fit:cover;border-radius:8px}.countdown{font-size:1.55rem;font-weight:800;color:#dc3545}.payment-qr{max-width:270px;width:100%;border:1px solid #dbe4ed;border-radius:14px;padding:10px;background:#fff}.payment-value{font-size:1.05rem;font-weight:700;word-break:break-all}.copy-btn{padding:.15rem .45rem;font-size:.78rem}.manual-payment-box{background:#f7fbff;border:1px solid #cfe6ff;border-radius:14px;padding:18px}.section-anchor{scroll-margin-top:20px}.next-action-card{display:flex;justify-content:space-between;align-items:center;gap:18px;border:0;border-left:5px solid #1089ff;border-radius:14px;background:linear-gradient(135deg,#eef7ff,#fff);padding:20px 22px;box-shadow:0 8px 24px rgba(20,60,90,.08)}.next-action-card h3{font-size:1.15rem;margin-bottom:.3rem}.mobile-summary{display:none}@@media(max-width:767px){.timeline-item{min-width:120px}.desktop-table{display:none}.mobile-summary,.comparison-mobile{display:block}.comparison-desktop{display:none}.action-box{padding:14px}.detail-card .card-body{padding:1rem}.countdown{font-size:1.25rem}.next-action-card{align-items:stretch;flex-direction:column}.next-action-card .btn{width:100%}}
 </style>
 <section class="ftco-section bg-light py-5">
 <div class="container detail-shell">
@@ -32,7 +41,7 @@
     @if (TempData["OperationSuccess"] != null){<div class="alert alert-success">@TempData["OperationSuccess"]</div>}
     @if (TempData["OperationError"] != null){<div class="alert alert-danger">@TempData["OperationError"]</div>}
 
-    <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4">
+    <div id="reservationSummary" class="card detail-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
         <div class="d-flex flex-wrap justify-content-between align-items-start">
             <div><div class="text-muted">Mã đơn #@Model.Reservation.ReservationID · tạo @Model.Reservation.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div><h2 class="mb-1">@Model.Reservation.CarName</h2><div>@Model.Reservation.PickUpLocation → @Model.Reservation.DropOffLocation</div></div>
             <span class="badge badge-@Badge(Model.Reservation.Status) p-3 mt-2">@Model.Reservation.Status</span>
@@ -46,6 +55,10 @@
         </div>
     </div></div>
 
+    <div class="next-action-card mb-4" role="region" aria-label="Việc cần làm tiếp theo">
+        <div><small class="text-primary font-weight-bold">VIỆC CẦN LÀM TIẾP THEO</small><h3>@nextActionTitle</h3><p class="text-muted mb-0">@nextActionDescription</p></div>
+        <a href="@nextActionHref" class="btn btn-primary flex-shrink-0 align-self-center">@nextActionButton</a>
+    </div>
 
             @if (Model.Reservation.Status == "Hết hạn thanh toán" && Model.Payments.Any(x => x.Status == "Chờ xác nhận"))
             {
@@ -58,7 +71,7 @@
         <div class="col-lg-8">
             @if (Model.CanOwnerDecide && isOwner)
             {
-                <div class="card detail-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
+                <div id="ownerDecision" class="card detail-card shadow-sm mb-4 section-anchor"><div class="card-body p-4">
                     <h4>Yêu cầu mới cần phản hồi</h4><p>Kiểm tra thời gian, địa điểm, hồ sơ xác minh và giá đã chốt trước khi quyết định.</p>
                     <div class="alert alert-info">Sau khi chấp nhận, xe được giữ <strong>15 phút</strong> để khách thanh toán giữ chỗ. Yêu cầu hiện tại chưa khóa lịch.</div>
                     <form asp-controller="VehiclePartner" asp-action="DecideReservation" method="post" id="ownerDecisionForm">
@@ -167,7 +180,7 @@
             </div></div>
 
             <div class="card detail-card shadow-sm mb-4 section-anchor" id="handover"><div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-center"><h4>Biên bản giao – trả xe</h4><span class="text-muted">Xác nhận hai bên bằng OTP</span></div>
+                <div class="d-flex justify-content-between align-items-center"><h4 id="handoverSection" class="section-anchor">Biên bản giao – trả xe</h4><span class="text-muted">Xác nhận hai bên bằng OTP</span></div>
                 @if(Model.Handovers.Count==0){<div class="alert alert-light border">Chưa có biên bản.</div>}
                 @foreach(var report in Model.Handovers.Where(x=>!x.IsSuperseded))
                 {
@@ -293,7 +306,7 @@
         <div class="col-lg-4">
             <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4>Chi tiết giá</h4><div class="finance-row"><span>Giá/ngày</span><strong>@Model.Price.DailyPrice.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row"><span>Thời lượng</span><span>@Model.Price.RentalDays ngày</span></div><div class="finance-row"><span>Tiền thuê</span><span>@Model.Price.RentalAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Phí giao xe</span><span>@Model.Price.DeliveryFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Phí bảo hiểm</span><span>@Model.Price.InsuranceFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Phí nền tảng</span><span>@Model.Price.CustomerPlatformFee.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row"><span>Khuyến mãi</span><span>-@Model.Price.DiscountAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</span></div><div class="finance-row finance-total"><span>Tổng tiền thuê</span><strong>@Model.Price.TotalRental.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row"><span>Cọc giữ chỗ (cấn trừ tiền thuê)</span><strong>@Model.Price.ReservationDepositAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row"><span>Cọc bảo đảm (hoàn lại)</span><strong>@Model.Price.SecurityDepositAmount.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="finance-row finance-total text-primary"><span>Tổng chi phí + cọc bảo đảm</span><strong>@Model.Price.TotalDue.ToString("#,0", CultureInfo.InvariantCulture) đ</strong></div><div class="alert alert-light border mt-3"><small>@Model.Price.RefundableExplanation</small></div></div></div>
 
-            <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4>Thanh toán</h4>
+            <div class="card detail-card shadow-sm mb-4"><div class="card-body p-4"><h4 id="paymentSection" class="section-anchor">Thanh toán</h4>
                 @if (paymentConfigured && isCustomer && Model.CanSubmitSecurityDepositProof)
                 {
                     <div class="alert alert-info">
