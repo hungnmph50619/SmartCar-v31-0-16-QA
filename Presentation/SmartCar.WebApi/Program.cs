@@ -57,6 +57,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 builder.Configuration.AddEnvironmentVariables();
 builder.Services.AddHttpClient();
+builder.Services.AddSingleton<ISensitiveDataProtector, SensitiveDataProtector>();
 builder.Services.AddAuthorization(options =>
 {
     options.FallbackPolicy = new AuthorizationPolicyBuilder()
@@ -133,6 +134,7 @@ builder.Services.AddHostedService<EmailOutboxBackgroundService>();
 builder.Services.AddScoped<IPrivateFileService, PrivateFileService>();
 builder.Services.AddHostedService<PrivateFileCleanupService>();
 builder.Services.AddHostedService<PublicFileDeletionBackgroundService>();
+builder.Services.AddHostedService<LegacySensitivePartnerDataMigrationService>();
 builder.Services.AddScoped<IReservationCancellationService, ReservationCancellationService>();
 builder.Services.AddScoped<ISystemSettingService, SystemSettingService>();
 builder.Services.AddScoped<IUserAnonymizationService, UserAnonymizationService>();
