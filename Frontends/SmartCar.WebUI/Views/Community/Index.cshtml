@@ -1,0 +1,27 @@
+@model SmartCar.WebUI.Models.CommunityFeedViewModel
+@{ Layout = "~/Views/UILayout/Index.cshtml"; ViewData["Title"] = "Cộng đồng SmartCar"; }
+<style>
+.community-hero{background:linear-gradient(135deg,#102a43,#168cf2);padding:125px 0 48px;color:#fff}.community-wrap{padding:42px 0;background:#f6f8fb;min-height:65vh}.community-card{background:#fff;border:1px solid #e8edf3;border-radius:18px;overflow:hidden;margin-bottom:22px;box-shadow:0 8px 25px rgba(15,45,75,.06)}.community-cover{width:100%;height:230px;object-fit:cover}.community-body{padding:24px}.badge-soft{background:#e9f5ff;color:#0878d1;padding:6px 10px;border-radius:20px;font-size:12px;font-weight:700}.official{background:#e9fff5;color:#087a55}.filter-box{background:#fff;padding:18px;border-radius:16px;margin-bottom:25px}.meta{color:#768391;font-size:13px}.empty-box{text-align:center;background:#fff;padding:55px;border-radius:18px}
+</style>
+<section class="community-hero"><div class="container"><div class="d-flex flex-wrap justify-content-between align-items-end">
+<div><div class="text-uppercase small mb-2">Chia sẻ có trách nhiệm</div><h1 class="text-white">Cộng đồng SmartCar</h1><p class="mb-0">Hỏi đáp, chia sẻ hành trình và kinh nghiệm thuê xe từ người dùng thật.</p></div>
+<div class="mt-3"><a asp-action="Create" class="btn btn-success mr-2">Viết bài</a><a asp-action="Mine" class="btn btn-outline-light">Bài của tôi</a></div>
+</div></div></section>
+<section class="community-wrap"><div class="container">
+@if (TempData["CommunitySuccess"] is string success){<div class="alert alert-success">@success</div>}
+@if (ViewBag.Error is string error){<div class="alert alert-warning">@error</div>}
+<form method="get" class="filter-box"><div class="row">
+<div class="col-lg-5 mb-2"><label class="sr-only">Tìm kiếm</label><input name="query" value="@ViewBag.Query" class="form-control" placeholder="Tìm theo tiêu đề, nội dung, địa điểm..." /></div>
+<div class="col-lg-3 mb-2"><select name="category" class="form-control"><option value="">Tất cả chủ đề</option>@foreach(var c in Model.Categories){<option value="@c" selected="@(ViewBag.Category == c)">@c</option>}</select></div>
+<div class="col-lg-2 mb-2"><select name="sort" class="form-control"><option value="newest" selected="@(ViewBag.Sort=="newest")">Mới nhất</option><option value="useful" selected="@(ViewBag.Sort=="useful")">Hữu ích nhất</option><option value="discussed" selected="@(ViewBag.Sort=="discussed")">Thảo luận nhiều</option></select></div>
+<div class="col-lg-2"><button class="btn btn-primary btn-block">Tìm bài</button></div></div></form>
+<div class="row"><div class="col-lg-8">
+@if(!Model.Items.Any()){<div class="empty-box"><h4>Chưa có bài phù hợp</h4><p>Hãy là người đầu tiên mở cuộc thảo luận.</p><a asp-action="Create" class="btn btn-primary">Viết bài mới</a></div>}
+@foreach(var post in Model.Items){<article class="community-card">
+@if(!string.IsNullOrWhiteSpace(post.CoverImageUrl)){<img src="@post.CoverImageUrl" class="community-cover" alt="@post.Title" />}
+<div class="community-body"><div class="mb-2"><span class="badge-soft @(post.IsOfficial ? "official" : "")">@(post.IsOfficial ? "SmartCar chính thức" : post.Category)</span>@if(post.VerifiedTrip){<span class="badge-soft official ml-1">✓ Chuyến đi đã xác minh</span>}</div>
+<h3><a asp-action="Details" asp-route-id="@post.CommunityPostID">@post.Title</a></h3><p>@post.Excerpt</p>
+<div class="meta">@(post.IsVehiclePartner ? "Chủ xe" : "Thành viên") · @post.AuthorName · @((post.PublishedAt ?? post.CreatedAt).ToString("dd/MM/yyyy HH:mm")) · 👍 @post.UsefulCount · 💬 @post.CommentCount</div></div></article>}
+</div><aside class="col-lg-4"><div class="filter-box"><h5>Đây là khu vực nào?</h5><p>Cộng đồng dành cho nội dung do thành viên chia sẻ. Bài chính thức của SmartCar luôn có nhãn riêng.</p><hr/><a href="/Blog/Index">Xem tin và bài viết chính thức →</a></div>
+<div class="filter-box"><h5>Nguyên tắc an toàn</h5><ul class="pl-3 mb-0"><li>Không đăng số điện thoại, CCCD, tài khoản ngân hàng.</li><li>Tôn trọng người khác, không quảng cáo rác.</li><li>Báo cáo nội dung có dấu hiệu lừa đảo.</li></ul></div></aside></div>
+</div></section>

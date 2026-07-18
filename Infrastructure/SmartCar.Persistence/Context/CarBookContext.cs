@@ -76,9 +76,55 @@ namespace SmartCar.Persistence.Context
         public DbSet<VehicleAvailabilityBlock> VehicleAvailabilityBlocks { get; set; }
         public DbSet<BankAccountChangeRequest> BankAccountChangeRequests { get; set; }
         public DbSet<RefundTransaction> RefundTransactions { get; set; }
+        public DbSet<CommunityPost> CommunityPosts { get; set; }
+        public DbSet<CommunityComment> CommunityComments { get; set; }
+        public DbSet<CommunityReaction> CommunityReactions { get; set; }
+        public DbSet<CommunityBookmark> CommunityBookmarks { get; set; }
+        public DbSet<CommunityReport> CommunityReports { get; set; }
+        public DbSet<CommunityModerationLog> CommunityModerationLogs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<CommunityPost>(entity =>
+            {
+                entity.HasOne(x => x.AuthorAppUser).WithMany().HasForeignKey(x => x.AuthorAppUserID).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.Reservation).WithMany().HasForeignKey(x => x.ReservationID).OnDelete(DeleteBehavior.SetNull);
+                entity.HasIndex(x => new { x.Status, x.PublishedAt });
+                entity.HasIndex(x => new { x.AuthorAppUserID, x.CreatedAt });
+            });
+            modelBuilder.Entity<CommunityComment>(entity =>
+            {
+                entity.HasOne(x => x.CommunityPost).WithMany(x => x.Comments).HasForeignKey(x => x.CommunityPostID).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.AuthorAppUser).WithMany().HasForeignKey(x => x.AuthorAppUserID).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(x => x.ParentComment).WithMany().HasForeignKey(x => x.ParentCommentID).OnDelete(DeleteBehavior.NoAction);
+                entity.HasIndex(x => new { x.CommunityPostID, x.CreatedAt });
+            });
+            modelBuilder.Entity<CommunityReaction>(entity =>
+            {
+                entity.HasOne(x => x.CommunityPost).WithMany(x => x.Reactions).HasForeignKey(x => x.CommunityPostID).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.AppUser).WithMany().HasForeignKey(x => x.AppUserID).OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(x => new { x.CommunityPostID, x.AppUserID }).IsUnique();
+            });
+            modelBuilder.Entity<CommunityBookmark>(entity =>
+            {
+                entity.HasOne(x => x.CommunityPost).WithMany(x => x.Bookmarks).HasForeignKey(x => x.CommunityPostID).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.AppUser).WithMany().HasForeignKey(x => x.AppUserID).OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(x => new { x.CommunityPostID, x.AppUserID }).IsUnique();
+            });
+            modelBuilder.Entity<CommunityReport>(entity =>
+            {
+                entity.HasOne(x => x.CommunityPost).WithMany(x => x.Reports).HasForeignKey(x => x.CommunityPostID).OnDelete(DeleteBehavior.NoAction);
+                entity.HasOne(x => x.CommunityComment).WithMany().HasForeignKey(x => x.CommunityCommentID).OnDelete(DeleteBehavior.NoAction);
+                entity.HasOne(x => x.ReporterAppUser).WithMany().HasForeignKey(x => x.ReporterAppUserID).OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(x => new { x.Status, x.CreatedAt });
+            });
+            modelBuilder.Entity<CommunityModerationLog>(entity =>
+            {
+                entity.HasOne(x => x.CommunityPost).WithMany().HasForeignKey(x => x.CommunityPostID).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(x => x.ModeratorAppUser).WithMany().HasForeignKey(x => x.ModeratorAppUserID).OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(x => new { x.CommunityPostID, x.CreatedAt });
+            });
+
             modelBuilder.Entity<Reservation>()
                 .HasOne(x => x.PickUpLocation)
                 .WithMany(y => y.PickUpReservation)
