@@ -36,6 +36,9 @@ public sealed class CommunityPostDetailViewModel
     public string? LocationName { get; set; }
     public bool IsOfficial { get; set; }
     public bool IsCommentsLocked { get; set; }
+    public string Status { get; set; } = "";
+    public string? ModerationReason { get; set; }
+    public int ReportCount { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public DateTime? PublishedAt { get; set; }
@@ -54,11 +57,12 @@ public sealed class CommunityCommentViewModel
     public string Content { get; set; } = "";
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public string Status { get; set; } = "";
     public int AuthorID { get; set; }
     public string AuthorName { get; set; } = "";
     public bool IsVehiclePartner { get; set; }
 }
-public sealed class CommunityPostFormViewModel
+public class CommunityPostFormViewModel
 {
     [Required, StringLength(150, MinimumLength = 10)] public string Title { get; set; } = "";
     [Required, StringLength(12000, MinimumLength = 50)] public string Content { get; set; } = "";
@@ -70,6 +74,13 @@ public sealed class CommunityPostFormViewModel
     public IFormFile? CoverImage { get; set; }
     public List<string> Categories { get; set; } = [];
     public List<CommunityTripViewModel> Trips { get; set; } = [];
+}
+public sealed class CommunityPostEditViewModel : CommunityPostFormViewModel
+{
+    public int CommunityPostID { get; set; }
+    public string? ExistingCoverImageUrl { get; set; }
+    public string Status { get; set; } = "";
+    public string? ModerationReason { get; set; }
 }
 public sealed class CommunityTripViewModel
 {

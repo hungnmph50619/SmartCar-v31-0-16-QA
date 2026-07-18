@@ -6,6 +6,7 @@ using SmartCar.Domain.Entities;
 using SmartCar.Domain.Security;
 using SmartCar.Dto.AccountDtos;
 using SmartCar.Persistence.Context;
+using SmartCar.WebApi.Services;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Claims;
@@ -22,15 +23,18 @@ namespace SmartCar.WebApi.Controllers
         private readonly CarBookContext _context;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AccountController> _logger;
+        private readonly ISensitiveDataProtector _sensitiveData;
 
         public AccountController(
             CarBookContext context,
             IConfiguration configuration,
-            ILogger<AccountController> logger)
+            ILogger<AccountController> logger,
+            ISensitiveDataProtector? sensitiveData = null)
         {
             _context = context;
             _configuration = configuration;
             _logger = logger;
+            _sensitiveData = sensitiveData ?? new SensitiveDataProtector(configuration);
         }
 
         [AllowAnonymous]
@@ -391,7 +395,7 @@ namespace SmartCar.WebApi.Controllers
             return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
         }
 
-        private static UserProfileDto MapProfile(AppUser user, VehiclePartnerProfile? partnerProfile)
+        private UserProfileDto MapProfile(AppUser user, VehiclePartnerProfile? partnerProfile)
         {
             return new UserProfileDto
             {
@@ -406,9 +410,9 @@ namespace SmartCar.WebApi.Controllers
                 Role = user.AppRole.AppRoleName,
                 IsVehiclePartner = user.IsVehiclePartner,
                 Address = partnerProfile?.Address,
-                CitizenIdentityNumber = partnerProfile?.CitizenIdentityNumber,
+                CitizenIdentityNumber = _sensitiveData.Mask(_sensitiveData.UnprotectOrLegacy(partnerProfile?.CitizenIdentityNumberEncrypted, partnerProfile?.CitizenIdentityNumber, "partner-citizen-id")),
                 BankName = partnerProfile?.BankName,
-                BankAccountNumber = partnerProfile?.BankAccountNumber,
+                BankAccountNumber = _sensitiveData.Mask(_sensitiveData.UnprotectOrLegacy(partnerProfile?.BankAccountNumberEncrypted, partnerProfile?.BankAccountNumber, "partner-bank-account")),
                 BankAccountHolder = partnerProfile?.BankAccountHolder,
                 CustomerRating = 0,
                 CustomerRatingCount = 0

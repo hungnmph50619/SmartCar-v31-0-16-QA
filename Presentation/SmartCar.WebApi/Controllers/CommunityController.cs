@@ -68,7 +68,7 @@ public sealed class CommunityController : ControllerBase
             .Select(x => new
             {
                 x.CommunityPostID, x.Title, x.Content, x.Category, x.CoverImageUrl, x.LocationName,
-                x.IsOfficial, x.IsCommentsLocked, x.CreatedAt, x.UpdatedAt, x.PublishedAt, x.ReservationID,
+                x.IsOfficial, x.IsCommentsLocked, x.Status, x.ModerationReason, x.CreatedAt, x.UpdatedAt, x.PublishedAt, x.ReservationID,
                 authorID = x.AuthorAppUserID,
                 authorName = (x.AuthorAppUser.Surname + " " + x.AuthorAppUser.Name).Trim(),
                 x.AuthorAppUser.IsVehiclePartner,
@@ -84,6 +84,49 @@ public sealed class CommunityController : ControllerBase
                     }).ToList()
             }).FirstOrDefaultAsync();
         return post is null ? NotFound(new { message = "Bài viết không tồn tại hoặc chưa được xuất bản." }) : Ok(post);
+    }
+
+    [Authorize(Roles = "Admin,Staff")]
+    [HttpGet("posts/{id:int}/review")]
+    public async Task<IActionResult> Review(int id)
+    {
+        var post = await _db.CommunityPosts.AsNoTracking()
+            .Where(x => x.CommunityPostID == id)
+            .Select(x => new
+            {
+                x.CommunityPostID, x.Title, x.Content, x.Category, x.CoverImageUrl, x.LocationName,
+                x.IsOfficial, x.IsCommentsLocked, x.Status, x.ModerationReason, x.CreatedAt, x.UpdatedAt, x.PublishedAt, x.ReservationID,
+                authorID = x.AuthorAppUserID,
+                authorName = (x.AuthorAppUser.Surname + " " + x.AuthorAppUser.Name).Trim(),
+                x.AuthorAppUser.IsVehiclePartner,
+                usefulCount = x.Reactions.Count,
+                bookmarkCount = x.Bookmarks.Count,
+                reportCount = x.Reports.Count(r => r.Status == "Mới"),
+                comments = x.Comments.OrderBy(c => c.CreatedAt).Select(c => new
+                {
+                    c.CommunityCommentID, c.ParentCommentID, c.Content, c.CreatedAt, c.UpdatedAt, c.Status,
+                    authorID = c.AuthorAppUserID,
+                    authorName = (c.AuthorAppUser.Surname + " " + c.AuthorAppUser.Name).Trim(),
+                    c.AuthorAppUser.IsVehiclePartner
+                }).ToList()
+            }).FirstOrDefaultAsync();
+        return post is null ? NotFound(new { message = "Bài viết không tồn tại." }) : Ok(post);
+    }
+
+    [Authorize]
+    [HttpGet("posts/{id:int}/mine")]
+    public async Task<IActionResult> MineDetail(int id)
+    {
+        var userId = UserId();
+        var isAdmin = User.IsInRole("Admin");
+        var post = await _db.CommunityPosts.AsNoTracking()
+            .Where(x => x.CommunityPostID == id && (x.AuthorAppUserID == userId || isAdmin))
+            .Select(x => new
+            {
+                x.CommunityPostID, x.Title, x.Content, x.Category, x.CoverImageUrl, x.LocationName,
+                x.ReservationID, x.Status, x.ModerationReason, x.IsOfficial, x.IsCommentsLocked
+            }).FirstOrDefaultAsync();
+        return post is null ? NotFound(new { message = "Không tìm thấy bài viết của bạn." }) : Ok(post);
     }
 
     [Authorize]
@@ -233,10 +276,16 @@ public sealed class CommunityController : ControllerBase
     public async Task<IActionResult> Report(ReportRequest request)
     {
         var userId = UserId();
-        if (!request.CommunityPostID.HasValue && !request.CommunityCommentID.HasValue) return BadRequest(new { message = "Phải chọn bài viết hoặc bình luận cần báo cáo." });
+        if (request.CommunityPostID.HasValue == request.CommunityCommentID.HasValue) return BadRequest(new { message = "Chỉ được báo cáo một bài viết hoặc một bình luận mỗi lần." });
+        var reason = (request.Reason ?? "").Trim();
+        var detail = request.Detail?.Trim();
+        if (reason.Length is < 3 or > 100) return BadRequest(new { message = "Lý do báo cáo phải có từ 3 đến 100 ký tự." });
+        if ((detail?.Length ?? 0) > 500) return BadRequest(new { message = "Chi tiết báo cáo không được vượt quá 500 ký tự." });
+        if (request.CommunityPostID.HasValue && !await _db.CommunityPosts.AnyAsync(x => x.CommunityPostID == request.CommunityPostID)) return NotFound(new { message = "Bài viết không tồn tại." });
+        if (request.CommunityCommentID.HasValue && !await _db.CommunityComments.AnyAsync(x => x.CommunityCommentID == request.CommunityCommentID)) return NotFound(new { message = "Bình luận không tồn tại." });
         var duplicate = await _db.CommunityReports.AnyAsync(x => x.ReporterAppUserID == userId && x.Status == "Mới" && x.CommunityPostID == request.CommunityPostID && x.CommunityCommentID == request.CommunityCommentID);
         if (duplicate) return Conflict(new { message = "Bạn đã báo cáo nội dung này." });
-        _db.CommunityReports.Add(new CommunityReport { ReporterAppUserID = userId, CommunityPostID = request.CommunityPostID, CommunityCommentID = request.CommunityCommentID, Reason = (request.Reason ?? "").Trim(), Detail = request.Detail?.Trim() });
+        _db.CommunityReports.Add(new CommunityReport { ReporterAppUserID = userId, CommunityPostID = request.CommunityPostID, CommunityCommentID = request.CommunityCommentID, Reason = reason, Detail = detail });
         await _db.SaveChangesAsync();
         return Ok(new { message = "Báo cáo đã được tiếp nhận. SmartCar không tiết lộ danh tính người báo cáo." });
     }
@@ -259,6 +308,9 @@ public sealed class CommunityController : ControllerBase
     {
         var action = (request.Action ?? "").Trim();
         if (action is not ("Xuất bản" or "Ẩn" or "Từ chối" or "Khóa bình luận" or "Mở bình luận")) return BadRequest(new { message = "Thao tác kiểm duyệt không hợp lệ." });
+        var reason = request.Reason?.Trim();
+        if ((action is "Ẩn" or "Từ chối") && string.IsNullOrWhiteSpace(reason))
+            return BadRequest(new { message = "Cần ghi rõ lý do khi ẩn hoặc từ chối bài viết." });
         var post = await _db.CommunityPosts.FirstOrDefaultAsync(x => x.CommunityPostID == id);
         if (post is null) return NotFound();
         if (action == "Xuất bản") { post.Status = CommunityPostStatuses.Published; post.PublishedAt ??= DateTime.UtcNow; }
@@ -266,8 +318,8 @@ public sealed class CommunityController : ControllerBase
         else if (action == "Từ chối") post.Status = CommunityPostStatuses.Rejected;
         else if (action == "Khóa bình luận") post.IsCommentsLocked = true;
         else if (action == "Mở bình luận") post.IsCommentsLocked = false;
-        post.ModeratedByAppUserID = UserId(); post.ModerationReason = request.Reason?.Trim(); post.UpdatedAt = DateTime.UtcNow;
-        _db.CommunityModerationLogs.Add(new CommunityModerationLog { CommunityPostID = id, ModeratorAppUserID = UserId(), Action = action, Reason = request.Reason?.Trim() ?? "Không có ghi chú." });
+        post.ModeratedByAppUserID = UserId(); post.ModerationReason = reason; post.UpdatedAt = DateTime.UtcNow;
+        _db.CommunityModerationLogs.Add(new CommunityModerationLog { CommunityPostID = id, ModeratorAppUserID = UserId(), Action = action, Reason = reason ?? "Không có ghi chú." });
         var reports = await _db.CommunityReports.Where(x => x.CommunityPostID == id && x.Status == "Mới").ToListAsync();
         foreach (var report in reports) { report.Status = "Đã xử lý"; report.ResolvedAt = DateTime.UtcNow; report.ResolvedByAppUserID = UserId(); }
         await _db.SaveChangesAsync();
