@@ -18,11 +18,13 @@ namespace SmartCar.WebApi.Controllers
         private readonly CarBookContext _context;
         private readonly IConfiguration _configuration;
         private readonly IPrivateFileService _files;
-        public VehiclePartnerProfilesController(CarBookContext context, IConfiguration configuration, IPrivateFileService files)
+        private readonly ISensitiveDataProtector _sensitiveData;
+        public VehiclePartnerProfilesController(CarBookContext context, IConfiguration configuration, IPrivateFileService files, ISensitiveDataProtector? sensitiveData = null)
         {
             _context = context;
             _configuration = configuration;
             _files = files;
+            _sensitiveData = sensitiveData ?? new SensitiveDataProtector(configuration);
         }
 
         [Authorize(Roles = "VehiclePartner")]
@@ -147,7 +149,8 @@ namespace SmartCar.WebApi.Controllers
                 profile.FullName = (dto.FullName ?? string.Empty).Trim();
                 profile.DateOfBirth = dto.DateOfBirth;
                 profile.Gender = (dto.Gender ?? string.Empty).Trim();
-                profile.CitizenIdentityNumber = cccd;
+                profile.CitizenIdentityNumberEncrypted = _sensitiveData.Protect(cccd, "partner-citizen-id");
+                profile.CitizenIdentityNumber = string.Empty;
                 profile.CitizenIdFingerprint = IdentityFingerprintSecurity.Compute(IdentityKey(), cccd);
                 // Một CCCD chỉ được gắn với một hồ sơ đối tác cá nhân. Cùng CCCD
                 // vẫn được phép dùng cho một tài khoản khách riêng.
@@ -222,6 +225,7 @@ namespace SmartCar.WebApi.Controllers
                 profile.DateOfBirth = null;
                 profile.Gender = string.Empty;
                 profile.CitizenIdentityNumber = string.Empty;
+                profile.CitizenIdentityNumberEncrypted = null;
                 profile.CitizenIdFingerprint = null;
                 profile.CitizenIssuedDate = null;
                 profile.CitizenExpiryDate = null;
@@ -248,7 +252,8 @@ namespace SmartCar.WebApi.Controllers
             profile.Email = user.Email;
             profile.Phone = user.Phone ?? profile.Phone;
             profile.BankName = (dto.BankName ?? string.Empty).Trim();
-            profile.BankAccountNumber = NormalizeBankAccount(dto.BankAccountNumber);
+            profile.BankAccountNumberEncrypted = _sensitiveData.Protect(NormalizeBankAccount(dto.BankAccountNumber), "partner-bank-account");
+            profile.BankAccountNumber = string.Empty;
             profile.BankAccountHolder = (dto.BankAccountHolder ?? string.Empty).Trim();
             profile.BankBranch = dto.BankBranch?.Trim() ?? string.Empty;
             profile.Status = "Chờ duyệt";
@@ -418,7 +423,7 @@ namespace SmartCar.WebApi.Controllers
             return (address.ProvinceCode, address.ProvinceName, address.WardCode, address.WardFullName);
         }
 
-        private static VehiclePartnerProfileDto Map(VehiclePartnerProfile x) => new()
+        private VehiclePartnerProfileDto Map(VehiclePartnerProfile x) => new()
         {
             VehiclePartnerProfileID = x.VehiclePartnerProfileID,
             AppUserID = x.AppUserID,
@@ -427,7 +432,7 @@ namespace SmartCar.WebApi.Controllers
             Phone = x.Phone,
             Email = x.Email,
             Address = x.Address,
-            CitizenIdentityNumber = x.CitizenIdentityNumber,
+            CitizenIdentityNumber = _sensitiveData.UnprotectOrLegacy(x.CitizenIdentityNumberEncrypted, x.CitizenIdentityNumber, "partner-citizen-id") ?? string.Empty,
             DateOfBirth = x.DateOfBirth,
             Gender = x.Gender,
             CitizenIssuedDate = x.CitizenIssuedDate,
@@ -467,7 +472,7 @@ namespace SmartCar.WebApi.Controllers
             BusinessLicenseImageUrl = x.BusinessLicenseImageUrl,
             AuthorizationDocumentUrl = x.AuthorizationDocumentUrl,
             BankName = x.BankName,
-            BankAccountNumber = x.BankAccountNumber,
+            BankAccountNumber = _sensitiveData.UnprotectOrLegacy(x.BankAccountNumberEncrypted, x.BankAccountNumber, "partner-bank-account") ?? string.Empty,
             BankAccountHolder = x.BankAccountHolder,
             BankBranch = x.BankBranch,
             Status = x.Status,
