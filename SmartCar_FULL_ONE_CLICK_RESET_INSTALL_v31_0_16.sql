@@ -6116,9 +6116,9 @@ BEGIN
   ModeratedByAppUserID int NULL,
   ModerationReason nvarchar(1000) NULL,
   RowVersion rowversion NOT NULL,
-  CONSTRAINT FK_CommunityPosts_Author FOREIGN KEY(AuthorAppUserID) REFERENCES dbo.AppUsers(AppUserID),
+  CONSTRAINT FK_CommunityPosts_Author FOREIGN KEY(AuthorAppUserID) REFERENCES dbo.AppUsers(AppUserId),
   CONSTRAINT FK_CommunityPosts_Reservation FOREIGN KEY(ReservationID) REFERENCES dbo.Reservations(ReservationID),
-  CONSTRAINT FK_CommunityPosts_Moderator FOREIGN KEY(ModeratedByAppUserID) REFERENCES dbo.AppUsers(AppUserID),
+  CONSTRAINT FK_CommunityPosts_Moderator FOREIGN KEY(ModeratedByAppUserID) REFERENCES dbo.AppUsers(AppUserId),
   CONSTRAINT CK_CommunityPosts_Status CHECK(Status IN (N'Bản nháp',N'Chờ duyệt',N'Đã xuất bản',N'Đã ẩn',N'Bị từ chối'))
  );
  CREATE INDEX IX_CommunityPosts_Status_PublishedAt ON dbo.CommunityPosts(Status,PublishedAt DESC);
@@ -6138,7 +6138,7 @@ BEGIN
   CreatedAt datetime2 NOT NULL CONSTRAINT DF_CommunityComments_Created DEFAULT SYSUTCDATETIME(),
   UpdatedAt datetime2 NULL,
   CONSTRAINT FK_CommunityComments_Post FOREIGN KEY(CommunityPostID) REFERENCES dbo.CommunityPosts(CommunityPostID) ON DELETE CASCADE,
-  CONSTRAINT FK_CommunityComments_Author FOREIGN KEY(AuthorAppUserID) REFERENCES dbo.AppUsers(AppUserID),
+  CONSTRAINT FK_CommunityComments_Author FOREIGN KEY(AuthorAppUserID) REFERENCES dbo.AppUsers(AppUserId),
   CONSTRAINT FK_CommunityComments_Parent FOREIGN KEY(ParentCommentID) REFERENCES dbo.CommunityComments(CommunityCommentID)
  );
  CREATE INDEX IX_CommunityComments_Post_Created ON dbo.CommunityComments(CommunityPostID,CreatedAt);
@@ -6152,7 +6152,7 @@ BEGIN
   CommunityPostID int NOT NULL, AppUserID int NOT NULL,
   CreatedAt datetime2 NOT NULL CONSTRAINT DF_CommunityReactions_Created DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_CommunityReactions_Post FOREIGN KEY(CommunityPostID) REFERENCES dbo.CommunityPosts(CommunityPostID) ON DELETE CASCADE,
-  CONSTRAINT FK_CommunityReactions_User FOREIGN KEY(AppUserID) REFERENCES dbo.AppUsers(AppUserID),
+  CONSTRAINT FK_CommunityReactions_User FOREIGN KEY(AppUserID) REFERENCES dbo.AppUsers(AppUserId),
   CONSTRAINT UQ_CommunityReactions_Post_User UNIQUE(CommunityPostID,AppUserID)
  );
 END;
@@ -6164,7 +6164,7 @@ BEGIN
   CommunityPostID int NOT NULL, AppUserID int NOT NULL,
   CreatedAt datetime2 NOT NULL CONSTRAINT DF_CommunityBookmarks_Created DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_CommunityBookmarks_Post FOREIGN KEY(CommunityPostID) REFERENCES dbo.CommunityPosts(CommunityPostID) ON DELETE CASCADE,
-  CONSTRAINT FK_CommunityBookmarks_User FOREIGN KEY(AppUserID) REFERENCES dbo.AppUsers(AppUserID),
+  CONSTRAINT FK_CommunityBookmarks_User FOREIGN KEY(AppUserID) REFERENCES dbo.AppUsers(AppUserId),
   CONSTRAINT UQ_CommunityBookmarks_Post_User UNIQUE(CommunityPostID,AppUserID)
  );
 END;
@@ -6181,8 +6181,8 @@ BEGIN
   CONSTRAINT CK_CommunityReports_Target CHECK((CommunityPostID IS NOT NULL AND CommunityCommentID IS NULL) OR (CommunityPostID IS NULL AND CommunityCommentID IS NOT NULL)),
   CONSTRAINT FK_CommunityReports_Post FOREIGN KEY(CommunityPostID) REFERENCES dbo.CommunityPosts(CommunityPostID),
   CONSTRAINT FK_CommunityReports_Comment FOREIGN KEY(CommunityCommentID) REFERENCES dbo.CommunityComments(CommunityCommentID),
-  CONSTRAINT FK_CommunityReports_Reporter FOREIGN KEY(ReporterAppUserID) REFERENCES dbo.AppUsers(AppUserID),
-  CONSTRAINT FK_CommunityReports_Resolver FOREIGN KEY(ResolvedByAppUserID) REFERENCES dbo.AppUsers(AppUserID)
+  CONSTRAINT FK_CommunityReports_Reporter FOREIGN KEY(ReporterAppUserID) REFERENCES dbo.AppUsers(AppUserId),
+  CONSTRAINT FK_CommunityReports_Resolver FOREIGN KEY(ResolvedByAppUserID) REFERENCES dbo.AppUsers(AppUserId)
  );
  CREATE INDEX IX_CommunityReports_Status_Created ON dbo.CommunityReports(Status,CreatedAt);
 END;
@@ -6195,7 +6195,7 @@ BEGIN
   Action nvarchar(50) NOT NULL, Reason nvarchar(1000) NOT NULL,
   CreatedAt datetime2 NOT NULL CONSTRAINT DF_CommunityModerationLogs_Created DEFAULT SYSUTCDATETIME(),
   CONSTRAINT FK_CommunityModerationLogs_Post FOREIGN KEY(CommunityPostID) REFERENCES dbo.CommunityPosts(CommunityPostID) ON DELETE CASCADE,
-  CONSTRAINT FK_CommunityModerationLogs_User FOREIGN KEY(ModeratorAppUserID) REFERENCES dbo.AppUsers(AppUserID)
+  CONSTRAINT FK_CommunityModerationLogs_User FOREIGN KEY(ModeratorAppUserID) REFERENCES dbo.AppUsers(AppUserId)
  );
  CREATE INDEX IX_CommunityModerationLogs_Post_Created ON dbo.CommunityModerationLogs(CommunityPostID,CreatedAt DESC);
 END;
