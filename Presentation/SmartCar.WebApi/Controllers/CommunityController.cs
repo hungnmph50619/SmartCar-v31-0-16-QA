@@ -187,9 +187,6 @@ public sealed class CommunityController : ControllerBase
     public async Task<IActionResult> Update(int id, SavePostRequest request)
     {
         var userId = UserId();
-        var reason = reason;
-        if (action is "Ẩn" or "Từ chối" && string.IsNullOrWhiteSpace(reason))
-            return BadRequest(new { message = "Cần ghi rõ lý do khi ẩn hoặc từ chối bài viết." });
         var post = await _db.CommunityPosts.FirstOrDefaultAsync(x => x.CommunityPostID == id);
         if (post is null) return NotFound();
         if (post.AuthorAppUserID != userId && !User.IsInRole("Admin")) return Forbid();
@@ -310,6 +307,9 @@ public sealed class CommunityController : ControllerBase
     {
         var action = (request.Action ?? "").Trim();
         if (action is not ("Xuất bản" or "Ẩn" or "Từ chối" or "Khóa bình luận" or "Mở bình luận")) return BadRequest(new { message = "Thao tác kiểm duyệt không hợp lệ." });
+        var reason = request.Reason?.Trim();
+        if (action is "Ẩn" or "Từ chối" && string.IsNullOrWhiteSpace(reason))
+            return BadRequest(new { message = "Cần ghi rõ lý do khi ẩn hoặc từ chối bài viết." });
         var post = await _db.CommunityPosts.FirstOrDefaultAsync(x => x.CommunityPostID == id);
         if (post is null) return NotFound();
         if (action == "Xuất bản") { post.Status = CommunityPostStatuses.Published; post.PublishedAt ??= DateTime.UtcNow; }
