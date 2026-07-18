@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging.Abstractions;
 using SmartCar.Domain.Entities;
+using SmartCar.Domain.BusinessRules;
 using SmartCar.WebApi.Controllers;
 using SmartCar.WebApi.Services;
 
