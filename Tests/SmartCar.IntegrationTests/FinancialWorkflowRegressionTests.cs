@@ -36,7 +36,16 @@ public class FinancialWorkflowRegressionTests
         db.Reservations.Add(BuildReservation(2, "Chờ đối soát"));
         db.HandoverReports.Add(BuildConfirmedReturn(2));
         db.Payments.Add(new Payment { ReservationID=2, PaymentType="Tiền thuê", Amount=1000000, Status="Thành công" });
-        db.AdditionalCharges.Add(new AdditionalCharge { AdditionalChargeID=20, ReservationID=2, Amount=100000, ChargeType="Vệ sinh", Reason="Test", Status="Đã chấp nhận", CreatedByAppUserID=2 });
+        db.AdditionalCharges.Add(new AdditionalCharge
+{
+    AdditionalChargeID = 20,
+    ReservationID = 2,
+    Amount = 100000,
+    ChargeType = "Vệ sinh",
+    Reason = "Test",
+    Status = AdditionalChargeStatuses.CustomerAccepted,
+    CreatedByAppUserID = 2
+});
         await db.SaveChangesAsync();
 
         var result = await Comprehensive(db, 2, "Staff").CreateSettlement(2);
@@ -51,7 +60,16 @@ public class FinancialWorkflowRegressionTests
         await using var db = TestDatabase.Create();
         db.Reservations.Add(BuildReservation(3, "Chờ đối soát"));
         db.HandoverReports.Add(BuildConfirmedReturn(3));
-        var charge = new AdditionalCharge { AdditionalChargeID=30, ReservationID=3, Amount=100000, ChargeType="Vệ sinh", Reason="Test", Status="Đã chấp nhận", CreatedByAppUserID=2 };
+        var charge = new AdditionalCharge
+{
+    AdditionalChargeID = 30,
+    ReservationID = 3,
+    Amount = 100000,
+    ChargeType = "Vệ sinh",
+    Reason = "Test",
+    Status = AdditionalChargeStatuses.CustomerAccepted,
+    CreatedByAppUserID = 2
+};
         var payment = new Payment { PaymentID=31, ReservationID=3, PaymentType="Phụ phí", RelatedEntityType=nameof(AdditionalCharge), RelatedEntityID=30, Amount=100000, Status="Thành công" };
         charge.PaymentID=31;
         db.Payments.AddRange(new Payment { ReservationID=3, PaymentType="Tiền thuê", Amount=1000000, Status="Thành công" }, payment);
