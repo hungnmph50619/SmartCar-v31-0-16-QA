@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using SmartCar.Persistence.Context;
 using SmartCar.WebApi.BackgroundServices;
-
+using SmartCar.WebApi.Services;
 namespace SmartCar.IntegrationTests;
 
 public class AuthorizationFallbackTests
