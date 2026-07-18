@@ -9,7 +9,12 @@ on:
 
 permissions:
   contents: read
-
+env:
+  Jwt__Issuer: "https://smartcar.test"
+  Jwt__Audience: "https://smartcar.test"
+  Jwt__Key: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  Security__OtpHmacKey: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+  Security__IdentityHmacKey: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
 jobs:
   build-test:
     runs-on: windows-latest
