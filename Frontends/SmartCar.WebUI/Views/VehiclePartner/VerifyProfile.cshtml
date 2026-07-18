@@ -35,6 +35,7 @@
         }
         <div id="clientValidationBox" class="alert alert-danger" style="display:none"></div>
         <div id="submitProgressBox" class="alert alert-info" style="display:none">Đang gửi hồ sơ xác minh, vui lòng đợi trong giây lát...</div>
+        <div id="profileDraftNotice" class="alert alert-secondary d-none"><span id="profileDraftMessage"></span> <button type="button" id="clearProfileDraft" class="btn btn-sm btn-outline-secondary ml-2">Xóa bản lưu tạm</button></div>
         <div class="card shadow-sm border-0">
             <div class="card-body p-4 p-md-5">
                 <h2 class="mb-1">Xác minh hồ sơ đối tác</h2>
@@ -540,6 +541,66 @@ function validatePartnerProfileBeforeSubmit() {
     return [...new Set(errors)];
 }
 
+// Chỉ lưu tạm các trường không nhạy cảm trong phiên trình duyệt. Không lưu CCCD, ngân hàng hoặc tệp giấy tờ.
+const profileDraftKey = 'smartcar_partner_profile_draft_v1';
+const profileDraftNotice = document.getElementById('profileDraftNotice');
+const profileDraftMessage = document.getElementById('profileDraftMessage');
+const clearProfileDraft = document.getElementById('clearProfileDraft');
+const sensitiveDraftNames = new Set([
+    'Form.CitizenIdentityNumber', 'Form.CitizenIssuedDate', 'Form.CitizenExpiryDate',
+    'Form.BankName', 'Form.BankAccountNumber', 'Form.BankAccountHolder', 'Form.BankBranch'
+]);
+
+function showProfileDraftNotice(message) {
+    if (profileDraftNotice && profileDraftMessage) {
+        profileDraftMessage.textContent = message;
+        profileDraftNotice.classList.remove('d-none');
+    }
+}
+
+function saveSafeProfileDraft() {
+    if (!partnerForm) return;
+    const values = {};
+    partnerForm.querySelectorAll('input, select, textarea').forEach(element => {
+        if (!element.name || element.type === 'file' || sensitiveDraftNames.has(element.name)) return;
+        values[element.name] = element.type === 'checkbox' ? element.checked : element.value;
+    });
+    sessionStorage.setItem(profileDraftKey, JSON.stringify({ values, savedAt: new Date().toISOString() }));
+    showProfileDraftNotice('Đã lưu tạm thông tin không nhạy cảm trên trình duyệt này.');
+}
+
+function restoreSafeProfileDraft() {
+    if (!partnerForm) return;
+    try {
+        const draft = JSON.parse(sessionStorage.getItem(profileDraftKey) || 'null');
+        if (!draft?.values) return;
+        Object.entries(draft.values).forEach(([name, value]) => {
+            const element = partnerForm.querySelector('[name="' + CSS.escape(name) + '"]');
+            if (!element || sensitiveDraftNames.has(name) || element.type === 'file') return;
+            const empty = element.type === 'checkbox' ? !element.checked : !element.value;
+            if (empty) {
+                if (element.type === 'checkbox') element.checked = Boolean(value);
+                else element.value = String(value ?? '');
+            }
+        });
+        syncPartnerType();
+        syncCurrentAddress();
+        showProfileDraftNotice('Đã khôi phục thông tin lưu tạm. CCCD, ngân hàng và tệp giấy tờ không bao giờ được lưu tạm.');
+    } catch { sessionStorage.removeItem(profileDraftKey); }
+}
+
+restoreSafeProfileDraft();
+clearProfileDraft?.addEventListener('click', () => {
+    sessionStorage.removeItem(profileDraftKey);
+    profileDraftNotice?.classList.add('d-none');
+});
+partnerForm?.querySelectorAll('input, select, textarea').forEach(element => {
+    if (element.type !== 'file' && !sensitiveDraftNames.has(element.name)) {
+        element.addEventListener('change', saveSafeProfileDraft);
+        element.addEventListener('input', saveSafeProfileDraft);
+    }
+});
+
 const partnerForm = document.getElementById('partnerProfileForm');
 if (partnerForm) {
     partnerForm.addEventListener('submit', function (event) {
@@ -562,6 +623,7 @@ if (partnerForm) {
             return false;
         }
         if (clientBox) clientBox.style.display = 'none';
+        sessionStorage.removeItem(profileDraftKey);
         if (progressBox) progressBox.style.display = 'block';
         if (submitButton) {
             submitButton.disabled = true;
