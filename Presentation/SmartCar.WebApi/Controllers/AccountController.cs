@@ -6,6 +6,7 @@ using SmartCar.Domain.Entities;
 using SmartCar.Domain.Security;
 using SmartCar.Dto.AccountDtos;
 using SmartCar.Persistence.Context;
+using SmartCar.WebApi.Services;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Claims;
