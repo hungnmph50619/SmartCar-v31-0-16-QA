@@ -13,7 +13,8 @@ namespace SmartCar.Domain.Entities
         [MaxLength(20)] public string Phone { get; set; } = string.Empty;
         [MaxLength(150)] public string Email { get; set; } = string.Empty;
         [MaxLength(300)] public string Address { get; set; } = string.Empty;
-        [MaxLength(20)] public string CitizenIdentityNumber { get; set; } = string.Empty;
+        [MaxLength(20)] public string CitizenIdentityNumber { get; set; } = string.Empty; // legacy; cleared after migration
+        public string? CitizenIdentityNumberEncrypted { get; set; }
         [MaxLength(64)] public string? CitizenIdFingerprint { get; set; }
         public DateTime? DateOfBirth { get; set; }
         [MaxLength(20)] public string Gender { get; set; } = string.Empty;
@@ -56,7 +57,8 @@ namespace SmartCar.Domain.Entities
         [MaxLength(500)] public string AuthorizationDocumentUrl { get; set; } = string.Empty;
 
         [MaxLength(120)] public string BankName { get; set; } = string.Empty;
-        [MaxLength(50)] public string BankAccountNumber { get; set; } = string.Empty;
+        [MaxLength(50)] public string BankAccountNumber { get; set; } = string.Empty; // legacy; cleared after migration
+        public string? BankAccountNumberEncrypted { get; set; }
         [MaxLength(160)] public string BankAccountHolder { get; set; } = string.Empty;
         [MaxLength(120)] public string BankBranch { get; set; } = string.Empty;
         public bool IsPayoutPaused { get; set; }
