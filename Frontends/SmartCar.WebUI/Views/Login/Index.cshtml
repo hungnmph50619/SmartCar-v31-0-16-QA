@@ -64,6 +64,7 @@
                                         </div>
                                         <div id="capsWarning" class="caps-warning" role="status">Caps Lock đang bật.</div>
                                         <span asp-validation-for="Password" id="passwordError" class="text-danger"></span>
+                                        <small class="form-text text-muted">Để bảo vệ tài khoản, hệ thống tạm khóa 15 phút sau 5 lần đăng nhập sai liên tiếp. Bạn có thể dùng “Quên mật khẩu?” nếu không nhớ thông tin đăng nhập.</small>
                                     </div>
                                     @if (ViewBag.ShowVerifyEmailLink == true)
                                     {

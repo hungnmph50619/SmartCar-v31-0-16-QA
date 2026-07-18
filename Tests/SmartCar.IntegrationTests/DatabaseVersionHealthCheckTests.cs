@@ -43,6 +43,6 @@ public class DatabaseVersionHealthCheckTests
             .CheckHealthAsync(new HealthCheckContext());
 
         Assert.Equal(HealthStatus.Unhealthy, result.Status);
-        Assert.True((result.Description ?? string.Empty).Contains("30.9", StringComparison.Ordinal));
+        Assert.Contains(SmartCarRelease.DatabaseVersion, result.Description ?? string.Empty, StringComparison.Ordinal);
     }
 }

@@ -118,7 +118,7 @@ namespace SmartCar.WebUI.Controllers
             catch (HttpRequestException)
             {
                 ModelState.AddModelError(string.Empty,
-                    "Không kết nối được Web API. Hãy chạy SmartCar.WebApi tại cổng 7060.");
+                    "Hệ thống đăng nhập đang tạm thời gián đoạn. Vui lòng thử lại sau ít phút.");
                 return View(createLoginDto);
             }
             catch (Exception)

@@ -6,6 +6,14 @@
     var isOrganization = Model.Form.PartnerType == "Doanh nghiệp/Tổ chức";
     var banks = SubmitVehiclePartnerProfileDto.SupportedBanks;
 }
+<style>
+.profile-stepper{position:sticky;top:12px;z-index:20;background:#fff;border:1px solid #dfe8f0;border-radius:14px;padding:16px;margin-bottom:22px;box-shadow:0 8px 25px rgba(29,55,80,.08)}
+.profile-step-links{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px}
+.profile-step-link{flex:1 0 145px;border:1px solid #cfe0ee;border-radius:10px;padding:9px 10px;background:#f7fafc;color:#345;cursor:pointer;text-align:center;font-size:.82rem;font-weight:700}
+.profile-step-link.active{background:#1089ff;border-color:#1089ff;color:#fff}
+.profile-section-anchor{scroll-margin-top:130px;border-top:1px solid #edf2f7;padding-top:18px}
+@@media(max-width:575px){.profile-stepper{top:4px;padding:12px}.profile-step-link{flex-basis:125px}.card-body{padding:1rem!important}}
+</style>
 <section class="ftco-section bg-light py-5">
     <div class="container" style="max-width:1080px">
         @if (TempData["VehiclePartnerError"] != null) { <div class="alert alert-danger">@TempData["VehiclePartnerError"]</div> }
@@ -55,7 +63,20 @@
                         @Html.AntiForgeryToken()
                         @if (!ViewData.ModelState.IsValid) { <div asp-validation-summary="All" class="alert alert-danger"></div> }
 
-                        <div class="form-group">
+                        <div class="profile-stepper" aria-label="Các nhóm thông tin hồ sơ đối tác">
+                            <div class="d-flex justify-content-between align-items-center mb-2"><strong id="profileStepLabel">Bước 1/5 · Loại đối tác</strong><small class="text-muted">Khoảng 10–15 phút</small></div>
+                            <div class="progress mb-3" style="height:7px"><div id="profileStepProgress" class="progress-bar bg-success" style="width:20%" role="progressbar" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div></div>
+                            <div class="profile-step-links">
+                                <button type="button" class="profile-step-link active" data-target="profileType">1. Loại đối tác</button>
+                                <button type="button" class="profile-step-link" data-target="profileIdentity">2. Định danh</button>
+                                <button type="button" class="profile-step-link" data-target="profileAddress">3. Địa chỉ</button>
+                                <button type="button" class="profile-step-link" data-target="profileDocuments">4. Giấy tờ</button>
+                                <button type="button" class="profile-step-link" data-target="profileBank">5. Ngân hàng & gửi</button>
+                            </div>
+                            <small class="d-block text-muted mt-2">Bạn có thể chuyển giữa các nhóm để kiểm tra. Vì hồ sơ có dữ liệu nhạy cảm, hãy hoàn tất và gửi trong phiên làm việc hiện tại.</small>
+                        </div>
+
+                        <div class="form-group profile-section-anchor" id="profileType">
                             <label>Loại đối tác *</label>
                             <select asp-for="Form.PartnerType" id="partnerType" class="form-control">
                                 <option>Cá nhân</option>
@@ -66,7 +87,7 @@
                         </div>
 
                         <div id="individualFields" style="display:@(isOrganization ? "none" : "block")">
-                            <h4 class="mt-4">Thông tin cá nhân</h4>
+                            <h4 class="mt-4 profile-section-anchor" id="profileIdentity">Thông tin cá nhân</h4>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Họ và tên theo CCCD *</label>
@@ -107,7 +128,7 @@
                                 </div>
                             </div>
 
-                            <h5 class="mt-4">Địa chỉ thường trú</h5>
+                            <h5 class="mt-4 profile-section-anchor" id="profileAddress">Địa chỉ thường trú</h5>
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label>Tỉnh/thành phố *</label>
@@ -164,7 +185,7 @@
                                 </div>
                             </div>
 
-                            <h5 class="mt-4">Ảnh xác minh</h5>
+                            <h5 class="mt-4 profile-section-anchor" id="profileDocuments">Ảnh xác minh</h5>
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label>Ảnh CCCD mặt trước *</label>
@@ -188,7 +209,7 @@
                         </div>
 
                         <div id="organizationFields" style="display:@(isOrganization ? "block" : "none")">
-                            <h4 class="mt-4">Thông tin doanh nghiệp/tổ chức</h4>
+                            <h4 class="mt-4 profile-section-anchor" id="profileIdentityOrganization">Thông tin doanh nghiệp/tổ chức</h4>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Tên doanh nghiệp/tổ chức *</label>
@@ -207,7 +228,7 @@
                                 </div>
                             </div>
 
-                            <h5 class="mt-4">Địa chỉ trụ sở</h5>
+                            <h5 class="mt-4 profile-section-anchor" id="profileAddressOrganization">Địa chỉ trụ sở</h5>
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label>Tỉnh/thành phố *</label>
@@ -235,7 +256,7 @@
                                 <span asp-validation-for="Form.HeadquartersPaperAddress" class="text-danger"></span>
                             </div>
 
-                            <h5 class="mt-4">Người đại diện và người phụ trách tài khoản</h5>
+                            <h5 class="mt-4 profile-section-anchor" id="profileDocumentsOrganization">Người đại diện và giấy tờ pháp lý</h5>
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label>Người đại diện pháp luật *</label>
@@ -269,7 +290,7 @@
                             </div>
                         </div>
 
-                        <h4 class="mt-4">Tài khoản ngân hàng nhận đối soát</h4>
+                        <h4 class="mt-4 profile-section-anchor" id="profileBank">Tài khoản ngân hàng nhận đối soát</h4>
                         <div class="alert alert-light border">
                             Đối với cá nhân, tên chủ tài khoản phải khớp với họ tên theo CCCD. Đối với doanh nghiệp/tổ chức, tên chủ tài khoản phải khớp với tên doanh nghiệp/tổ chức đã xác minh.
                         </div>
@@ -317,6 +338,33 @@ const individual = document.getElementById('individualFields');
 const organization = document.getElementById('organizationFields');
 const sameAddress = document.getElementById('sameAddress');
 const currentAddressFields = document.getElementById('currentAddressFields');
+const profileStepButtons = [...document.querySelectorAll('.profile-step-link')];
+const profileStepLabel = document.getElementById('profileStepLabel');
+const profileStepProgress = document.getElementById('profileStepProgress');
+const profileStepNames = ['Loại đối tác', 'Định danh', 'Địa chỉ', 'Giấy tờ', 'Ngân hàng & gửi'];
+
+function setProfileStep(index) {
+    const safeIndex = Math.max(0, Math.min(4, index));
+    profileStepButtons.forEach((button, buttonIndex) => button.classList.toggle('active', buttonIndex === safeIndex));
+    if (profileStepLabel) profileStepLabel.textContent = `Bước ${safeIndex + 1}/5 · ${profileStepNames[safeIndex]}`;
+    if (profileStepProgress) {
+        const percent = (safeIndex + 1) * 20;
+        profileStepProgress.style.width = percent + '%';
+        profileStepProgress.setAttribute('aria-valuenow', String(percent));
+    }
+}
+
+profileStepButtons.forEach((button, index) => {
+    button.addEventListener('click', function () {
+        const org = typeSelect && typeSelect.value === 'Doanh nghiệp/Tổ chức';
+        let targetId = button.dataset.target;
+        if (org && targetId === 'profileIdentity') targetId = 'profileIdentityOrganization';
+        if (org && targetId === 'profileAddress') targetId = 'profileAddressOrganization';
+        if (org && targetId === 'profileDocuments') targetId = 'profileDocumentsOrganization';
+        document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setProfileStep(index);
+    });
+});
 
 function normalizedAddressName(value) {
     return (value || '').replace(/^(Tỉnh|Thành phố|Phường|Xã|Đặc khu)\s+/i, '').trim().toLocaleLowerCase('vi');

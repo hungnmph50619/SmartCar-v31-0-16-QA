@@ -239,14 +239,14 @@
 
         .location-map-canvas {
             width: 100%;
-            height: 300px;
+            height: clamp(420px, 48vw, 500px);
             border-radius: 12px;
             background: #eef3f7;
             overflow: hidden;
         }
 
         .location-map-empty {
-            height: 300px;
+            height: clamp(420px, 48vw, 500px);
             border-radius: 12px;
             background: linear-gradient(135deg,#eef6ff,#f8fbff);
             display: flex;
@@ -395,6 +395,24 @@
             font-size: 12px;
         }
 
+        .location-preview.map-fullscreen {
+            position: fixed;
+            inset: 16px;
+            z-index: 10050;
+            margin: 0;
+            overflow: auto;
+            border: 1px solid #d8e4ef;
+            box-shadow: 0 24px 80px rgba(10, 32, 56, .38);
+        }
+
+        .location-preview.map-fullscreen .location-map-canvas,
+        .location-preview.map-fullscreen .location-map-empty {
+            height: calc(100vh - 230px);
+            min-height: 420px;
+        }
+
+        body.map-fullscreen-open { overflow: hidden; }
+
         @@media (max-width: 575.98px) {
             .location-picker-row {
                 flex-direction: column;
@@ -411,6 +429,30 @@
             .map-toggle-btn {
                 width: 100%;
             }
+
+            .location-map-canvas,
+            .location-map-empty {
+                height: 340px;
+            }
+
+            .location-preview.map-fullscreen {
+                inset: 0;
+                border-radius: 0;
+                padding: 14px;
+            }
+
+            .location-preview.map-fullscreen .location-map-canvas,
+            .location-preview.map-fullscreen .location-map-empty {
+                height: calc(100vh - 255px);
+                min-height: 320px;
+            }
+
+            .map-confirm-row {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .map-action-buttons button { flex: 1 1 100%; }
         }
     </style>
 
@@ -565,6 +607,7 @@
                                     <div class="map-confirm-row">
                                         <span id="locationAccuracyText" class="accuracy-note">Bấm trên bản đồ hoặc kéo ghim đỏ để chỉnh vị trí.</span>
                                         <div class="map-action-buttons">
+                                            <button type="button" id="toggleMapFullscreen" class="map-secondary-btn" aria-pressed="false"><i class="ion-ios-expand"></i> Mở toàn màn hình</button>
                                             <button type="button" id="centerCurrentLocation" class="map-secondary-btn" hidden><i class="ion-ios-locate"></i> Về vị trí của tôi</button>
                                             <button type="button" id="confirmMapLocation" class="map-confirm-btn"><i class="ion-ios-checkmark-circle"></i> Xác nhận điểm nhận xe</button>
                                         </div>
@@ -678,6 +721,7 @@
             const selectedCoordinateText = document.getElementById("selectedCoordinateText");
             const locationAccuracyText = document.getElementById("locationAccuracyText");
             const confirmMapLocationButton = document.getElementById("confirmMapLocation");
+            const mapFullscreenButton = document.getElementById("toggleMapFullscreen");
             const centerCurrentLocationButton = document.getElementById("centerCurrentLocation");
             const currentLocationLegend = document.getElementById("currentLocationLegend");
             const searchLatitudeInput = document.getElementById("searchLatitude");
@@ -1284,12 +1328,39 @@
                 setMapVisibility(!isMapVisible());
             });
 
+            mapFullscreenButton?.addEventListener('click', function () {
+                const expanded = !locationPreview.classList.contains('map-fullscreen');
+                locationPreview.classList.toggle('map-fullscreen', expanded);
+                document.body.classList.toggle('map-fullscreen-open', expanded);
+                mapFullscreenButton.setAttribute('aria-pressed', String(expanded));
+                mapFullscreenButton.innerHTML = expanded
+                    ? '<i class="ion-ios-contract"></i> Thu nhỏ bản đồ'
+                    : '<i class="ion-ios-expand"></i> Mở toàn màn hình';
+                window.setTimeout(function () {
+                    locationMap?.invalidateSize();
+                    focusMapOnKnownPoints();
+                }, 120);
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key !== 'Escape' || !locationPreview?.classList.contains('map-fullscreen')) return;
+                locationPreview.classList.remove('map-fullscreen');
+                document.body.classList.remove('map-fullscreen-open');
+                mapFullscreenButton?.setAttribute('aria-pressed', 'false');
+                if (mapFullscreenButton) mapFullscreenButton.innerHTML = '<i class="ion-ios-expand"></i> Mở toàn màn hình';
+                window.setTimeout(function () { locationMap?.invalidateSize(); }, 120);
+            });
+
             confirmMapLocationButton?.addEventListener('click', function () {
                 if (!hasExactCoordinates()) {
                     showError('Hãy chọn địa chỉ gợi ý, bấm trên bản đồ hoặc kéo ghim đỏ tới vị trí cần nhận xe.', locationSearchInput);
                     return;
                 }
                 hideError();
+                locationPreview.classList.remove('map-fullscreen');
+                document.body.classList.remove('map-fullscreen-open');
+                mapFullscreenButton?.setAttribute('aria-pressed', 'false');
+                if (mapFullscreenButton) mapFullscreenButton.innerHTML = '<i class="ion-ios-expand"></i> Mở toàn màn hình';
                 setMapVisibility(false);
                 if (locationInputHelp) locationInputHelp.textContent = 'Đã xác nhận điểm nhận xe. Bạn vẫn có thể mở bản đồ để chỉnh lại ghim đỏ.';
             });
