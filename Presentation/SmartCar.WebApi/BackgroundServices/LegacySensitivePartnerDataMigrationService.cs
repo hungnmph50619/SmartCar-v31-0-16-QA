@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SmartCar.Persistence.Context;
+using SmartCar.WebApi.Services;
 
 namespace SmartCar.WebApi.BackgroundServices;
 
