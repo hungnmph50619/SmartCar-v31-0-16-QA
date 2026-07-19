@@ -432,7 +432,14 @@
         const withDriver = rentalMode?.value === 'Có tài xế';
         const ready = selectedCanBook();
         withDriverFields?.classList.toggle('d-none', !withDriver);
-        document.querySelectorAll('.with-driver-required').forEach(el => el.required = withDriver);
+        withDriverFields?.querySelectorAll('input, select, textarea').forEach(el => {
+            el.disabled = !withDriver;
+            if (el.classList.contains('with-driver-required')) el.required = withDriver;
+        });
+        const passengerCount = document.getElementById('PassengerCount');
+        if (withDriver && passengerCount && Number(passengerCount.value) < 1) {
+            passengerCount.value = '1';
+        }
         const alert = document.getElementById('readinessAlert');
         alert.className = 'alert ' + (ready ? 'alert-info' : 'alert-warning') + ' shadow-sm border-0 mb-4';
         setText('readinessTitle', withDriver ? 'Điều kiện đặt xe có tài xế' : 'Điều kiện thuê xe tự lái');

@@ -542,6 +542,7 @@ function validatePartnerProfileBeforeSubmit() {
 }
 
 // Chỉ lưu tạm các trường không nhạy cảm trong phiên trình duyệt. Không lưu CCCD, ngân hàng hoặc tệp giấy tờ.
+const partnerForm = document.getElementById('partnerProfileForm');
 const profileDraftKey = 'smartcar_partner_profile_draft_v1';
 const profileDraftNotice = document.getElementById('profileDraftNotice');
 const profileDraftMessage = document.getElementById('profileDraftMessage');
@@ -601,7 +602,6 @@ partnerForm?.querySelectorAll('input, select, textarea').forEach(element => {
     }
 });
 
-const partnerForm = document.getElementById('partnerProfileForm');
 if (partnerForm) {
     partnerForm.addEventListener('submit', function (event) {
         const clientBox = document.getElementById('clientValidationBox');

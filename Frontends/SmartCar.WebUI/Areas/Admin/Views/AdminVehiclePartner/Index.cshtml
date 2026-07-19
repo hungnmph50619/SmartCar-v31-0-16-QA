@@ -19,15 +19,21 @@
                         @if(!string.IsNullOrWhiteSpace(p.AuthorizationDocumentUrl)){<span> · </span><a href="@p.AuthorizationDocumentUrl" target="_blank">Giấy ủy quyền</a>}
                     }else{
                         <p><strong>CCCD:</strong> @p.CitizenIdentityNumber<br/><strong>Ngày sinh:</strong> @(p.DateOfBirth?.ToString("dd/MM/yyyy")) · <strong>Giới tính:</strong> @p.Gender<br/><strong>Thường trú:</strong> @p.PermanentAddress<br/><strong>Địa chỉ theo giấy tờ:</strong> @p.PermanentPaperAddress<br/><strong>Hiện tại:</strong> @p.CurrentAddress<br/><strong>Ngân hàng:</strong> @p.BankName - @p.BankAccountNumber - @p.BankAccountHolder</p>
-                        <a href="@p.CitizenFrontImageUrl" target="_blank">CCCD trước</a><span> · </span><a href="@p.CitizenBackImageUrl" target="_blank">CCCD sau</a><span> · </span><a href="@p.PortraitImageUrl" target="_blank">Chân dung</a>
+                        <div class="partner-document-links">
+                            @if(!string.IsNullOrWhiteSpace(p.CitizenFrontImageUrl)){<a href="@p.CitizenFrontImageUrl" target="_blank" rel="noopener noreferrer">CCCD trước</a>}else{<span class="text-muted">CCCD trước: Chưa có tệp</span>}
+                            <span> · </span>
+                            @if(!string.IsNullOrWhiteSpace(p.CitizenBackImageUrl)){<a href="@p.CitizenBackImageUrl" target="_blank" rel="noopener noreferrer">CCCD sau</a>}else{<span class="text-muted">CCCD sau: Chưa có tệp</span>}
+                            <span> · </span>
+                            @if(!string.IsNullOrWhiteSpace(p.PortraitImageUrl)){<a href="@p.PortraitImageUrl" target="_blank" rel="noopener noreferrer">Chân dung</a>}else{<span class="text-muted">Chân dung: Chưa có tệp</span>}
+                        </div>
                     }
                     @if(!string.IsNullOrWhiteSpace(p.ReviewNote)){<div class="alert alert-light border mt-2 mb-0"><strong>Ghi chú:</strong> @p.ReviewNote</div>}
                 </div>
                 <div class="col-lg-3">
                     @if(p.Status!="Đã xác minh"){
-                        <form method="post" action="/Admin/AdminVehiclePartner/ReviewProfile">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@p.VehiclePartnerProfileID"/>
+                        <form method="post" action="/Admin/AdminVehiclePartner/ReviewProfile" class="staff-review-form">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@p.VehiclePartnerProfileID"/>
                             <div class="form-group"><label>Kết quả</label><select name="status" class="form-control"><option>Đã xác minh</option><option>Yêu cầu bổ sung</option><option>Bị từ chối</option><option>Chờ xác minh lại</option></select></div>
-                            <div class="form-group"><label>Lý do/ghi chú</label><textarea name="reviewNote" class="form-control" rows="3"></textarea></div>
+                            <div class="form-group"><label>Lý do/ghi chú <span class="review-note-required text-danger d-none">*</span></label><textarea name="reviewNote" class="form-control" rows="3" maxlength="1000"></textarea></div>
                             <button class="btn btn-success btn-block">Lưu duyệt hồ sơ</button>
                         </form>
                     }else{<div class="alert alert-success">Đối tác đã xác minh và được phép gửi xe lên duyệt.</div>}
@@ -42,7 +48,13 @@
             <div class="border rounded p-3 mb-3"><div class="row">
                 <div class="col-lg-3"><img src="@item.VehicleImageUrl" class="img-fluid rounded mb-2" style="height:180px;width:100%;object-fit:cover"/><strong>@item.BrandName @item.Model @item.VehicleVersion</strong><br/><span>@item.LicensePlate · @item.ManufactureYear</span></div>
                 <div class="col-lg-5"><p><strong>Chủ xe:</strong> @item.OwnerFullName<br/><strong>Liên hệ:</strong> @item.Phone · @item.Email<br/><strong>CCCD:</strong> @item.CitizenIdentityNumber<br/><strong>Địa điểm:</strong> @item.LocationName<br/><strong>Số khung:</strong> @item.ChassisNumber<br/><strong>Số máy:</strong> @item.EngineNumber<br/><strong>Hình thức thuê:</strong> @item.RentalMode<br/><strong>Giá đề xuất:</strong> @item.ProposedDailyPrice.ToString("#,0", CultureInfo.InvariantCulture) VNĐ/ngày<br/><strong>Đặt cọc đề xuất:</strong> @item.ProposedDepositAmount.ToString("#,0", CultureInfo.InvariantCulture) VNĐ<br/><strong>Ngân hàng:</strong> @item.BankName - @item.BankAccountNumber - @item.BankAccountHolder</p>
-                    <a href="@item.RegistrationImageUrl" target="_blank">Đăng ký xe</a> · <a href="@item.InspectionImageUrl" target="_blank">Đăng kiểm</a> · <a href="@item.InsuranceImageUrl" target="_blank">Bảo hiểm</a>
+                    <div class="vehicle-document-links">
+                        @if(!string.IsNullOrWhiteSpace(item.RegistrationImageUrl)){<a href="@item.RegistrationImageUrl" target="_blank" rel="noopener noreferrer">Đăng ký xe</a>}else{<span class="text-muted">Đăng ký xe: Chưa có tệp</span>}
+                        <span> · </span>
+                        @if(!string.IsNullOrWhiteSpace(item.InspectionImageUrl)){<a href="@item.InspectionImageUrl" target="_blank" rel="noopener noreferrer">Đăng kiểm</a>}else{<span class="text-muted">Đăng kiểm: Chưa có tệp</span>}
+                        <span> · </span>
+                        @if(!string.IsNullOrWhiteSpace(item.InsuranceImageUrl)){<a href="@item.InsuranceImageUrl" target="_blank" rel="noopener noreferrer">Bảo hiểm</a>}else{<span class="text-muted">Bảo hiểm: Chưa có tệp</span>}
+                    </div>
                     @if(item.RentalMode is "Có tài xế" or "Tự lái hoặc có tài xế"){
                         <div class="alert alert-info mt-3 mb-0">
                             <strong>Hồ sơ tài xế:</strong> @item.DriverFullName · @item.DriverPhone<br/>
@@ -54,7 +66,7 @@
                 </div>
                 <div class="col-lg-4"><div class="alert alert-light border"><strong>Trạng thái:</strong> @item.Status<br/>@item.AdminNote</div>
                     @if(item.Status!="Đã duyệt"){
-                    <form method="post" action="/Admin/AdminVehiclePartner/Review">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.VehiclePartnerApplicationID"/>
+                    <form method="post" action="/Admin/AdminVehiclePartner/Review" class="staff-review-form">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.VehiclePartnerApplicationID"/>
                         <div class="form-group"><label>Kết quả</label><select name="status" class="form-control"><option>Đã duyệt</option><option>Yêu cầu bổ sung</option><option>Từ chối</option></select></div>
                         <div class="form-row">
                             <div class="form-group col-6">
@@ -74,7 +86,7 @@
                             </div>
                         </div>
                         <div class="form-group"><label>Hoa hồng riêng (%)</label><input name="commissionRateOverride" type="number" min="0" max="100" step="0.1" class="form-control" placeholder="Để trống để dùng mức chung"/></div>
-                        <div class="form-group"><label>Ghi chú</label><textarea name="adminNote" class="form-control" rows="2"></textarea></div><button class="btn btn-success">Lưu kết quả duyệt</button>
+                        <div class="form-group"><label>Lý do/ghi chú <span class="review-note-required text-danger d-none">*</span></label><textarea name="adminNote" class="form-control" rows="2" maxlength="1000"></textarea></div><button class="btn btn-success">Lưu kết quả duyệt</button>
                     </form>}
                 </div>
             </div></div>
@@ -96,6 +108,31 @@ document.addEventListener('DOMContentLoaded', function () {
             if (raw) raw.value = digits || '0';
             display.value = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Number(digits || 0));
         });
+    });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const statusesRequiringReason = new Set(['Yêu cầu bổ sung', 'Bị từ chối', 'Từ chối']);
+    document.querySelectorAll('.staff-review-form').forEach(function (form) {
+        const status = form.querySelector('select[name="status"]');
+        const note = form.querySelector('textarea[name="reviewNote"], textarea[name="adminNote"]');
+        const requiredMark = form.querySelector('.review-note-required');
+        if (!status || !note) return;
+
+        function syncReasonRequirement() {
+            const required = statusesRequiringReason.has(status.value);
+            note.required = required;
+            requiredMark?.classList.toggle('d-none', !required);
+        }
+
+        status.addEventListener('change', syncReasonRequirement);
+        form.addEventListener('submit', function (event) {
+            syncReasonRequirement();
+            if (!note.checkValidity()) {
+                event.preventDefault();
+                note.reportValidity();
+            }
+        });
+        syncReasonRequirement();
     });
 });
 </script>

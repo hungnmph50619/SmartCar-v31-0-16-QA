@@ -263,7 +263,10 @@ namespace SmartCar.WebApi.Controllers
         public async Task<IActionResult> Review(int id, ReviewVehiclePartnerApplicationDto dto)
         {
             var status = dto.Status?.Trim() ?? string.Empty;
+            var adminNote = dto.AdminNote?.Trim();
             if (!ReviewStatuses.Contains(status)) return BadRequest("Trạng thái duyệt hồ sơ xe không hợp lệ.");
+            if (status is "Yêu cầu bổ sung" or "Từ chối" && string.IsNullOrWhiteSpace(adminNote))
+                return BadRequest("Vui lòng nhập lý do khi yêu cầu bổ sung hoặc từ chối hồ sơ xe.");
 
             var application = await _context.VehiclePartnerApplications
                 .Include(x => x.Location)
@@ -272,7 +275,7 @@ namespace SmartCar.WebApi.Controllers
             if (application.Status == "Đã duyệt") return BadRequest("Hồ sơ này đã được duyệt trước đó.");
 
             application.Status = status;
-            application.AdminNote = string.IsNullOrWhiteSpace(dto.AdminNote) ? null : (dto.AdminNote ?? string.Empty).Trim();
+            application.AdminNote = string.IsNullOrWhiteSpace(adminNote) ? null : adminNote;
             application.ReviewedDate = DateTime.UtcNow;
 
             if (status != "Đã duyệt")
