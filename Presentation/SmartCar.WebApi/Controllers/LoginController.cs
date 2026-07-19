@@ -34,9 +34,15 @@ namespace SmartCar.WebApi.Controllers
                 var message = string.IsNullOrWhiteSpace(values.FailureReason)
                     ? "Tên đăng nhập hoặc mật khẩu không đúng"
                     : values.FailureReason;
+                var payload = new
+                {
+                    message,
+                    remainingAttempts = values.RemainingAttempts,
+                    lockoutEnd = values.LockoutEnd
+                };
                 return values.LockoutEnd.HasValue
-                    ? StatusCode(StatusCodes.Status423Locked, message)
-                    : BadRequest(message);
+                    ? StatusCode(StatusCodes.Status423Locked, payload)
+                    : BadRequest(payload);
             }
         }
     }

@@ -48,7 +48,24 @@ namespace SmartCar.WebUI.Controllers
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    var message = (await response.Content.ReadAsStringAsync()).Trim().Trim('"');
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    var message = responseBody.Trim().Trim('"');
+                    try
+                    {
+                        using var errorJson = JsonDocument.Parse(responseBody);
+                        var root = errorJson.RootElement;
+                        if (root.TryGetProperty("message", out var messageValue))
+                            message = messageValue.GetString() ?? message;
+                        if (root.TryGetProperty("remainingAttempts", out var attemptsValue) &&
+                            attemptsValue.ValueKind == JsonValueKind.Number &&
+                            attemptsValue.TryGetInt32(out var remainingAttempts))
+                            ViewBag.RemainingAttempts = remainingAttempts;
+                        if (root.TryGetProperty("lockoutEnd", out var lockoutValue) &&
+                            lockoutValue.ValueKind == JsonValueKind.String)
+                            ViewBag.LockoutEnd = lockoutValue.GetString();
+                    }
+                    catch (JsonException) { }
+
                     if (!string.IsNullOrWhiteSpace(message) &&
                         message.Contains("chưa xác minh email", StringComparison.OrdinalIgnoreCase))
                     {

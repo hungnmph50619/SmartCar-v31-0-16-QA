@@ -51,6 +51,7 @@ namespace SmartCar.Application.Features.Mediator.Handlers.AppUserHandlers
                 else if (!PasswordSecurity.Verify(user.Password, password, out var needsUpgrade))
                 {
                     user.FailedLoginCount++;
+                    values.RemainingAttempts = Math.Max(0, 5 - user.FailedLoginCount);
                     if (user.FailedLoginCount >= 5)
                     {
                         user.LockoutEnd = DateTime.UtcNow.AddMinutes(15);
@@ -60,6 +61,7 @@ namespace SmartCar.Application.Features.Mediator.Handlers.AppUserHandlers
                         user.LockedAt = DateTime.UtcNow;
                         user.LockedByAppUserID = null;
                         values.LockoutEnd = user.LockoutEnd;
+                        values.RemainingAttempts = 0;
                         values.FailureReason = BuildLockoutMessage(user.LockoutEnd.Value, true);
                     }
                     await _appUserRepository.UpdateAsync(user);
