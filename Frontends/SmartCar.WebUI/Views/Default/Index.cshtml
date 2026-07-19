@@ -1123,7 +1123,7 @@
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
 
                 const nearest = findNearestCatalogLocation(lat, lng);
-                if (nearest) locationSelect.value = String(nearest.id);
+                locationSelect.value = nearest ? String(nearest.id) : '';
 
                 const safeAddress = (address || '').trim() || ('Tọa độ ' + formatCoordinates(lat, lng));
                 searchLatitudeInput.value = lat.toFixed(7);
@@ -1161,7 +1161,10 @@
                     updatePickupMarker(lat, lng);
                     updateCurrentPositionMarker();
                 }
-                return true;
+                if (!nearest && locationInputHelp) {
+                    locationInputHelp.textContent = 'Đã xác định được tọa độ nhưng chưa ánh xạ được tới điểm giao xe SmartCar.';
+                }
+                return Boolean(nearest);
             }
 
             async function reverseGeocode(latitude, longitude) {
@@ -1373,6 +1376,10 @@
                     showError('Hãy chọn địa chỉ gợi ý, bấm trên bản đồ hoặc kéo ghim đỏ tới vị trí cần nhận xe.', locationSearchInput);
                     return;
                 }
+                if (!locationSelect.value || Number(locationSelect.value) <= 0) {
+                    showError('Đã xác định được địa chỉ nhưng chưa ánh xạ được tới điểm giao xe SmartCar. Hãy chọn một điểm giao xe SmartCar trong danh sách gợi ý.', locationSearchInput);
+                    return;
+                }
                 hideError();
                 locationPreview.classList.remove('map-fullscreen');
                 document.body.classList.remove('map-fullscreen-open');
@@ -1483,9 +1490,15 @@
                     }
                 }
 
-                if (!locationSelect.value || Number(locationSelect.value) <= 0 || !hasExactCoordinates()) {
+                if (!hasExactCoordinates()) {
                     event.preventDefault();
                     showError("Vui lòng xác định điểm nhận xe: chọn gợi ý, nhập địa chỉ rồi mở bản đồ, hoặc bấm Gần tôi.", locationSearchInput);
+                    return;
+                }
+
+                if (!locationSelect.value || Number(locationSelect.value) <= 0) {
+                    event.preventDefault();
+                    showError("Địa chỉ đã có tọa độ nhưng chưa ánh xạ được tới điểm giao xe SmartCar. Hãy chọn một điểm giao xe SmartCar trong danh sách gợi ý.", locationSearchInput);
                     return;
                 }
 
