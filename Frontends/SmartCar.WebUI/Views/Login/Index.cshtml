@@ -66,6 +66,18 @@
                                         <span asp-validation-for="Password" id="passwordError" class="text-danger"></span>
                                         <small class="form-text text-muted">Để bảo vệ tài khoản, hệ thống tạm khóa 15 phút sau 5 lần đăng nhập sai liên tiếp. Bạn có thể dùng “Quên mật khẩu?” nếu không nhớ thông tin đăng nhập.</small>
                                     </div>
+                                    @if (ViewBag.RemainingAttempts is int remainingAttempts && remainingAttempts > 0)
+                                    {
+                                        <div class="alert alert-warning small" role="status">
+                                            Bạn còn <strong>@remainingAttempts</strong> lần thử trước khi tài khoản bị khóa tạm thời 15 phút.
+                                        </div>
+                                    }
+                                    @if (ViewBag.LockoutEnd != null)
+                                    {
+                                        <div class="alert alert-danger small" role="alert">
+                                            Tài khoản đang bị khóa tạm thời. Bạn có thể đặt lại mật khẩu hoặc chờ đến thời điểm thông báo.
+                                        </div>
+                                    }
                                     @if (ViewBag.ShowVerifyEmailLink == true)
                                     {
                                         <div class="alert alert-warning small">
