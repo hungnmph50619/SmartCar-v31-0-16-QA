@@ -62,6 +62,10 @@ namespace SmartCar.WebApi.Controllers
             if (profile.Status == "Đã xác minh") return BadRequest("Hồ sơ đã xác minh. Nếu cần thay đổi thông tin pháp lý, vui lòng gửi yêu cầu xác minh lại.");
 
             dto.PartnerType = NormalizePartnerType(dto.PartnerType);
+            var submissionErrors = ValidateSubmission(dto);
+            if (submissionErrors.Count > 0)
+                return BadRequest(string.Join(" ", submissionErrors));
+
             try
             {
                 if (dto.PartnerType == "Cá nhân")
@@ -303,12 +307,17 @@ namespace SmartCar.WebApi.Controllers
         [HttpPut("{id:int}/review")]
         public async Task<IActionResult> Review(int id, ReviewVehiclePartnerProfileDto dto)
         {
-            if (!ReviewStatuses.Contains(dto.Status)) return BadRequest("Trạng thái duyệt hồ sơ đối tác không hợp lệ.");
+            var status = dto.Status?.Trim() ?? string.Empty;
+            var reviewNote = dto.ReviewNote?.Trim();
+            if (!ReviewStatuses.Contains(status)) return BadRequest("Trạng thái duyệt hồ sơ đối tác không hợp lệ.");
+            if (status is "Yêu cầu bổ sung" or "Bị từ chối" && string.IsNullOrWhiteSpace(reviewNote))
+                return BadRequest("Vui lòng nhập lý do khi yêu cầu bổ sung hoặc từ chối hồ sơ đối tác.");
+
             var profile = await _context.VehiclePartnerProfiles.Include(x => x.AppUser).FirstOrDefaultAsync(x => x.VehiclePartnerProfileID == id);
             if (profile is null) return NotFound("Không tìm thấy hồ sơ đối tác.");
 
-            profile.Status = dto.Status;
-            profile.ReviewNote = dto.ReviewNote?.Trim();
+            profile.Status = status;
+            profile.ReviewNote = string.IsNullOrWhiteSpace(reviewNote) ? null : reviewNote;
             profile.ReviewedDate = DateTime.UtcNow;
             profile.ReviewedByAppUserID = GetCurrentUserId();
             if (profile.AppUser is not null) profile.AppUser.IsVehiclePartner = true;
@@ -325,14 +334,14 @@ namespace SmartCar.WebApi.Controllers
                 Action = "Duyệt hồ sơ đối tác",
                 EntityName = nameof(VehiclePartnerProfile),
                 EntityID = profile.VehiclePartnerProfileID.ToString(),
-                Note = $"Kết quả: {dto.Status}. {dto.ReviewNote}",
+                Note = $"Kết quả: {status}. {reviewNote}",
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString()
             });
 
             await _context.SaveChangesAsync();
-            return Ok(dto.Status == "Đã xác minh"
+            return Ok(status == "Đã xác minh"
                 ? "Đã xác minh hồ sơ đối tác. Đối tác có thể gửi xe lên duyệt."
-                : $"Đã cập nhật hồ sơ đối tác sang trạng thái {dto.Status}.");
+                : $"Đã cập nhật hồ sơ đối tác sang trạng thái {status}.");
         }
 
         private static IEnumerable<Guid> ExtractProfileFileIds(VehiclePartnerProfile profile)
@@ -377,6 +386,85 @@ namespace SmartCar.WebApi.Controllers
         {
             var raw = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub") ?? User.FindFirstValue("nameid");
             return int.TryParse(raw, out var id) ? id : 0;
+        }
+
+        private static List<string> ValidateSubmission(SubmitVehiclePartnerProfileDto dto)
+        {
+            var errors = new List<string>();
+            var today = DateTime.UtcNow.Date;
+
+            if (dto.PartnerType == "Cá nhân")
+            {
+                if (string.IsNullOrWhiteSpace(dto.FullName))
+                    errors.Add("Vui lòng nhập họ và tên theo CCCD.");
+
+                if (dto.DateOfBirth is not DateTime dateOfBirth)
+                    errors.Add("Vui lòng nhập ngày sinh.");
+                else if (dateOfBirth.Date >= today)
+                    errors.Add("Ngày sinh phải nhỏ hơn ngày hiện tại.");
+
+                if (string.IsNullOrWhiteSpace(dto.Gender))
+                    errors.Add("Vui lòng chọn giới tính.");
+
+                if (NormalizeDigits(dto.CitizenIdentityNumber).Length != 12)
+                    errors.Add("Số CCCD phải gồm đúng 12 chữ số.");
+
+                DateTime? issuedDate = dto.CitizenIssuedDate is DateTime issued ? issued.Date : null;
+                DateTime? expiryDate = dto.CitizenExpiryDate is DateTime expiry ? expiry.Date : null;
+                if (!issuedDate.HasValue)
+                    errors.Add("Vui lòng nhập ngày cấp CCCD.");
+                else if (issuedDate.Value > today)
+                    errors.Add("Ngày cấp CCCD không được lớn hơn ngày hiện tại.");
+
+                if (!expiryDate.HasValue)
+                    errors.Add("Vui lòng nhập ngày hết hạn CCCD.");
+                else if (expiryDate.Value < today)
+                    errors.Add("CCCD không được hết hạn tại thời điểm gửi hồ sơ.");
+
+                if (issuedDate.HasValue && expiryDate.HasValue && expiryDate.Value <= issuedDate.Value)
+                    errors.Add("Ngày hết hạn CCCD phải sau ngày cấp CCCD.");
+
+                if (string.IsNullOrWhiteSpace(dto.PermanentDetail))
+                    errors.Add("Vui lòng nhập địa chỉ chi tiết thường trú.");
+
+                if (!dto.CurrentAddressSameAsPermanent && string.IsNullOrWhiteSpace(dto.CurrentDetail))
+                    errors.Add("Vui lòng nhập địa chỉ chi tiết hiện tại.");
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(dto.BusinessName))
+                    errors.Add("Vui lòng nhập tên doanh nghiệp/tổ chức.");
+
+                var taxCodeDigits = NormalizeDigits(dto.TaxCode);
+                if (taxCodeDigits.Length is not (10 or 13))
+                    errors.Add("Mã số thuế phải có 10 hoặc 13 chữ số.");
+
+                if (string.IsNullOrWhiteSpace(dto.BusinessRegistrationNumber))
+                    errors.Add("Vui lòng nhập số đăng ký kinh doanh hoặc mã định danh pháp lý tương đương.");
+
+                if (string.IsNullOrWhiteSpace(dto.HeadquartersDetail))
+                    errors.Add("Vui lòng nhập địa chỉ chi tiết trụ sở.");
+
+                if (string.IsNullOrWhiteSpace(dto.LegalRepresentativeName))
+                    errors.Add("Vui lòng nhập người đại diện pháp luật.");
+
+                if (string.IsNullOrWhiteSpace(dto.AccountManagerName))
+                    errors.Add("Vui lòng nhập người phụ trách tài khoản.");
+
+                if (string.IsNullOrWhiteSpace(dto.AccountManagerTitle))
+                    errors.Add("Vui lòng nhập chức vụ người phụ trách.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.BankName))
+                errors.Add("Vui lòng chọn ngân hàng nhận đối soát.");
+
+            if (string.IsNullOrWhiteSpace(NormalizeBankAccount(dto.BankAccountNumber)))
+                errors.Add("Vui lòng nhập số tài khoản nhận đối soát.");
+
+            if (string.IsNullOrWhiteSpace(dto.BankAccountHolder))
+                errors.Add("Vui lòng nhập tên chủ tài khoản nhận đối soát.");
+
+            return errors;
         }
 
         private static string NormalizePartnerType(string? value)
