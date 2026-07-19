@@ -18,5 +18,6 @@ namespace SmartCar.Application.Features.Mediator.Results.AppUserResults
         public bool IsExist { get; set; }
         public string? FailureReason { get; set; }
         public DateTime? LockoutEnd { get; set; }
+        public int? RemainingAttempts { get; set; }
     }
 }
