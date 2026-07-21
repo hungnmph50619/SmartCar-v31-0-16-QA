@@ -36,6 +36,41 @@
             : verificationStatus == "Bị từ chối" || verificationStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
                 ? "Hồ sơ chưa đạt yêu cầu. Hãy xem phản hồi của nhân viên và gửi lại giấy tờ cần bổ sung."
                 : "Hoàn tất CCCD, bằng lái và ảnh chân dung một lần trước khi đặt xe.";
+
+    var partnerStatus = string.IsNullOrWhiteSpace(Model.PartnerProfile?.Status)
+        ? "Chưa có hồ sơ"
+        : Model.PartnerProfile.Status.Trim();
+    var partnerBadgeClass = partnerStatus == "Đã xác minh"
+        ? "verification-badge-success"
+        : partnerStatus == "Bị từ chối" || partnerStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+            ? "verification-badge-danger"
+            : "verification-badge-warning";
+    var partnerTitle = partnerStatus == "Đã xác minh"
+        ? "Hồ sơ đối tác đã xác minh"
+        : partnerStatus == "Chờ duyệt"
+            ? "Hồ sơ đối tác đang chờ xác minh"
+            : partnerStatus == "Bị từ chối"
+                ? "Hồ sơ đối tác bị từ chối"
+                : partnerStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+                    ? "Hồ sơ đối tác cần bổ sung"
+                    : "Hồ sơ đối tác chưa xác minh";
+    var partnerDescription = partnerStatus == "Đã xác minh"
+        ? "Hồ sơ đã được nhân viên SmartCar xác minh. Bạn có thể đăng và gửi xe lên duyệt."
+        : partnerStatus == "Chờ duyệt"
+            ? "Hồ sơ đã được gửi và đang chờ nhân viên SmartCar kiểm tra. Bạn chưa thể đăng xe trong thời gian này."
+            : partnerStatus == "Bị từ chối" || partnerStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+                ? "Hồ sơ chưa đạt yêu cầu. Hãy xem phản hồi của nhân viên và bổ sung thông tin cần thiết."
+                : "Bạn cần hoàn thiện và gửi hồ sơ đối tác trước khi được phép đăng xe.";
+    var partnerButtonText = partnerStatus == "Đã xác minh"
+        ? "Đăng xe"
+        : partnerStatus == "Chờ duyệt"
+            ? "Xem trạng thái hồ sơ"
+            : partnerStatus == "Bị từ chối" || partnerStatus.Contains("bổ sung", StringComparison.OrdinalIgnoreCase)
+                ? "Bổ sung hồ sơ"
+                : "Hoàn thiện hồ sơ";
+    var partnerActionUrl = partnerStatus == "Đã xác minh"
+        ? "/VehiclePartner/Register"
+        : "/VehiclePartner/VerifyProfile";
 }
 
 <style>
@@ -232,13 +267,28 @@ else
                         <div class="card-body p-4">
                             @if (Model.Profile.IsVehiclePartner)
                             {
-                                <h4>Hồ sơ đối tác đã xác minh</h4>
-                                <p class="profile-note">Thông tin đối tác được đặt ở chế độ chỉ đọc để bảo đảm dữ liệu xác minh không bị tự ý thay đổi. Khi cần điều chỉnh, vui lòng liên hệ SmartCar. Bạn vẫn có thể đổi mật khẩu ở khung bên phải.</p>
+                                <div class="d-flex flex-wrap align-items-start justify-content-between mb-3">
+                                    <div class="mr-3">
+                                        <h4 class="mb-2">@partnerTitle</h4>
+                                        <p class="text-muted mb-0">@partnerDescription</p>
+                                    </div>
+                                    <span class="verification-badge @partnerBadgeClass mt-2">@partnerStatus</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(Model.PartnerProfile?.ReviewNote))
+                                {
+                                    <div class="verification-feedback mb-3">
+                                        <strong>Phản hồi của nhân viên:</strong> @Model.PartnerProfile.ReviewNote
+                                    </div>
+                                }
+                                <p class="profile-note">
+                                    Thông tin đối tác được đặt ở chế độ chỉ đọc tại trang tài khoản. Để hoàn thiện, theo dõi hoặc bổ sung hồ sơ, hãy mở trang xác minh đối tác.
+                                </p>
                                 <div class="row"><div class="col-md-6 form-group"><label>Họ và tên</label><input value="@Model.Profile.FullName" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Tên đăng nhập</label><input value="@Model.Profile.Username" class="form-control readonly-input" readonly /></div></div>
                                 <div class="row"><div class="col-md-6 form-group"><label>Email</label><input value="@Model.Profile.Email" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Số điện thoại</label><input value="@Model.Profile.Phone" class="form-control readonly-input" readonly /></div></div>
                                 <div class="form-group"><label>Địa chỉ</label><input value="@Model.Profile.Address" class="form-control readonly-input" readonly /></div>
                                 <div class="row"><div class="col-md-6 form-group"><label>Số CCCD</label><input value="@Model.Profile.CitizenIdentityNumber" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Ngân hàng</label><input value="@Model.Profile.BankName" class="form-control readonly-input" readonly /></div></div>
                                 <div class="row"><div class="col-md-6 form-group"><label>Số tài khoản</label><input value="@Model.Profile.BankAccountNumber" class="form-control readonly-input" readonly /></div><div class="col-md-6 form-group"><label>Chủ tài khoản</label><input value="@Model.Profile.BankAccountHolder" class="form-control readonly-input" readonly /></div></div>
+                                <a href="@partnerActionUrl" class="btn btn-primary mt-2">@partnerButtonText</a>
                             }
                             else
                             {
