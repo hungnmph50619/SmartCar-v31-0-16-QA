@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using SmartCar.Dto.AccountDtos;
+using SmartCar.Dto.MarketplaceDtos;
 using SmartCar.Dto.ReservationDtos;
 using SmartCar.WebUI.Models;
 using System.Net.Http.Headers;
@@ -92,6 +93,9 @@ namespace SmartCar.WebUI.Controllers
                 var model = new AccountProfileViewModel
                 {
                     Profile = profile,
+                    PartnerProfile = profile.IsVehiclePartner
+                        ? await LoadPartnerProfileAsync()
+                        : null,
                     CustomerReadiness = User.IsInRole("Customer") && !profile.IsVehiclePartner
                         ? await LoadCustomerReadinessAsync()
                         : null
@@ -238,6 +242,26 @@ namespace SmartCar.WebUI.Controllers
             var token = User.FindFirst("carbooktoken")?.Value;
             if (!string.IsNullOrWhiteSpace(token)) client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             return client;
+        }
+
+        private async Task<VehiclePartnerProfileDto?> LoadPartnerProfileAsync()
+        {
+            try
+            {
+                var response = await CreateAuthorizedClient().GetAsync("api/VehiclePartnerProfiles/me");
+                if (!response.IsSuccessStatusCode) return null;
+
+                var raw = await response.Content.ReadAsStringAsync();
+                return JsonConvert.DeserializeObject<VehiclePartnerProfileDto>(raw);
+            }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         private async Task<CustomerReadinessDto?> LoadCustomerReadinessAsync()
