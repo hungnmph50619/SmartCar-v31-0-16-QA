@@ -346,7 +346,12 @@ const profileStepNames = ['Loại đối tác', 'Định danh', 'Địa chỉ', 
 
 function setProfileStep(index) {
     const safeIndex = Math.max(0, Math.min(4, index));
-    profileStepButtons.forEach((button, buttonIndex) => button.classList.toggle('active', buttonIndex === safeIndex));
+    profileStepButtons.forEach((button, buttonIndex) => {
+        const isActive = buttonIndex === safeIndex;
+        button.classList.toggle('active', isActive);
+        if (isActive) button.setAttribute('aria-current', 'step');
+        else button.removeAttribute('aria-current');
+    });
     if (profileStepLabel) profileStepLabel.textContent = `Bước ${safeIndex + 1}/5 · ${profileStepNames[safeIndex]}`;
     if (profileStepProgress) {
         const percent = (safeIndex + 1) * 20;
@@ -366,6 +371,46 @@ profileStepButtons.forEach((button, index) => {
         setProfileStep(index);
     });
 });
+
+function getVisibleProfileStepTargets() {
+    const org = typeSelect && typeSelect.value === 'Doanh nghiệp/Tổ chức';
+    return [
+        document.getElementById('profileType'),
+        document.getElementById(org ? 'profileIdentityOrganization' : 'profileIdentity'),
+        document.getElementById(org ? 'profileAddressOrganization' : 'profileAddress'),
+        document.getElementById(org ? 'profileDocumentsOrganization' : 'profileDocuments'),
+        document.getElementById('profileBank')
+    ];
+}
+
+let profileStepScrollFrame = null;
+function syncProfileStepFromScroll() {
+    profileStepScrollFrame = null;
+    const targets = getVisibleProfileStepTargets();
+    const activationLine = Math.min(window.innerHeight * 0.35, 260);
+    let activeIndex = 0;
+
+    targets.forEach((target, index) => {
+        if (target && target.getClientRects().length > 0 && target.getBoundingClientRect().top <= activationLine) {
+            activeIndex = index;
+        }
+    });
+
+    const pageBottom = window.scrollY + window.innerHeight;
+    const nearDocumentBottom = document.documentElement.scrollHeight - pageBottom <= 80;
+    if (nearDocumentBottom && targets[4]) activeIndex = 4;
+
+    setProfileStep(activeIndex);
+}
+
+function requestProfileStepSync() {
+    if (profileStepScrollFrame !== null) return;
+    profileStepScrollFrame = window.requestAnimationFrame(syncProfileStepFromScroll);
+}
+
+window.addEventListener('scroll', requestProfileStepSync, { passive: true });
+window.addEventListener('resize', requestProfileStepSync);
+requestProfileStepSync();
 
 function normalizedAddressName(value) {
     return (value || '').replace(/^(Tỉnh|Thành phố|Phường|Xã|Đặc khu)\s+/i, '').trim().toLocaleLowerCase('vi');
