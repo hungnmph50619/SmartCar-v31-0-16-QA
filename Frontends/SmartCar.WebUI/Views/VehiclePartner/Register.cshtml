@@ -5,7 +5,7 @@
     Layout = "~/Views/UILayout/Partner.cshtml";
 }
 <style>
-    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.summary-row{border-bottom:1px solid #eee;padding:9px 0}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}.step-guide{border-left:4px solid #1089ff;background:#f3f8ff;padding:12px 14px;margin:12px 0 20px;border-radius:6px}.option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.option-item{display:flex;align-items:flex-start;gap:8px;border:1px solid #dfe5ec;border-radius:8px;padding:10px;background:#fff}.option-item input{margin-top:4px}.optional-note{font-size:.8rem;color:#667085}@@media(max-width:767px){.option-grid{grid-template-columns:1fr}}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
+    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.summary-row{border-bottom:1px solid #eee;padding:9px 0}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}.step-guide{border-left:4px solid #1089ff;background:#f3f8ff;padding:12px 14px;margin:12px 0 20px;border-radius:6px}.option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.option-item{display:flex;align-items:flex-start;gap:8px;border:1px solid #dfe5ec;border-radius:8px;padding:10px;background:#fff}.option-item input{margin-top:4px}.optional-note{font-size:.8rem;color:#667085}.policy-card{border:1px solid #d9e4f0;border-radius:10px;background:#f8fbff;padding:14px 16px;height:100%}.policy-card-title{font-weight:700;color:#344054;margin-bottom:6px}.policy-card p{margin:0;color:#475467;line-height:1.55}.field-help{display:block;margin-top:6px;color:#667085;font-size:.8rem}@@media(max-width:767px){.option-grid{grid-template-columns:1fr}}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
 </style>
 <section class="ftco-section bg-light py-5">
     <div class="container wizard-shell">
@@ -232,21 +232,40 @@
                 </section>
 
                 <section class="wizard-panel" data-panel="2">
-                    <h4>Địa điểm và hình thức giao xe</h4>
-                    <div class="step-guide"><strong>Hãy chọn cách giao xe trước.</strong> Lựa chọn này quyết định ô phí giao xe ở bước tiếp theo được khóa ở 0 đồng hay cho phép nhập.</div>
+                    <h4>Địa điểm và cách giao xe</h4>
+                    <div class="step-guide"><strong>Chọn cách khách sẽ nhận xe.</strong> Hệ thống sẽ tự khóa phí giao xe ở 0 đồng khi khách nhận tại điểm giao xe; nếu có giao tận nơi, bạn sẽ nhập phí ở bước Giá &amp; cọc.</div>
                     <div class="form-row">
-                        <div class="form-group col-md-5"><label class="required">Hình thức giao nhận</label><select asp-for="Form.DeliveryMethod" class="form-control draft-field" required><option>Nhận tại điểm giao xe</option><option>Giao xe tận nơi</option><option>Nhận tại điểm hoặc giao tận nơi</option></select></div>
-                        <div class="form-group col-md-7"><label>Địa chỉ giao xe chi tiết</label><input asp-for="Form.DeliveryAddress" class="form-control draft-field" placeholder="Bãi xe, số nhà, phường/xã..." /></div>
+                        <div class="form-group col-md-5">
+                            <label class="required">Bạn hỗ trợ khách nhận xe bằng cách nào?</label>
+                            <select asp-for="Form.DeliveryMethod" class="form-control draft-field" required>
+                                <option>Nhận tại điểm giao xe</option>
+                                <option>Giao xe tận nơi</option>
+                                <option>Nhận tại điểm hoặc giao tận nơi</option>
+                            </select>
+                        </div>
+                        <div class="form-group col-md-7">
+                            <label id="deliveryAddressLabel" for="Form_DeliveryAddress">Hướng dẫn điểm hẹn (không bắt buộc)</label>
+                            <input asp-for="Form.DeliveryAddress" class="form-control draft-field" placeholder="Ví dụ: bãi xe tầng B1, cổng phía đường Thành Thái..." />
+                            <small id="deliveryAddressHelp" class="field-help">Điểm giao xe chính đã được chọn ở bước Thông tin xe. Chỉ nhập thêm chỉ dẫn giúp khách dễ tìm.</small>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Điều kiện thuê chung</label>
-                        <textarea asp-for="Form.RentalConditions" rows="3" class="form-control draft-field bg-light" readonly></textarea>
-                        <small class="text-muted">Điều kiện chung do SmartCar áp dụng để bảo vệ khách thuê và chủ xe. Đối tác không cần tự soạn lại.</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Chính sách hủy và hoàn tiền</label>
-                        <textarea asp-for="Form.CancellationPolicy" rows="3" class="form-control draft-field bg-light" readonly></textarea>
-                        <small class="text-muted">Khoản hoàn và phí hủy được tính theo chính sách SmartCar để tránh nội dung hiển thị khác với số tiền thực tế.</small>
+                    <input asp-for="Form.RentalConditions" type="hidden" class="draft-field" />
+                    <input asp-for="Form.CancellationPolicy" type="hidden" class="draft-field" />
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <div class="policy-card">
+                                <div class="policy-card-title">Điều kiện thuê chung do SmartCar áp dụng</div>
+                                <p>@Model.Form.RentalConditions</p>
+                                <small class="field-help">Áp dụng thống nhất để bảo vệ khách thuê và chủ xe; đối tác không cần tự soạn lại.</small>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <div class="policy-card">
+                                <div class="policy-card-title">Chính sách hủy và hoàn tiền</div>
+                                <p>@Model.Form.CancellationPolicy</p>
+                                <small class="field-help">Khoản hoàn và phí hủy được hệ thống tính theo chính sách SmartCar.</small>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -351,11 +370,25 @@
     function syncAllMoneyDisplays(){document.querySelectorAll('.money-display').forEach(display=>{const raw=document.getElementById(display.dataset.target);if(raw)display.value=new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(raw.value||0));});}
     function applyDeliveryFeeRule(){
         const method=document.querySelector('[name="Form.DeliveryMethod"]')?.value;
+        const address=document.getElementById('Form_DeliveryAddress');
+        const addressLabel=document.getElementById('deliveryAddressLabel');
+        const addressHelp=document.getElementById('deliveryAddressHelp');
+        const fixedPoint=method==='Nhận tại điểm giao xe';
+        if(address&&addressLabel&&addressHelp){
+            if(fixedPoint){
+                addressLabel.textContent='Hướng dẫn điểm hẹn (không bắt buộc)';
+                address.placeholder='Ví dụ: bãi xe tầng B1, cổng phía đường Thành Thái...';
+                addressHelp.textContent='Điểm giao xe chính đã được chọn ở bước Thông tin xe. Chỉ nhập thêm chỉ dẫn giúp khách dễ tìm.';
+            }else{
+                addressLabel.textContent='Ghi chú khu vực giao xe (không bắt buộc)';
+                address.placeholder='Ví dụ: hỗ trợ giao trong khu vực nội thành, hẹn trước 2 giờ...';
+                addressHelp.textContent='Khách sẽ nhập địa chỉ nhận cụ thể khi đặt xe. Ở đây chỉ ghi phạm vi hoặc lưu ý phục vụ của bạn.';
+            }
+        }
         const reminder=document.getElementById('deliveryChoiceReminder');
         if(reminder) reminder.innerHTML=`<strong>Hình thức đã chọn:</strong> ${method||'Chưa chọn'}. ${method==='Nhận tại điểm giao xe'?'Phí giao xe được khóa ở 0 đồng.':'Bạn có thể nhập phí hỗ trợ giao xe tận nơi.'}`;
         const raw=document.getElementById('Form_DeliveryFee');
         const display=document.getElementById('DeliveryFeeDisplay');
-        const fixedPoint=method==='Nhận tại điểm giao xe';
         if(fixedPoint&&raw&&display){raw.value='0';display.value='0';}
         if(display){display.readOnly=fixedPoint;display.classList.toggle('bg-light',fixedPoint);}
         const note=document.getElementById('deliveryFeeRule');
