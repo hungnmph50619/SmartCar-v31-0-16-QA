@@ -5,7 +5,7 @@
     Layout = "~/Views/UILayout/Partner.cshtml";
 }
 <style>
-    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.summary-row{border-bottom:1px solid #eee;padding:9px 0}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
+    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.summary-row{border-bottom:1px solid #eee;padding:9px 0}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}.step-guide{border-left:4px solid #1089ff;background:#f3f8ff;padding:12px 14px;margin:12px 0 20px;border-radius:6px}.option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.option-item{display:flex;align-items:flex-start;gap:8px;border:1px solid #dfe5ec;border-radius:8px;padding:10px;background:#fff}.option-item input{margin-top:4px}.optional-note{font-size:.8rem;color:#667085}@@media(max-width:767px){.option-grid{grid-template-columns:1fr}}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
 </style>
 <section class="ftco-section bg-light py-5">
     <div class="container wizard-shell">
@@ -18,8 +18,8 @@
 
         <div class="wizard-steps" aria-label="Các bước đăng xe">
             <button type="button" class="wizard-step active" data-step="1">1. Thông tin xe</button>
-            <button type="button" class="wizard-step" data-step="2">2. Giá & cọc</button>
-            <button type="button" class="wizard-step" data-step="3">3. Giao nhận</button>
+            <button type="button" class="wizard-step" data-step="2">2. Giao nhận</button>
+            <button type="button" class="wizard-step" data-step="3">3. Giá & cọc</button>
             <button type="button" class="wizard-step" data-step="4">4. Giấy tờ</button>
             <button type="button" class="wizard-step" data-step="5">5. Hình ảnh</button>
             <button type="button" class="wizard-step" data-step="6">6. Tiện ích</button>
@@ -196,9 +196,10 @@
                     </div>
                 </section>
 
-                <section class="wizard-panel" data-panel="2">
+                <section class="wizard-panel" data-panel="3">
                     <h4>Giá thuê và tiền đặt cọc</h4>
                     <p class="text-muted">SmartCar có thể điều chỉnh giá khi duyệt. Mọi khoản thu sẽ được thể hiện rõ trên đơn.</p>
+                    <div id="deliveryChoiceReminder" class="step-guide"></div>
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label class="required">Giá thuê đề xuất/ngày</label>
@@ -230,14 +231,23 @@
                     <div class="alert alert-info">Ước tính chủ xe nhận sau phí nền tảng: <strong id="ownerEstimate">0 đồng/ngày</strong>. Chưa gồm phí cổng thanh toán, hoàn tiền hoặc bồi thường.</div>
                 </section>
 
-                <section class="wizard-panel" data-panel="3">
+                <section class="wizard-panel" data-panel="2">
                     <h4>Địa điểm và hình thức giao xe</h4>
+                    <div class="step-guide"><strong>Hãy chọn cách giao xe trước.</strong> Lựa chọn này quyết định ô phí giao xe ở bước tiếp theo được khóa ở 0 đồng hay cho phép nhập.</div>
                     <div class="form-row">
                         <div class="form-group col-md-5"><label class="required">Hình thức giao nhận</label><select asp-for="Form.DeliveryMethod" class="form-control draft-field" required><option>Nhận tại điểm giao xe</option><option>Giao xe tận nơi</option><option>Nhận tại điểm hoặc giao tận nơi</option></select></div>
                         <div class="form-group col-md-7"><label>Địa chỉ giao xe chi tiết</label><input asp-for="Form.DeliveryAddress" class="form-control draft-field" placeholder="Bãi xe, số nhà, phường/xã..." /></div>
                     </div>
-                    <div class="form-group"><label>Điều kiện thuê</label><textarea asp-for="Form.RentalConditions" rows="4" class="form-control draft-field" placeholder="Yêu cầu độ tuổi, bằng lái, đặt cọc, phạm vi sử dụng..."></textarea></div>
-                    <div class="form-group"><label>Chính sách hủy</label><textarea asp-for="Form.CancellationPolicy" rows="4" class="form-control draft-field" placeholder="Mốc thời gian hủy, khoản được hoàn, khoản không được hoàn..."></textarea></div>
+                    <div class="form-group">
+                        <label>Điều kiện thuê chung</label>
+                        <textarea asp-for="Form.RentalConditions" rows="3" class="form-control draft-field bg-light" readonly></textarea>
+                        <small class="text-muted">Điều kiện chung do SmartCar áp dụng để bảo vệ khách thuê và chủ xe. Đối tác không cần tự soạn lại.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Chính sách hủy và hoàn tiền</label>
+                        <textarea asp-for="Form.CancellationPolicy" rows="3" class="form-control draft-field bg-light" readonly></textarea>
+                        <small class="text-muted">Khoản hoàn và phí hủy được tính theo chính sách SmartCar để tránh nội dung hiển thị khác với số tiền thực tế.</small>
+                    </div>
                 </section>
 
                 <section class="wizard-panel" data-panel="4">
@@ -267,8 +277,26 @@
 
                 <section class="wizard-panel" data-panel="6">
                     <h4>Tiện ích và phụ kiện bàn giao</h4>
-                    <div class="form-group"><label>Tiện ích trên xe</label><textarea asp-for="Form.Amenities" rows="4" class="form-control draft-field" placeholder="Bluetooth, camera lùi, bản đồ, ghế trẻ em, cửa sổ trời..."></textarea><small class="text-muted">Mỗi mục cách nhau bằng dấu phẩy.</small></div>
-                    <div class="form-group"><label>Phụ kiện sẽ bàn giao</label><textarea asp-for="Form.Accessories" rows="4" class="form-control draft-field" placeholder="Đăng ký xe bản sao, bảo hiểm, lốp dự phòng, kích, camera hành trình..."></textarea></div>
+                    <p class="text-muted">Chọn các mục thực tế có trên xe. Bạn có thể bổ sung mục khác nếu danh sách chưa có.</p>
+                    <input asp-for="Form.Amenities" type="hidden" class="draft-field" />
+                    <label class="font-weight-bold">Tiện ích trên xe <span class="optional-note">(không bắt buộc)</span></label>
+                    <div class="option-grid mb-3" data-option-target="Form_Amenities">
+                        @foreach (var item in new[] { "Bluetooth", "Camera lùi", "Camera 360°", "Cảm biến va chạm", "Camera hành trình", "Bản đồ/GPS", "Apple CarPlay", "Android Auto", "Ghế trẻ em", "Cửa sổ trời", "Sạc không dây", "Cốp điện" })
+                        {
+                            <label class="option-item"><input type="checkbox" class="option-checkbox" value="@item" /> <span>@item</span></label>
+                        }
+                    </div>
+                    <div class="form-group"><label for="amenitiesOther">Tiện ích khác</label><input id="amenitiesOther" class="form-control option-other" data-option-target="Form_Amenities" maxlength="300" placeholder="Nhập tiện ích khác, cách nhau bằng dấu phẩy" /></div>
+
+                    <input asp-for="Form.Accessories" type="hidden" class="draft-field" />
+                    <label class="font-weight-bold">Phụ kiện bàn giao <span class="optional-note">(được đưa vào biên bản giao xe)</span></label>
+                    <div class="option-grid mb-3" data-option-target="Form_Accessories">
+                        @foreach (var item in new[] { "Đăng ký xe bản sao", "Bảo hiểm", "Đăng kiểm", "Chìa khóa dự phòng", "Lốp dự phòng", "Kích nâng xe", "Bộ dụng cụ thay lốp", "Áo phản quang", "Camera hành trình", "Cáp sạc điện thoại", "Bộ sạc xe điện" })
+                        {
+                            <label class="option-item"><input type="checkbox" class="option-checkbox" value="@item" /> <span>@item</span></label>
+                        }
+                    </div>
+                    <div class="form-group"><label for="accessoriesOther">Phụ kiện khác</label><input id="accessoriesOther" class="form-control option-other" data-option-target="Form_Accessories" maxlength="300" placeholder="Nhập phụ kiện khác, cách nhau bằng dấu phẩy" /></div>
                     <div class="alert alert-light border">Danh sách phụ kiện sẽ được đưa vào checklist biên bản giao xe. Thiếu hoặc sai phải được hai bên ghi nhận, không tự động khấu trừ tiền cọc.</div>
                 </section>
 
@@ -295,7 +323,7 @@
                     </div>
                     <div>
                         <button id="clearDraft" type="button" class="btn btn-outline-danger mr-2">Xóa bản nháp</button>
-                        <a href="/VehiclePartner/Dashboard" class="btn btn-outline-secondary mr-2">Về Dashboard</a>
+                        <button id="saveAndExit" type="button" class="btn btn-outline-secondary mr-2">Lưu bản nháp & thoát</button>
                         <button id="submitApplication" type="submit" class="btn btn-success px-5 d-none">Gửi hồ sơ duyệt</button>
                     </div>
                 </div>
@@ -323,6 +351,8 @@
     function syncAllMoneyDisplays(){document.querySelectorAll('.money-display').forEach(display=>{const raw=document.getElementById(display.dataset.target);if(raw)display.value=new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(raw.value||0));});}
     function applyDeliveryFeeRule(){
         const method=document.querySelector('[name="Form.DeliveryMethod"]')?.value;
+        const reminder=document.getElementById('deliveryChoiceReminder');
+        if(reminder) reminder.innerHTML=`<strong>Hình thức đã chọn:</strong> ${method||'Chưa chọn'}. ${method==='Nhận tại điểm giao xe'?'Phí giao xe được khóa ở 0 đồng.':'Bạn có thể nhập phí hỗ trợ giao xe tận nơi.'}`;
         const raw=document.getElementById('Form_DeliveryFee');
         const display=document.getElementById('DeliveryFeeDisplay');
         const fixedPoint=method==='Nhận tại điểm giao xe';
@@ -421,10 +451,30 @@
     document.querySelector('[name="Form.RentalMode"]')?.addEventListener('change',()=>{applyRentalModeRule();saveDraft();});
     document.getElementById('brandSelect')?.addEventListener('change',()=>{populateModels(false);saveDraft();});
     document.getElementById('licensePlateInput')?.addEventListener('blur',e=>{e.target.value=(e.target.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');saveDraft();});
-    document.getElementById('clearDraft').addEventListener('click',()=>{if(confirm('Xóa toàn bộ bản nháp văn bản trên trình duyệt?')){localStorage.removeItem(draftKey);location.reload()}});
+    document.getElementById('clearDraft').addEventListener('click',()=>{if(confirm('Bạn có chắc muốn xóa toàn bộ bản nháp xe này? Dữ liệu văn bản đã lưu trên trình duyệt sẽ không thể khôi phục.')){localStorage.removeItem(draftKey);location.reload()}});
+    document.getElementById('saveAndExit').addEventListener('click',()=>{saveDraft();window.location.href='/VehiclePartner/Dashboard';});
     document.querySelectorAll('.preview-input').forEach(input=>input.addEventListener('change',()=>{const file=input.files?.[0],img=document.getElementById(input.dataset.preview);if(file&&img){img.src=URL.createObjectURL(file)}}));
     function updateEstimate(){const price=Number(document.querySelector('[name="Form.ProposedDailyPrice"]')?.value||0);const fee=@Model.CurrentCommissionRate.ToString(System.Globalization.CultureInfo.InvariantCulture);document.getElementById('ownerEstimate').textContent=money(price*(100-fee)/100)+'/ngày';}
     function value(name){return document.querySelector(`[name="${name}"]`)?.value||'Chưa nhập'}
+    function fileName(name){return document.querySelector(`[name="${name}"]`)?.files?.[0]?.name||'Chưa chọn tệp'}
+    function syncOptionTarget(targetId){
+        const target=document.getElementById(targetId); if(!target)return;
+        const checked=[...document.querySelectorAll(`[data-option-target="${targetId}"] .option-checkbox:checked`)].map(x=>x.value);
+        const other=document.querySelector(`.option-other[data-option-target="${targetId}"]`)?.value.split(',').map(x=>x.trim()).filter(Boolean)||[];
+        target.value=[...new Set([...checked,...other])].join(', ');
+        scheduleSave();
+    }
+    function restoreOptionTargets(){
+        ['Form_Amenities','Form_Accessories'].forEach(targetId=>{
+            const target=document.getElementById(targetId); if(!target)return;
+            const values=(target.value||'').split(',').map(x=>x.trim()).filter(Boolean);
+            const known=[...document.querySelectorAll(`[data-option-target="${targetId}"] .option-checkbox`)];
+            known.forEach(cb=>cb.checked=values.includes(cb.value));
+            const knownValues=new Set(known.map(x=>x.value));
+            const other=document.querySelector(`.option-other[data-option-target="${targetId}"]`);
+            if(other)other.value=values.filter(x=>!knownValues.has(x)).join(', ');
+        });
+    }
     function selected(name){const e=document.querySelector(`[name="${name}"]`);return e?.selectedOptions?.[0]?.text||value(name)}
     function buildSummary(){
         document.getElementById('reviewSummary').innerHTML=`
@@ -432,17 +482,23 @@
             <div class="summary-row"><strong>Cấu hình:</strong> ${value('Form.Seat')} chỗ · ${value('Form.Transmission')} · ${value('Form.Fuel')} · ${value('Form.RentalMode')}</div>
             ${(value('Form.RentalMode')==='Có tài xế'||value('Form.RentalMode')==='Tự lái hoặc có tài xế')?`<div class="summary-row"><strong>Tài xế:</strong> ${value('Form.DriverFullName')} · GPLX ${value('Form.DriverLicenseClass')} · hết hạn ${value('Form.DriverLicenseExpiryDate')}</div>`:''}
             <div class="summary-row"><strong>Số khung/số máy:</strong> ${value('Form.ChassisNumber')} · ${value('Form.EngineNumber')}</div>
-            <div class="summary-row"><strong>Địa điểm:</strong> ${selected('Form.LocationID')} · ${value('Form.DeliveryMethod')} · ${value('Form.DeliveryAddress')}</div>
+            <div class="summary-row"><strong>Giao nhận:</strong> ${selected('Form.LocationID')} · ${value('Form.DeliveryMethod')} · ${value('Form.DeliveryAddress')}</div>
+            <div class="summary-row"><strong>Điều kiện thuê:</strong> ${value('Form.RentalConditions')}</div>
+            <div class="summary-row"><strong>Chính sách hủy:</strong> ${value('Form.CancellationPolicy')}</div>
             <div class="summary-row"><strong>Giá:</strong> ${money(value('Form.ProposedDailyPrice'))}/ngày · Cọc ${money(value('Form.ProposedDepositAmount'))}</div>
             <div class="summary-row"><strong>Giới hạn:</strong> ${value('Form.KmLimitPerDay')} km/ngày · Vượt km ${money(value('Form.ExtraKmFee'))}/km · Giao xe ${money(value('Form.DeliveryFee'))}</div>
-            <div class="summary-row"><strong>Tiện ích:</strong> ${value('Form.Amenities')}</div>
-            <div class="summary-row border-0"><strong>Phụ kiện:</strong> ${value('Form.Accessories')}</div>`;
+            <div class="summary-row"><strong>Giấy tờ:</strong> Đăng ký xe: ${fileName('RegistrationImage')} · Đăng kiểm: ${fileName('InspectionImage')} · Bảo hiểm: ${fileName('InsuranceImage')}</div>
+            <div class="summary-row"><strong>Hình ảnh:</strong> ${[...document.querySelectorAll('.preview-input')].filter(x=>x.files?.length).length}/7 ảnh đã chọn</div>
+            <div class="summary-row"><strong>Tiện ích:</strong> ${value('Form.Amenities')==='Chưa nhập'?'Không khai báo':value('Form.Amenities')}</div>
+            <div class="summary-row border-0"><strong>Phụ kiện:</strong> ${value('Form.Accessories')==='Chưa nhập'?'Không khai báo':value('Form.Accessories')}</div>`;
     }
     form.addEventListener('submit',e=>{
         for(let i=1;i<=6;i++){if(!validateStep(i)){e.preventDefault();showStep(i);return}}
         if(!document.getElementById('confirmTruth').checked){e.preventDefault();showStep(7);document.getElementById('confirmTruth').reportValidity();return}
         localStorage.removeItem(draftKey); submit.disabled=true; submit.textContent='Đang gửi hồ sơ...';
     });
-    loadDraft(); applyDeliveryFeeRule(); applyRentalModeRule(); showStep(1);
+    document.querySelectorAll('.option-checkbox').forEach(el=>el.addEventListener('change',()=>syncOptionTarget(el.closest('[data-option-target]').dataset.optionTarget)));
+    document.querySelectorAll('.option-other').forEach(el=>el.addEventListener('input',()=>syncOptionTarget(el.dataset.optionTarget)));
+    loadDraft(); restoreOptionTargets(); applyDeliveryFeeRule(); applyRentalModeRule(); showStep(1);
 })();
 </script>
