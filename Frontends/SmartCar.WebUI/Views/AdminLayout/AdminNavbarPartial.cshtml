@@ -1,6 +1,6 @@
 <header id="page-topbar">
     <div class="navbar-header">
-        <div class="d-flex align-items-left">
+        <div class="d-flex align-items-center">
             <button type="button" class="btn btn-sm mr-2 d-lg-none px-3 font-size-16 header-item waves-effect" id="vertical-menu-btn" aria-label="Mở hoặc đóng menu quản trị" aria-controls="sidebar-menu" aria-expanded="false">
                 <i class="fa fa-fw fa-bars"></i>
             </button>
@@ -10,16 +10,22 @@
             </a>
         </div>
 
-        <div class="d-flex align-items-center">
+        <nav class="d-flex align-items-center" aria-label="Tiện ích tài khoản">
             @await Component.InvokeAsync("NotificationBell", new { theme = "admin" })
-            <a href="/Admin/AdminReservation/Index" class="btn header-item waves-effect"><i class="mdi mdi-calendar-check"></i><span class="d-none d-sm-inline-block ml-1">Đơn đặt xe</span></a>
+            <a href="/Admin/AdminReservation/Index" class="btn header-item waves-effect" aria-label="Mở danh sách đơn đặt xe">
+                <i class="mdi mdi-calendar-check"></i>
+                <span class="d-none d-sm-inline-block ml-1">Đơn đặt xe</span>
+            </a>
             @if (User.IsInRole("Admin"))
             {
-                <a href="/Default/Index" class="btn header-item waves-effect" target="_blank" rel="noopener noreferrer"><i class="mdi mdi-home"></i><span class="d-none d-sm-inline-block ml-1">Xem trang web</span></a>
+                <a href="/Default/Index" class="btn header-item waves-effect" target="_blank" rel="noopener noreferrer" aria-label="Mở trang web SmartCar">
+                    <i class="mdi mdi-home"></i>
+                    <span class="d-none d-sm-inline-block ml-1">Xem trang web</span>
+                </a>
             }
-            <div class="dropdown d-inline-block ml-2">
-                <button type="button" class="btn header-item waves-effect" data-toggle="dropdown">
-                    <img class="rounded-circle header-profile-user" src="~/Admin/vertical/assets/images/users/avatar-3.jpg" alt="Ảnh tài khoản">
+            <div class="dropdown d-inline-flex align-items-center ml-2">
+                <button type="button" class="btn header-item waves-effect" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="Mở menu tài khoản">
+                    <img class="rounded-circle header-profile-user" src="~/Admin/vertical/assets/images/users/avatar-3.jpg" alt="">
                     <span class="d-none d-sm-inline-block ml-1">Xin chào, @(User.Identity?.Name ?? (User.IsInRole("Admin") ? "Quản trị viên" : "Nhân viên"))</span>
                     <i class="mdi mdi-chevron-down d-none d-sm-inline-block"></i>
                 </button>
@@ -35,6 +41,6 @@
                     </form>
                 </div>
             </div>
-        </div>
+        </nav>
     </div>
 </header>

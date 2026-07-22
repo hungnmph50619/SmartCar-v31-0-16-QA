@@ -14,4 +14,62 @@
     <link href="~/Admin/vertical/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
     <link href="~/Admin/vertical/assets/css/theme.min.css" rel="stylesheet" type="text/css" />
 
+    <style>
+        /* Keep every top-bar action on the same visual baseline. */
+        #page-topbar .navbar-header > .d-flex {
+            height: 100%;
+        }
+
+        #page-topbar .header-item {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+
+        #page-topbar .dropdown {
+            height: 100%;
+        }
+
+        /* The theme styles sidebar anchors only; logout is a POST button. */
+        #sidebar-menu .sidebar-logout-button {
+            display: block;
+            width: 100%;
+            padding: .65rem 1.5rem;
+            border: 0;
+            background: transparent;
+            color: #a7b1c2;
+            position: relative;
+            font-size: 14px;
+            text-align: left;
+            transition: all .4s;
+        }
+
+        #sidebar-menu .sidebar-logout-button:hover,
+        #sidebar-menu .sidebar-logout-button:focus {
+            color: #c4d2e8;
+            text-decoration: none;
+            outline: none;
+        }
+
+        #sidebar-menu .sidebar-logout-button i {
+            display: inline-block;
+            min-width: 1.75rem;
+            padding-bottom: .125em;
+            font-size: 1rem;
+            line-height: 1.40625rem;
+            vertical-align: middle;
+        }
+
+        @@media (max-width: 575.98px) {
+            #page-topbar .navbar-header {
+                padding-right: .5rem;
+            }
+
+            #page-topbar .header-item {
+                padding-left: .55rem;
+                padding-right: .55rem;
+            }
+        }
+    </style>
 </head>
