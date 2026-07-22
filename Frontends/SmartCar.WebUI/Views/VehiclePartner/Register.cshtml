@@ -5,7 +5,7 @@
     Layout = "~/Views/UILayout/Partner.cshtml";
 }
 <style>
-    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.summary-row{border-bottom:1px solid #eee;padding:9px 0}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}.step-guide{border-left:4px solid #1089ff;background:#f3f8ff;padding:12px 14px;margin:12px 0 20px;border-radius:6px}.option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.option-item{display:flex;align-items:flex-start;gap:8px;border:1px solid #dfe5ec;border-radius:8px;padding:10px;background:#fff}.option-item input{margin-top:4px}.optional-note{font-size:.8rem;color:#667085}.policy-card{border:1px solid #d9e4f0;border-radius:10px;background:#f8fbff;padding:14px 16px;height:100%}.policy-card-title{font-weight:700;color:#344054;margin-bottom:6px}.policy-card p{margin:0;color:#475467;line-height:1.55}.field-help{display:block;margin-top:6px;color:#667085;font-size:.8rem}@@media(max-width:767px){.option-grid{grid-template-columns:1fr}}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
+    .wizard-shell{max-width:1180px;margin:auto}.wizard-steps{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:24px}.wizard-step{border:0;background:#eef2f6;border-radius:10px;padding:12px 8px;font-size:.82rem;font-weight:600;color:#667085}.wizard-step.active{background:#1089ff;color:#fff}.wizard-step.done{background:#dff6e7;color:#137a3b}.wizard-panel{display:none}.wizard-panel.active{display:block}.required:after{content:' *';color:#dc3545}.preview-image{width:100%;height:130px;object-fit:cover;border-radius:8px;background:#f2f4f7}.review-progress{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #b7e4c7;background:#ecfdf3;color:#14532d;border-radius:10px;padding:13px 16px;margin-bottom:16px;font-size:1rem}.review-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.review-card{border:1px solid #d7dee8;border-radius:12px;background:#f8fafc;padding:16px;color:#344054;font-size:1rem;line-height:1.6}.review-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}.review-card-title{margin:0;color:#101828;font-size:1.05rem;font-weight:700}.review-edit{border:0;background:transparent;color:#0878dc;font-weight:700;padding:4px 6px}.review-edit:hover{text-decoration:underline}.summary-row{border-bottom:1px solid #e4e7ec;padding:11px 0;color:#344054}.summary-row strong{color:#101828;font-weight:700}.review-owner-info{border:1px solid #a7d7b8;background:#ecfdf3;color:#1d2939;border-radius:10px;padding:15px 17px;font-size:1rem;line-height:1.6}.review-confirmation{border:1px solid #d7dee8;border-radius:10px;padding:14px 16px;background:#fff;color:#344054;font-size:1rem}.review-confirmation .custom-control-label{cursor:pointer;line-height:1.5;padding-left:4px}.review-thumbnails{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.review-thumbnail{width:100%;height:76px;object-fit:cover;border-radius:7px;border:1px solid #d7dee8}.review-warning{border:1px solid #f3c969;background:#fff8e1;color:#7a4b00;border-radius:10px;padding:12px 15px;margin-bottom:14px}.sticky-actions{position:sticky;bottom:0;background:#fff;border-top:1px solid #e5e7eb;padding:14px 0;z-index:10}.draft-state{font-size:.85rem}.file-note{font-size:.8rem;color:#667085}.step-guide{border-left:4px solid #1089ff;background:#f3f8ff;padding:12px 14px;margin:12px 0 20px;border-radius:6px}.option-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.option-item{display:flex;align-items:flex-start;gap:8px;border:1px solid #dfe5ec;border-radius:8px;padding:10px;background:#fff}.option-item input{margin-top:4px}.optional-note{font-size:.8rem;color:#667085}.policy-card{border:1px solid #d9e4f0;border-radius:10px;background:#f8fbff;padding:14px 16px;height:100%}.policy-card-title{font-weight:700;color:#344054;margin-bottom:6px}.policy-card p{margin:0;color:#475467;line-height:1.55}.field-help{display:block;margin-top:6px;color:#667085;font-size:.8rem}@@media(max-width:767px){.option-grid,.review-grid{grid-template-columns:1fr}.review-thumbnails{grid-template-columns:repeat(2,1fr)}.review-progress{align-items:flex-start;flex-direction:column}}@@media(max-width:991px){.wizard-steps{grid-template-columns:repeat(2,1fr)}.wizard-step{font-size:.75rem}.sticky-actions .btn{margin-bottom:6px}}
 </style>
 <section class="ftco-section bg-light py-5">
     <div class="container wizard-shell">
@@ -320,19 +320,21 @@
                 </section>
 
                 <section class="wizard-panel" data-panel="7">
-                    <h4>Kiểm tra và gửi duyệt</h4>
-                    <p class="text-muted">Đối chiếu thông tin trước khi gửi. Sau khi gửi, thay đổi phải qua hồ sơ bổ sung.</p>
-                    <div id="reviewSummary" class="border rounded p-3 mb-3"></div>
-                    <div class="alert alert-secondary">
+                    <h4>Kiểm tra hồ sơ xe trước khi gửi</h4>
+                    <p class="text-dark mb-3">Đối chiếu từng nhóm thông tin. Nếu cần thay đổi, bấm <strong>Sửa</strong> để quay đúng bước.</p>
+                    <div id="reviewProgress" class="review-progress"></div>
+                    <div id="reviewWarning" class="review-warning d-none" role="alert"></div>
+                    <div id="reviewSummary" class="mb-3"></div>
+                    <div class="review-owner-info mb-3">
                         <strong>Thông tin chủ xe đã xác minh</strong><br />
                         @Model.Form.OwnerFullName · @Model.Form.Phone · @Model.Form.Email<br />
-                        Ngân hàng: @Model.Form.BankName – @Model.Form.BankAccountNumber – @Model.Form.BankAccountHolder
+                        Ngân hàng: @Model.Form.BankName – ******@((Model.Form.BankAccountNumber ?? string.Empty).Length > 4 ? Model.Form.BankAccountNumber.Substring(Model.Form.BankAccountNumber.Length - 4) : Model.Form.BankAccountNumber) – @Model.Form.BankAccountHolder
                     </div>
-                    <div class="custom-control custom-checkbox mb-3">
+                    <div class="review-confirmation custom-control custom-checkbox mb-3">
                         <input type="checkbox" class="custom-control-input" id="confirmTruth" required />
                         <label class="custom-control-label" for="confirmTruth">Tôi xác nhận xe thuộc quyền sở hữu/quyền cho thuê hợp pháp, hình ảnh và giấy tờ là đúng sự thật.</label>
                     </div>
-                    <div class="alert alert-info">Sau khi gửi, hồ sơ có trạng thái <strong>Chờ duyệt</strong>. Xe chỉ nhận đơn khi được duyệt và giấy tờ còn hiệu lực.</div>
+                    <div class="alert alert-info mb-0">Sau khi gửi, hồ sơ chuyển sang <strong>Chờ duyệt</strong>. Nhân viên dự kiến phản hồi trong 4 giờ làm việc; xe chỉ nhận đơn sau khi được duyệt và giấy tờ còn hiệu lực.</div>
                 </section>
 
                 <div class="sticky-actions d-flex flex-wrap justify-content-between align-items-center mt-4">
@@ -509,21 +511,63 @@
         });
     }
     function selected(name){const e=document.querySelector(`[name="${name}"]`);return e?.selectedOptions?.[0]?.text||value(name)}
+    function escapeHtml(input){
+        return String(input??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+    }
+    function maskSensitive(input,visible=4){
+        const text=String(input||'');
+        if(!text||text==='Chưa nhập')return 'Chưa nhập';
+        return text.length<=visible?'•'.repeat(text.length):'•'.repeat(Math.min(8,text.length-visible))+text.slice(-visible);
+    }
     function buildSummary(){
-        document.getElementById('reviewSummary').innerHTML=`
-            <div class="summary-row"><strong>Xe:</strong> ${value('Form.BrandName')} ${value('Form.Model')} ${value('Form.VehicleVersion')==='Chưa nhập'?'':value('Form.VehicleVersion')} · ${value('Form.ManufactureYear')} · ${value('Form.LicensePlate')}</div>
-            <div class="summary-row"><strong>Cấu hình:</strong> ${value('Form.Seat')} chỗ · ${value('Form.Transmission')} · ${value('Form.Fuel')} · ${value('Form.RentalMode')}</div>
-            ${(value('Form.RentalMode')==='Có tài xế'||value('Form.RentalMode')==='Tự lái hoặc có tài xế')?`<div class="summary-row"><strong>Tài xế:</strong> ${value('Form.DriverFullName')} · GPLX ${value('Form.DriverLicenseClass')} · hết hạn ${value('Form.DriverLicenseExpiryDate')}</div>`:''}
-            <div class="summary-row"><strong>Số khung/số máy:</strong> ${value('Form.ChassisNumber')} · ${value('Form.EngineNumber')}</div>
-            <div class="summary-row"><strong>Giao nhận:</strong> ${selected('Form.LocationID')} · ${value('Form.DeliveryMethod')} · ${value('Form.DeliveryAddress')}</div>
-            <div class="summary-row"><strong>Điều kiện thuê:</strong> ${value('Form.RentalConditions')}</div>
-            <div class="summary-row"><strong>Chính sách hủy:</strong> ${value('Form.CancellationPolicy')}</div>
-            <div class="summary-row"><strong>Giá:</strong> ${money(value('Form.ProposedDailyPrice'))}/ngày · Cọc ${money(value('Form.ProposedDepositAmount'))}</div>
-            <div class="summary-row"><strong>Giới hạn:</strong> ${value('Form.KmLimitPerDay')} km/ngày · Vượt km ${money(value('Form.ExtraKmFee'))}/km · Giao xe ${money(value('Form.DeliveryFee'))}</div>
-            <div class="summary-row"><strong>Giấy tờ:</strong> Đăng ký xe: ${fileName('RegistrationImage')} · Đăng kiểm: ${fileName('InspectionImage')} · Bảo hiểm: ${fileName('InsuranceImage')}</div>
-            <div class="summary-row"><strong>Hình ảnh:</strong> ${[...document.querySelectorAll('.preview-input')].filter(x=>x.files?.length).length}/7 ảnh đã chọn</div>
-            <div class="summary-row"><strong>Tiện ích:</strong> ${value('Form.Amenities')==='Chưa nhập'?'Không khai báo':value('Form.Amenities')}</div>
-            <div class="summary-row border-0"><strong>Phụ kiện:</strong> ${value('Form.Accessories')==='Chưa nhập'?'Không khai báo':value('Form.Accessories')}</div>`;
+        const required=[...document.querySelectorAll('[data-panel] [required]')].filter(el=>el.type!=='hidden'&&!el.disabled);
+        const missing=required.filter(el=>el.type==='file'?!el.files?.length:el.type==='checkbox'?!el.checked:!String(el.value||'').trim());
+        const imageInputs=[...document.querySelectorAll('.preview-input')];
+        const chosenImages=imageInputs.filter(x=>x.files?.length);
+        const thumbnails=chosenImages.map(input=>{
+            const image=document.getElementById(input.dataset.preview);
+            return image?.src?`<img class="review-thumbnail" src="${image.src}" alt="Ảnh xe đã chọn" />`:'';
+        }).join('');
+        const deliveryNote=value('Form.DeliveryAddress');
+        const version=value('Form.VehicleVersion')==='Chưa nhập'?'':` ${escapeHtml(value('Form.VehicleVersion'))}`;
+        const driverMode=value('Form.RentalMode');
+        const driverRow=(driverMode==='Có tài xế'||driverMode==='Tự lái hoặc có tài xế')
+            ?`<div class="summary-row"><strong>Tài xế:</strong> ${escapeHtml(value('Form.DriverFullName'))} · GPLX ${escapeHtml(value('Form.DriverLicenseClass'))} · hết hạn ${escapeHtml(value('Form.DriverLicenseExpiryDate'))}</div>`:'';
+        const card=(stepNumber,title,content)=>`<section class="review-card"><div class="review-card-header"><h5 class="review-card-title">${title}</h5><button type="button" class="review-edit" data-review-step="${stepNumber}">Sửa</button></div>${content}</section>`;
+        document.getElementById('reviewProgress').innerHTML=`<strong>${missing.length?'Hồ sơ còn thiếu thông tin':'Đã hoàn thành 6/6 nhóm thông tin'}</strong><span>${missing.length?`${missing.length} trường bắt buộc cần kiểm tra`:'Sẵn sàng gửi nhân viên duyệt'}</span>`;
+        const warning=document.getElementById('reviewWarning');
+        warning.classList.toggle('d-none',missing.length===0);
+        warning.textContent=missing.length?'Vui lòng bấm Sửa tại nhóm liên quan và hoàn tất các trường bắt buộc trước khi gửi.':'';
+        submit.disabled=missing.length>0;
+        document.getElementById('reviewSummary').innerHTML=`<div class="review-grid">
+            ${card(1,'1. Thông tin xe',`
+                <div class="summary-row"><strong>Xe:</strong> ${escapeHtml(value('Form.BrandName'))} ${escapeHtml(value('Form.Model'))}${version} · ${escapeHtml(value('Form.ManufactureYear'))}</div>
+                <div class="summary-row"><strong>Biển số:</strong> ${escapeHtml(value('Form.LicensePlate'))}</div>
+                <div class="summary-row"><strong>Cấu hình:</strong> ${escapeHtml(value('Form.Seat'))} chỗ · ${escapeHtml(value('Form.Transmission'))} · ${escapeHtml(value('Form.Fuel'))} · ${escapeHtml(driverMode)}</div>
+                ${driverRow}
+                <div class="summary-row border-0"><strong>Số khung/số máy:</strong> ${maskSensitive(value('Form.ChassisNumber'))} · ${maskSensitive(value('Form.EngineNumber'))}</div>`)}
+            ${card(2,'2. Giao nhận',`
+                <div class="summary-row"><strong>Điểm hoạt động:</strong> ${escapeHtml(selected('Form.LocationID'))}</div>
+                <div class="summary-row"><strong>Cách nhận xe:</strong> ${escapeHtml(value('Form.DeliveryMethod'))}</div>
+                <div class="summary-row border-0"><strong>Ghi chú:</strong> ${deliveryNote==='Chưa nhập'?'Không có ghi chú':escapeHtml(deliveryNote)}</div>`)}
+            ${card(3,'3. Giá và cọc',`
+                <div class="summary-row"><strong>Giá thuê:</strong> ${money(value('Form.ProposedDailyPrice'))}/ngày</div>
+                <div class="summary-row"><strong>Tiền cọc:</strong> ${money(value('Form.ProposedDepositAmount'))}</div>
+                <div class="summary-row border-0"><strong>Giới hạn:</strong> ${escapeHtml(value('Form.KmLimitPerDay'))} km/ngày · Vượt km ${money(value('Form.ExtraKmFee'))}/km · Giao xe ${money(value('Form.DeliveryFee'))}</div>`)}
+            ${card(4,'4. Giấy tờ xe',`
+                <div class="summary-row"><strong>Đăng ký xe:</strong> ${escapeHtml(fileName('RegistrationImage'))}</div>
+                <div class="summary-row"><strong>Đăng kiểm:</strong> ${escapeHtml(fileName('InspectionImage'))}</div>
+                <div class="summary-row border-0"><strong>Bảo hiểm:</strong> ${escapeHtml(fileName('InsuranceImage'))}</div>`)}
+            ${card(5,'5. Hình ảnh',`
+                <div class="summary-row border-0"><strong>Đã chọn:</strong> ${chosenImages.length}/7 ảnh</div>
+                ${thumbnails?`<div class="review-thumbnails">${thumbnails}</div>`:''}`)}
+            ${card(6,'6. Tiện ích và điều khoản',`
+                <div class="summary-row"><strong>Tiện ích:</strong> ${value('Form.Amenities')==='Chưa nhập'?'Không khai báo':escapeHtml(value('Form.Amenities'))}</div>
+                <div class="summary-row"><strong>Phụ kiện:</strong> ${value('Form.Accessories')==='Chưa nhập'?'Không khai báo':escapeHtml(value('Form.Accessories'))}</div>
+                <div class="summary-row"><strong>Điều kiện thuê:</strong> ${escapeHtml(value('Form.RentalConditions'))}</div>
+                <div class="summary-row border-0"><strong>Chính sách hủy:</strong> ${escapeHtml(value('Form.CancellationPolicy'))}</div>`)}
+        </div>`;
+        document.querySelectorAll('[data-review-step]').forEach(button=>button.addEventListener('click',()=>showStep(Number(button.dataset.reviewStep))));
     }
     form.addEventListener('submit',e=>{
         for(let i=1;i<=6;i++){if(!validateStep(i)){e.preventDefault();showStep(i);return}}
