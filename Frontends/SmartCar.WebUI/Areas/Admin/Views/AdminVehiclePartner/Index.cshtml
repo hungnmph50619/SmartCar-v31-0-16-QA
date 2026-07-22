@@ -8,7 +8,7 @@
     @if(TempData["MarketplaceSuccess"]!=null){<div class="alert alert-success">@TempData["MarketplaceSuccess"]</div>}
     @if(TempData["MarketplaceError"]!=null){<div class="alert alert-danger">@TempData["MarketplaceError"]</div>}
     <div class="card mb-4"><div class="card-body">
-        <div class="d-flex flex-wrap align-items-center mb-3"><h4 class="mr-3 mb-0">Hồ sơ đối tác chờ xác minh</h4><span class="badge badge-warning p-2">@Model.Profiles.Count(x=>x.Status=="Chờ duyệt") chờ duyệt</span></div>
+        <div class="d-flex flex-wrap align-items-center mb-3"><h4 class="mr-3 mb-0">Hồ sơ đối tác</h4><span class="badge badge-warning p-2">@Model.Profiles.Count(x=>x.Status=="Chờ duyệt") chờ duyệt</span></div>
         @foreach(var p in Model.Profiles.Where(x=>x.Status!="Bản nháp").OrderByDescending(x=>x.SubmittedDate ?? x.CreatedDate)){
             <div class="border rounded p-3 mb-3"><div class="row">
                 <div class="col-lg-4"><strong>@(p.PartnerType=="Doanh nghiệp/Tổ chức" ? p.BusinessName : p.FullName)</strong><br/><span class="badge badge-info">@p.PartnerType</span> <span class="badge badge-secondary">@p.Status</span><br/><small>@p.Phone · @p.Email</small><br/><small>Gửi: @((p.SubmittedDate ?? p.CreatedDate).ToString("dd/MM/yyyy HH:mm"))</small></div>
