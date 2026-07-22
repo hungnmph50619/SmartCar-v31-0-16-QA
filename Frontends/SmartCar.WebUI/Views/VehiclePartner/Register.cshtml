@@ -141,11 +141,12 @@
                             <span asp-validation-for="Form.RentalMode" class="text-danger"></span>
                         </div>
                         <div class="form-group col-md-6">
-                            <label class="required">Điểm hoạt động</label>
+                            <label class="required">Điểm xuất phát/quản lý của xe</label>
                             <select asp-for="Form.LocationID" class="form-control draft-field" required>
                                 <option value="">Chọn địa điểm</option>
                                 @foreach (var location in Model.Locations){<option value="@location.LocationID">@location.DisplayName</option>}
                             </select>
+                            <small class="field-help">Nơi xe thường được lưu giữ. Hệ thống dùng làm mốc hiển thị khu vực, khoảng cách và phí giao xe; khách không bắt buộc nhận xe tại đây nếu bạn hỗ trợ giao tận nơi.</small>
                             <span asp-validation-for="Form.LocationID" class="text-danger"></span>
                         </div>
                     </div>
@@ -233,7 +234,8 @@
 
                 <section class="wizard-panel" data-panel="2">
                     <h4>Địa điểm và cách giao xe</h4>
-                    <div class="step-guide"><strong>Chọn cách khách sẽ nhận xe.</strong> Hệ thống sẽ tự khóa phí giao xe ở 0 đồng khi khách nhận tại điểm giao xe; nếu có giao tận nơi, bạn sẽ nhập phí ở bước Giá &amp; cọc.</div>
+                    <div class="step-guide"><strong>Chọn cách khách sẽ nhận xe.</strong> Hệ thống sẽ tự khóa phí giao xe ở 0 đồng khi khách nhận tại điểm; nếu có giao tận nơi, bạn khai báo khu vực hỗ trợ và nhập phí ở bước Giá &amp; cọc.</div>
+                    <div id="deliveryOriginSummary" class="alert alert-light border mb-3"></div>
                     <div class="form-row">
                         <div class="form-group col-md-5">
                             <label class="required">Bạn hỗ trợ khách nhận xe bằng cách nào?</label>
@@ -246,7 +248,8 @@
                         <div class="form-group col-md-7">
                             <label id="deliveryAddressLabel" for="Form_DeliveryAddress">Hướng dẫn điểm hẹn (không bắt buộc)</label>
                             <input asp-for="Form.DeliveryAddress" class="form-control draft-field" placeholder="Ví dụ: bãi xe tầng B1, cổng phía đường Thành Thái..." />
-                            <small id="deliveryAddressHelp" class="field-help">Điểm giao xe chính đã được chọn ở bước Thông tin xe. Chỉ nhập thêm chỉ dẫn giúp khách dễ tìm.</small>
+                            <small id="deliveryAddressHelp" class="field-help">Chỉ nhập thêm chỉ dẫn giúp khách dễ tìm điểm nhận xe.</small>
+                            <span asp-validation-for="Form.DeliveryAddress" id="deliveryAddressValidation" class="text-danger field-help"></span>
                         </div>
                     </div>
                     <input asp-for="Form.RentalConditions" type="hidden" class="draft-field" />
@@ -375,20 +378,33 @@
         const address=document.getElementById('Form_DeliveryAddress');
         const addressLabel=document.getElementById('deliveryAddressLabel');
         const addressHelp=document.getElementById('deliveryAddressHelp');
+        const addressValidation=document.getElementById('deliveryAddressValidation');
+        const origin=document.getElementById('deliveryOriginSummary');
+        const locationName=selected('Form.LocationID');
         const fixedPoint=method==='Nhận tại điểm giao xe';
+        const supportsDelivery=!fixedPoint;
+        if(origin){
+            origin.innerHTML=fixedPoint
+                ?`<strong>Khách nhận xe tại:</strong> ${escapeHtml(locationName)}`
+                :`<strong>Xe xuất phát từ:</strong> ${escapeHtml(locationName)}. Khách sẽ nhập địa chỉ nhận cụ thể khi đặt xe.`;
+        }
         if(address&&addressLabel&&addressHelp){
+            address.required=supportsDelivery;
+            addressLabel.classList.toggle('required',supportsDelivery);
             if(fixedPoint){
                 addressLabel.textContent='Hướng dẫn điểm hẹn (không bắt buộc)';
                 address.placeholder='Ví dụ: bãi xe tầng B1, cổng phía đường Thành Thái...';
-                addressHelp.textContent='Điểm giao xe chính đã được chọn ở bước Thông tin xe. Chỉ nhập thêm chỉ dẫn giúp khách dễ tìm.';
+                addressHelp.textContent='Chỉ nhập thêm chỉ dẫn giúp khách dễ tìm điểm nhận xe.';
+                address.setCustomValidity('');
+                if(addressValidation)addressValidation.textContent='';
             }else{
-                addressLabel.textContent='Ghi chú khu vực giao xe (không bắt buộc)';
-                address.placeholder='Ví dụ: hỗ trợ giao trong khu vực nội thành, hẹn trước 2 giờ...';
-                addressHelp.textContent='Khách sẽ nhập địa chỉ nhận cụ thể khi đặt xe. Ở đây chỉ ghi phạm vi hoặc lưu ý phục vụ của bạn.';
+                addressLabel.textContent='Khu vực hỗ trợ giao xe';
+                address.placeholder='Ví dụ: nội thành Hà Nội, tối đa 10 km...';
+                addressHelp.textContent='Bắt buộc nhập phạm vi bạn có thể giao xe. Không nhập địa chỉ cụ thể của khách tại đây.';
             }
         }
         const reminder=document.getElementById('deliveryChoiceReminder');
-        if(reminder) reminder.innerHTML=`<strong>Hình thức đã chọn:</strong> ${method||'Chưa chọn'}. ${method==='Nhận tại điểm giao xe'?'Phí giao xe được khóa ở 0 đồng.':'Bạn có thể nhập phí hỗ trợ giao xe tận nơi.'}`;
+        if(reminder) reminder.innerHTML=`<strong>Hình thức đã chọn:</strong> ${method||'Chưa chọn'}. ${fixedPoint?'Phí giao xe được khóa ở 0 đồng.':'Bạn có thể nhập phí hỗ trợ giao xe tận nơi.'}`;
         const raw=document.getElementById('Form_DeliveryFee');
         const display=document.getElementById('DeliveryFeeDisplay');
         if(fixedPoint&&raw&&display){raw.value='0';display.value='0';}
@@ -444,7 +460,15 @@
     function fieldsForStep(n){return [...document.querySelector(`[data-panel="${n}"]`).querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden');}
     function validateStep(n){
         let ok=true;
-        fieldsForStep(n).forEach(el=>{ if(!el.checkValidity()){el.classList.add('is-invalid');ok=false}else el.classList.remove('is-invalid'); });
+        const deliveryError=document.getElementById('deliveryAddressValidation');
+        fieldsForStep(n).forEach(el=>{
+            if(el.id==='Form_DeliveryAddress'){
+                const needsArea=el.required&&!String(el.value||'').trim();
+                el.setCustomValidity(needsArea?'Vui lòng nhập khu vực bạn hỗ trợ giao xe tận nơi.':'');
+                if(deliveryError)deliveryError.textContent=needsArea?'Vui lòng nhập khu vực bạn hỗ trợ giao xe tận nơi.':'';
+            }
+            if(!el.checkValidity()){el.classList.add('is-invalid');ok=false}else el.classList.remove('is-invalid');
+        });
         if(!ok){const first=document.querySelector(`[data-panel="${n}"] .is-invalid`); first?.focus(); first?.reportValidity();}
         return ok;
     }
@@ -483,6 +507,8 @@
     document.querySelectorAll('.draft-field').forEach(el=>{el.addEventListener('input',scheduleSave);el.addEventListener('change',scheduleSave);});
     document.querySelectorAll('.money-display').forEach(el=>el.addEventListener('input',()=>{syncMoneyDisplay(el);applyDeliveryFeeRule();scheduleSave();updateEstimate();}));
     document.querySelector('[name="Form.DeliveryMethod"]')?.addEventListener('change',()=>{applyDeliveryFeeRule();saveDraft();});
+    document.querySelector('[name="Form.LocationID"]')?.addEventListener('change',applyDeliveryFeeRule);
+    document.getElementById('Form_DeliveryAddress')?.addEventListener('input',e=>{e.target.setCustomValidity('');const error=document.getElementById('deliveryAddressValidation');if(error)error.textContent='';});
     document.querySelector('[name="Form.RentalMode"]')?.addEventListener('change',()=>{applyRentalModeRule();saveDraft();});
     document.getElementById('brandSelect')?.addEventListener('change',()=>{populateModels(false);saveDraft();});
     document.getElementById('licensePlateInput')?.addEventListener('blur',e=>{e.target.value=(e.target.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');saveDraft();});
@@ -547,9 +573,9 @@
                 ${driverRow}
                 <div class="summary-row border-0"><strong>Số khung/số máy:</strong> ${maskSensitive(value('Form.ChassisNumber'))} · ${maskSensitive(value('Form.EngineNumber'))}</div>`)}
             ${card(2,'2. Giao nhận',`
-                <div class="summary-row"><strong>Điểm hoạt động:</strong> ${escapeHtml(selected('Form.LocationID'))}</div>
+                <div class="summary-row"><strong>Điểm xuất phát/quản lý:</strong> ${escapeHtml(selected('Form.LocationID'))}</div>
                 <div class="summary-row"><strong>Cách nhận xe:</strong> ${escapeHtml(value('Form.DeliveryMethod'))}</div>
-                <div class="summary-row border-0"><strong>Ghi chú:</strong> ${deliveryNote==='Chưa nhập'?'Không có ghi chú':escapeHtml(deliveryNote)}</div>`)}
+                <div class="summary-row border-0"><strong>${value('Form.DeliveryMethod')==='Nhận tại điểm giao xe'?'Hướng dẫn điểm hẹn':'Khu vực hỗ trợ'}:</strong> ${deliveryNote==='Chưa nhập'?'Không có ghi chú':escapeHtml(deliveryNote)}</div>`)}
             ${card(3,'3. Giá và cọc',`
                 <div class="summary-row"><strong>Giá thuê:</strong> ${money(value('Form.ProposedDailyPrice'))}/ngày</div>
                 <div class="summary-row"><strong>Tiền cọc:</strong> ${money(value('Form.ProposedDepositAmount'))}</div>
@@ -576,6 +602,7 @@
     });
     document.querySelectorAll('.option-checkbox').forEach(el=>el.addEventListener('change',()=>syncOptionTarget(el.closest('[data-option-target]').dataset.optionTarget)));
     document.querySelectorAll('.option-other').forEach(el=>el.addEventListener('input',()=>syncOptionTarget(el.dataset.optionTarget)));
-    loadDraft(); restoreOptionTargets(); applyDeliveryFeeRule(); applyRentalModeRule(); showStep(1);
+    loadDraft(); restoreOptionTargets(); applyDeliveryFeeRule(); applyRentalModeRule();
+    showStep(document.getElementById('deliveryAddressValidation')?.textContent.trim()?2:1);
 })();
 </script>
