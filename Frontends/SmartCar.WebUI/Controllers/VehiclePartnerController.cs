@@ -283,19 +283,19 @@ namespace SmartCar.WebUI.Controllers
                 ModelState.Remove("Form.DriverLicenseExpiryDate");
             }
 
-            ValidateImageFile(model.VehicleImage, nameof(model.VehicleImage), "ảnh tổng thể xe");
-            ValidateImageFile(model.FrontImage, nameof(model.FrontImage), "ảnh đầu xe");
-            ValidateImageFile(model.RearImage, nameof(model.RearImage), "ảnh đuôi xe");
-            ValidateImageFile(model.LeftImage, nameof(model.LeftImage), "ảnh bên trái xe");
-            ValidateImageFile(model.RightImage, nameof(model.RightImage), "ảnh bên phải xe");
-            ValidateImageFile(model.InteriorImage, nameof(model.InteriorImage), "ảnh nội thất xe");
-            ValidateImageFile(model.DashboardImage, nameof(model.DashboardImage), "ảnh đồng hồ kilomet");
-            ValidateFile(model.RegistrationImage, nameof(model.RegistrationImage), "ảnh đăng ký xe");
-            ValidateFile(model.InspectionImage, nameof(model.InspectionImage), "ảnh đăng kiểm");
-            ValidateFile(model.InsuranceImage, nameof(model.InsuranceImage), "ảnh bảo hiểm xe");
+            ValidateImageFile(model.VehicleImage, nameof(model.VehicleImage), "ảnh tổng thể xe", model.Form.VehicleImageUrl);
+            ValidateImageFile(model.FrontImage, nameof(model.FrontImage), "ảnh đầu xe", model.Form.FrontImageUrl);
+            ValidateImageFile(model.RearImage, nameof(model.RearImage), "ảnh đuôi xe", model.Form.RearImageUrl);
+            ValidateImageFile(model.LeftImage, nameof(model.LeftImage), "ảnh bên trái xe", model.Form.LeftImageUrl);
+            ValidateImageFile(model.RightImage, nameof(model.RightImage), "ảnh bên phải xe", model.Form.RightImageUrl);
+            ValidateImageFile(model.InteriorImage, nameof(model.InteriorImage), "ảnh nội thất xe", model.Form.InteriorImageUrl);
+            ValidateImageFile(model.DashboardImage, nameof(model.DashboardImage), "ảnh đồng hồ kilomet", model.Form.DashboardImageUrl);
+            ValidateFile(model.RegistrationImage, nameof(model.RegistrationImage), "ảnh đăng ký xe", model.Form.RegistrationFileId.ToString());
+            ValidateFile(model.InspectionImage, nameof(model.InspectionImage), "ảnh đăng kiểm", model.Form.InspectionFileId.ToString());
+            ValidateFile(model.InsuranceImage, nameof(model.InsuranceImage), "ảnh bảo hiểm xe", model.Form.InsuranceFileId.ToString());
             if (requiresDriverProfile)
             {
-                ValidateFile(model.DriverLicenseImage, nameof(model.DriverLicenseImage), "ảnh giấy phép lái xe của tài xế");
+                ValidateFile(model.DriverLicenseImage, nameof(model.DriverLicenseImage), "ảnh giấy phép lái xe của tài xế", model.Form.DriverLicenseFileId.ToString());
                 if (string.IsNullOrWhiteSpace(model.Form.DriverFullName))
                     ModelState.AddModelError("Form.DriverFullName", "Vui lòng nhập họ tên tài xế.");
                 if (string.IsNullOrWhiteSpace(model.Form.DriverPhone))
@@ -324,37 +324,50 @@ namespace SmartCar.WebUI.Controllers
             var savedFiles = new List<string>();
             try
             {
-                model.Form.VehicleImageUrl = await SavePublicVehicleImageAsync(model.VehicleImage!, savedFiles);
-                model.Form.FrontImageUrl = await SavePublicVehicleImageAsync(model.FrontImage!, savedFiles);
-                model.Form.RearImageUrl = await SavePublicVehicleImageAsync(model.RearImage!, savedFiles);
-                model.Form.LeftImageUrl = await SavePublicVehicleImageAsync(model.LeftImage!, savedFiles);
-                model.Form.RightImageUrl = await SavePublicVehicleImageAsync(model.RightImage!, savedFiles);
-                model.Form.InteriorImageUrl = await SavePublicVehicleImageAsync(model.InteriorImage!, savedFiles);
-                model.Form.DashboardImageUrl = await SavePublicVehicleImageAsync(model.DashboardImage!, savedFiles);
-                model.Form.RegistrationFileId = await SavePrivateFileAsync(model.RegistrationImage!, savedFiles, "VehicleRegistration");
-                model.Form.InspectionFileId = await SavePrivateFileAsync(model.InspectionImage!, savedFiles, "VehicleInspection");
-                model.Form.InsuranceFileId = await SavePrivateFileAsync(model.InsuranceImage!, savedFiles, "VehicleInsurance");
-                if (requiresDriverProfile)
-                    model.Form.DriverLicenseFileId = await SavePrivateFileAsync(model.DriverLicenseImage!, savedFiles, "VehicleDriverLicense");
-                else
+                if (model.VehicleImage is { Length: > 0 })
+                    model.Form.VehicleImageUrl = await SavePublicVehicleImageAsync(model.VehicleImage, savedFiles);
+                if (model.FrontImage is { Length: > 0 })
+                    model.Form.FrontImageUrl = await SavePublicVehicleImageAsync(model.FrontImage, savedFiles);
+                if (model.RearImage is { Length: > 0 })
+                    model.Form.RearImageUrl = await SavePublicVehicleImageAsync(model.RearImage, savedFiles);
+                if (model.LeftImage is { Length: > 0 })
+                    model.Form.LeftImageUrl = await SavePublicVehicleImageAsync(model.LeftImage, savedFiles);
+                if (model.RightImage is { Length: > 0 })
+                    model.Form.RightImageUrl = await SavePublicVehicleImageAsync(model.RightImage, savedFiles);
+                if (model.InteriorImage is { Length: > 0 })
+                    model.Form.InteriorImageUrl = await SavePublicVehicleImageAsync(model.InteriorImage, savedFiles);
+                if (model.DashboardImage is { Length: > 0 })
+                    model.Form.DashboardImageUrl = await SavePublicVehicleImageAsync(model.DashboardImage, savedFiles);
+                if (model.RegistrationImage is { Length: > 0 })
+                    model.Form.RegistrationFileId = await SavePrivateFileAsync(model.RegistrationImage, savedFiles, "VehicleRegistration");
+                if (model.InspectionImage is { Length: > 0 })
+                    model.Form.InspectionFileId = await SavePrivateFileAsync(model.InspectionImage, savedFiles, "VehicleInspection");
+                if (model.InsuranceImage is { Length: > 0 })
+                    model.Form.InsuranceFileId = await SavePrivateFileAsync(model.InsuranceImage, savedFiles, "VehicleInsurance");
+                if (requiresDriverProfile && model.DriverLicenseImage is { Length: > 0 })
+                    model.Form.DriverLicenseFileId = await SavePrivateFileAsync(model.DriverLicenseImage, savedFiles, "VehicleDriverLicense");
+                else if (!requiresDriverProfile)
                     model.Form.DriverLicenseFileId = null;
 
                 var response = await CreateAuthorizedClient().PostAsync(
                     "api/VehiclePartnerApplications", JsonContent(model.Form));
+                var rawResponse = await response.Content.ReadAsStringAsync();
                 if (!response.IsSuccessStatusCode)
                 {
-                    await DeleteSavedFilesAsync(savedFiles);
-                    ModelState.AddModelError(string.Empty, Clean(await response.Content.ReadAsStringAsync()));
+                    // Keep saved files and their hidden IDs/URLs so the user can retry without re-uploading.
+                    var message = ExplainApiFailure(response, rawResponse);
+                    ModelState.AddModelError(string.Empty, message);
+                    ViewBag.ProfileSubmitFailed = $"Hồ sơ chưa được gửi. {message}";
                     return View(model);
                 }
 
                 TempData["VehiclePartnerSuccess"] = "Đã gửi hồ sơ xe. Bạn có thể theo dõi kết quả tại khu vực đối tác.";
                 return RedirectToAction(nameof(Dashboard));
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                await DeleteSavedFilesAsync(savedFiles);
-                ModelState.AddModelError(string.Empty, "Không kết nối được Web API tại cổng 7060.");
+                ModelState.AddModelError(string.Empty, $"Không kết nối được Web API tại cổng 7060. {ex.Message}");
+                ViewBag.ProfileSubmitFailed = "Không kết nối được Web API tại cổng 7060. Dữ liệu và tệp đã tải vẫn được giữ để thử lại.";
                 return View(model);
             }
             catch (IOException)
@@ -800,10 +813,17 @@ namespace SmartCar.WebUI.Controllers
             }
         }
 
-        private void ValidateFile(IFormFile? file, string key, string displayName)
+        private static bool HasRetainedFile(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            return !Guid.TryParse(value, out var id) || id != Guid.Empty;
+        }
+
+        private void ValidateFile(IFormFile? file, string key, string displayName, string? retainedFileId = null)
         {
             if (file is null || file.Length == 0)
             {
+                if (HasRetainedFile(retainedFileId)) return;
                 ModelState.AddModelError(key, $"Vui lòng tải {displayName}.");
                 return;
             }
@@ -812,10 +832,11 @@ namespace SmartCar.WebUI.Controllers
             if (file.Length > MaxFileSize) ModelState.AddModelError(key, $"{displayName} không được vượt quá 6 MB.");
         }
 
-        private void ValidateImageFile(IFormFile? file, string key, string displayName)
+        private void ValidateImageFile(IFormFile? file, string key, string displayName, string? retainedUrl = null)
         {
             if (file is null || file.Length == 0)
             {
+                if (HasRetainedFile(retainedUrl)) return;
                 ModelState.AddModelError(key, $"Vui lòng tải {displayName}.");
                 return;
             }
@@ -942,6 +963,34 @@ namespace SmartCar.WebUI.Controllers
             }
             catch (JsonException) { }
             return raw.Trim().Trim('"');
+        }
+
+        private static string ExplainApiFailure(HttpResponseMessage response, string raw)
+        {
+            var message = Clean(raw);
+            try
+            {
+                var obj = JsonConvert.DeserializeObject<dynamic>(raw);
+                var code = (string?)obj?.errorCode ?? (string?)obj?.ErrorCode;
+                var trace = (string?)obj?.traceId ?? (string?)obj?.TraceId;
+                if (!string.IsNullOrWhiteSpace(code) || !string.IsNullOrWhiteSpace(trace))
+                {
+                    var prefix = message == "Không thể xử lý yêu cầu." || string.IsNullOrWhiteSpace(message)
+                        ? $"Web API trả lỗi {(int)response.StatusCode} ({response.ReasonPhrase})."
+                        : message;
+                    var details = string.Join(" ", new[]
+                    {
+                        string.IsNullOrWhiteSpace(code) ? null : $"Mã lỗi: {code}.",
+                        string.IsNullOrWhiteSpace(trace) ? null : $"Mã theo dõi: {trace}."
+                    }.Where(x => !string.IsNullOrWhiteSpace(x)));
+                    return $"{prefix} {details}".Trim();
+                }
+            }
+            catch (JsonException) { }
+
+            return message == "Không thể xử lý yêu cầu."
+                ? $"Web API trả lỗi {(int)response.StatusCode} ({response.ReasonPhrase}). Vui lòng thử lại; nếu lỗi lặp lại, gửi mã theo dõi cho quản trị viên."
+                : message;
         }
     }
 }
