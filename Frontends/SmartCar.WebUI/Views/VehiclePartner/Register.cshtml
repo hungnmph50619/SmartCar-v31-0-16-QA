@@ -362,6 +362,8 @@
     const stepButtons=[...document.querySelectorAll('.wizard-step')];
     const prev=document.getElementById('prevStep'), next=document.getElementById('nextStep'), submit=document.getElementById('submitApplication');
     const draftKey='smartcar.partnerVehicleDraft.v3';
+    const hasServerErrors=@((!ViewData.ModelState.IsValid).ToString().ToLowerInvariant());
+    const serverPostedModel=document.getElementById('modelSelect')?.value||'';
     let step=1;
     const money=v=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(v||0))+' đồng';
     const moneyDigits=v=>String(v??'').replace(/[^0-9]/g,'');
@@ -490,13 +492,23 @@
     function loadDraft(){
         try{
             const data=JSON.parse(localStorage.getItem(draftKey)||'{}');
-            document.querySelectorAll('.draft-field').forEach(el=>{
-                if(data[el.name]!==undefined&&data[el.name]!==null&&data[el.name]!=='' )el.value=data[el.name]
-            });
-            populateModels(true);
+            // Khi server trả form có lỗi, ưu tiên chính dữ liệu vừa POST thay vì bản nháp cũ.
+            if(!hasServerErrors){
+                document.querySelectorAll('.draft-field').forEach(el=>{
+                    if(data[el.name]!==undefined&&data[el.name]!==null&&data[el.name]!=='' )el.value=data[el.name]
+                });
+            }
             const model=document.getElementById('modelSelect');
-            if(model&&data['Form.Model']) model.value=data['Form.Model'];
-        }catch{populateModels(true)}
+            const modelToRestore=hasServerErrors?serverPostedModel:data['Form.Model'];
+            populateModels(false);
+            if(model&&modelToRestore&&(modelMap[document.getElementById('brandSelect')?.value]||[]).includes(modelToRestore)){
+                model.value=modelToRestore;
+            }
+        }catch{
+            populateModels(false);
+            const model=document.getElementById('modelSelect');
+            if(model&&serverPostedModel)model.value=serverPostedModel;
+        }
         syncAllMoneyDisplays();
         applyDeliveryFeeRule();
         applyRentalModeRule();
@@ -546,8 +558,17 @@
         return text.length<=visible?'•'.repeat(text.length):'•'.repeat(Math.min(8,text.length-visible))+text.slice(-visible);
     }
     function buildSummary(){
-        const required=[...document.querySelectorAll('[data-panel] [required]')].filter(el=>el.type!=='hidden'&&!el.disabled);
+        // Ô xác nhận cuối cùng được kiểm tra riêng khi gửi, không phải dữ liệu hồ sơ còn thiếu.
+        const required=[...document.querySelectorAll('[data-panel] [required]')]
+            .filter(el=>el.type!=='hidden'&&!el.disabled&&el.id!=='confirmTruth');
         const missing=required.filter(el=>el.type==='file'?!el.files?.length:el.type==='checkbox'?!el.checked:!String(el.value||'').trim());
+        const stepTitles={1:'Thông tin xe',2:'Giao nhận',3:'Giá và cọc',4:'Giấy tờ xe',5:'Hình ảnh',6:'Tiện ích và điều khoản'};
+        const missingDetails=missing.map(el=>{
+            const stepNumber=Number(el.closest('[data-panel]')?.dataset.panel||1);
+            const label=document.querySelector(`label[for="${el.id}"]`)?.textContent?.replace('*','').trim()
+                || el.getAttribute('aria-label') || el.name || 'Trường bắt buộc';
+            return {stepNumber,label};
+        });
         const imageInputs=[...document.querySelectorAll('.preview-input')];
         const chosenImages=imageInputs.filter(x=>x.files?.length);
         const thumbnails=chosenImages.map(input=>{
@@ -563,7 +584,9 @@
         document.getElementById('reviewProgress').innerHTML=`<strong>${missing.length?'Hồ sơ còn thiếu thông tin':'Đã hoàn thành 6/6 nhóm thông tin'}</strong><span>${missing.length?`${missing.length} trường bắt buộc cần kiểm tra`:'Sẵn sàng gửi nhân viên duyệt'}</span>`;
         const warning=document.getElementById('reviewWarning');
         warning.classList.toggle('d-none',missing.length===0);
-        warning.textContent=missing.length?'Vui lòng bấm Sửa tại nhóm liên quan và hoàn tất các trường bắt buộc trước khi gửi.':'';
+        warning.innerHTML=missing.length
+            ?`<strong>Cần bổ sung:</strong><ul class="mb-0 mt-2">${missingDetails.map(item=>`<li>${escapeHtml(item.label)} — Bước ${item.stepNumber}: ${escapeHtml(stepTitles[item.stepNumber]||'Kiểm tra hồ sơ')} <button type="button" class="btn btn-link btn-sm p-0 ms-1" data-missing-step="${item.stepNumber}">Đi tới trường này</button></li>`).join('')}</ul>`
+            :'';
         submit.disabled=missing.length>0;
         document.getElementById('reviewSummary').innerHTML=`<div class="review-grid">
             ${card(1,'1. Thông tin xe',`
@@ -594,6 +617,13 @@
                 <div class="summary-row border-0"><strong>Chính sách hủy:</strong> ${escapeHtml(value('Form.CancellationPolicy'))}</div>`)}
         </div>`;
         document.querySelectorAll('[data-review-step]').forEach(button=>button.addEventListener('click',()=>showStep(Number(button.dataset.reviewStep))));
+        document.querySelectorAll('[data-missing-step]').forEach(button=>button.addEventListener('click',()=>{
+            const target=Number(button.dataset.missingStep);
+            showStep(target);
+            const firstMissing=missingDetails.findIndex(item=>item.stepNumber===target);
+            missing[firstMissing]?.focus();
+            missing[firstMissing]?.reportValidity();
+        }));
     }
     form.addEventListener('submit',e=>{
         for(let i=1;i<=6;i++){if(!validateStep(i)){e.preventDefault();showStep(i);return}}

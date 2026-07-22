@@ -37,14 +37,17 @@ namespace SmartCar.WebApi.Controllers
         private readonly CarBookContext _context;
         private readonly IPrivateFileService _files;
         private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<VehiclePartnerApplicationsController> _logger;
         public VehiclePartnerApplicationsController(
             CarBookContext context,
             IPrivateFileService files,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            ILogger<VehiclePartnerApplicationsController> logger)
         {
             _context = context;
             _files = files;
             _environment = environment;
+            _logger = logger;
         }
 
         [Authorize(Roles = "VehiclePartner")]
@@ -222,12 +225,50 @@ namespace SmartCar.WebApi.Controllers
                 CreatedDate = DateTime.UtcNow
             };
 
-            await using var transaction = await _context.Database.BeginTransactionAsync(HttpContext.RequestAborted);
-            _context.VehiclePartnerApplications.Add(entity);
-            await _context.SaveChangesAsync(HttpContext.RequestAborted);
-            _files.MarkAttached(privateDocuments, nameof(VehiclePartnerApplication), entity.VehiclePartnerApplicationID.ToString());
-            await _context.SaveChangesAsync(HttpContext.RequestAborted);
-            await transaction.CommitAsync(HttpContext.RequestAborted);
+            try
+            {
+                // Tương thích cả khi SQL retry được bật: transaction do execution strategy quản lý.
+                var strategy = _context.Database.CreateExecutionStrategy();
+                await strategy.ExecuteAsync(async () =>
+                {
+                    await using var transaction = await _context.Database.BeginTransactionAsync(HttpContext.RequestAborted);
+                    try
+                    {
+                        _context.VehiclePartnerApplications.Add(entity);
+                        await _context.SaveChangesAsync(HttpContext.RequestAborted);
+                        _files.MarkAttached(privateDocuments, nameof(VehiclePartnerApplication), entity.VehiclePartnerApplicationID.ToString());
+                        await _context.SaveChangesAsync(HttpContext.RequestAborted);
+                        await transaction.CommitAsync(HttpContext.RequestAborted);
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync(HttpContext.RequestAborted);
+                        throw;
+                    }
+                });
+            }
+            catch (DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Không thể lưu hồ sơ xe của đối tác {UserId}, biển số {LicensePlate}.", userId, normalizedPlate);
+                var plateNowExists = await _context.VehiclePartnerApplications.AsNoTracking()
+                    .AnyAsync(x => x.LicensePlate == normalizedPlate && x.Status != "Từ chối", HttpContext.RequestAborted);
+                if (plateNowExists)
+                    return Conflict(new { message = "Biển số xe này vừa được dùng cho một hồ sơ khác. Vui lòng kiểm tra lại." });
+
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "Web API không lưu được hồ sơ xe vào cơ sở dữ liệu. Vui lòng kiểm tra cấu trúc CSDL và nhật ký Web API."
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogError(ex, "Transaction gửi hồ sơ xe thất bại cho đối tác {UserId}.", userId);
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                {
+                    message = "Web API chưa thể hoàn tất giao dịch lưu hồ sơ. Vui lòng thử lại; nếu lỗi lặp lại, kiểm tra cấu hình SQL retry."
+                });
+            }
+
             return Ok(new { entity.VehiclePartnerApplicationID, Message = "Đã gửi hồ sơ xe đối tác. Smart Car sẽ kiểm tra giấy tờ và phản hồi trong khu vực Xe đối tác của tôi." });
         }
 
