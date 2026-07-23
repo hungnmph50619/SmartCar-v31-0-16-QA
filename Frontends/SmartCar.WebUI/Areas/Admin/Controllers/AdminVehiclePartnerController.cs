@@ -50,12 +50,7 @@ namespace SmartCar.WebUI.Areas.Admin.Controllers
                                      ?? new List<ResultPartnerVehicleDto>();
                 }
 
-                var feeResponse = await client.GetAsync("api/PlatformFees");
-                if (feeResponse.IsSuccessStatusCode)
-                {
-                    var fee = JsonConvert.DeserializeObject<PlatformFeeSettingDto>(await feeResponse.Content.ReadAsStringAsync());
-                    model.GlobalCommissionRate = fee?.VehiclePartnerCommissionPercent ?? 20m;
-                }
+                model.GlobalCommissionRate = await GetGlobalCommissionRateAsync(client);
             }
             catch (HttpRequestException)
             {
@@ -65,10 +60,48 @@ namespace SmartCar.WebUI.Areas.Admin.Controllers
             return View(model);
         }
 
+        [HttpGet("VehicleApplication/{id:int}")]
+        public async Task<IActionResult> VehicleApplication(int id)
+        {
+            try
+            {
+                var client = CreateAuthorizedClient();
+                var response = await client.GetAsync("api/VehiclePartnerApplications");
+                if (!response.IsSuccessStatusCode)
+                {
+                    TempData["MarketplaceError"] = Clean(await response.Content.ReadAsStringAsync());
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var applications = JsonConvert.DeserializeObject<List<ResultVehiclePartnerApplicationDto>>(
+                                       await response.Content.ReadAsStringAsync())
+                                   ?? new List<ResultVehiclePartnerApplicationDto>();
+                var application = applications.FirstOrDefault(x => x.VehiclePartnerApplicationID == id);
+                if (application is null) return NotFound();
+
+                return View(new AdminVehiclePartnerDetailViewModel
+                {
+                    Application = application,
+                    GlobalCommissionRate = await GetGlobalCommissionRateAsync(client)
+                });
+            }
+            catch (HttpRequestException)
+            {
+                TempData["MarketplaceError"] = "Không kết nối được Web API tại cổng 7060.";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
         [HttpPost("Review")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Review(int id, string status, string? adminNote, decimal? approvedDailyPrice, decimal? approvedDepositAmount, decimal? commissionRateOverride)
+        public async Task<IActionResult> Review(int id, string status, string? adminNote, decimal? approvedDailyPrice, decimal? approvedDepositAmount, decimal? commissionRateOverride, bool returnToDetails = false)
         {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                TempData["MarketplaceError"] = "Vui lòng chọn kết quả xử lý hồ sơ xe.";
+                return returnToDetails ? RedirectToAction(nameof(VehicleApplication), new { id }) : RedirectToAction(nameof(Index));
+            }
+
             try
             {
                 var dto = new ReviewVehiclePartnerApplicationDto
@@ -88,14 +121,19 @@ namespace SmartCar.WebUI.Areas.Admin.Controllers
             {
                 TempData["MarketplaceError"] = "Không kết nối được Web API tại cổng 7060.";
             }
-            return RedirectToAction(nameof(Index));
+            return returnToDetails ? RedirectToAction(nameof(VehicleApplication), new { id }) : RedirectToAction(nameof(Index));
         }
-
 
         [HttpPost("ReviewProfile")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReviewProfile(int id, string status, string? reviewNote)
         {
+            if (string.IsNullOrWhiteSpace(status))
+            {
+                TempData["MarketplaceError"] = "Vui lòng chọn kết quả xử lý hồ sơ đối tác.";
+                return RedirectToAction(nameof(Index));
+            }
+
             try
             {
                 var dto = new ReviewVehiclePartnerProfileDto
@@ -113,6 +151,14 @@ namespace SmartCar.WebUI.Areas.Admin.Controllers
                 TempData["MarketplaceError"] = "Không kết nối được Web API tại cổng 7060.";
             }
             return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<decimal> GetGlobalCommissionRateAsync(HttpClient client)
+        {
+            var feeResponse = await client.GetAsync("api/PlatformFees");
+            if (!feeResponse.IsSuccessStatusCode) return 20m;
+            var fee = JsonConvert.DeserializeObject<PlatformFeeSettingDto>(await feeResponse.Content.ReadAsStringAsync());
+            return fee?.VehiclePartnerCommissionPercent ?? 20m;
         }
 
         private HttpClient CreateAuthorizedClient()
