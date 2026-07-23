@@ -14,6 +14,66 @@
         </div>
     </footer>
     @await Component.InvokeAsync("_ScriptUILayoutComponentPartial")
+    <script>
+    (function () {
+        function textEquals(element, value) {
+            return element && element.textContent && element.textContent.trim() === value;
+        }
+
+        var path = window.location.pathname.toLowerCase();
+        if (path === '/vehiclepartner/dashboard') {
+            document.querySelectorAll('a[href*="/VehiclePartner/VehicleOperations/"]').forEach(function (link) {
+                if (!textEquals(link, 'Xem chi tiết')) return;
+                var match = link.getAttribute('href').match(/VehicleOperations\/(\d+)/i);
+                if (match) link.setAttribute('href', '/VehiclePartner/VehicleDetails/' + match[1]);
+            });
+
+            document.querySelectorAll('button, span, a').forEach(function (element) {
+                var text = element.textContent.trim();
+                if (text === 'Đề nghị mở lại') element.textContent = 'Bật nhận đơn mới';
+                if (text.indexOf('Ngừng cho thuê') === 0) element.textContent = text.replace('Ngừng cho thuê', 'Đang tắt nhận đơn');
+            });
+
+            document.querySelectorAll('[data-confirm]').forEach(function (button) {
+                if (button.textContent.trim() === 'Bật nhận đơn mới')
+                    button.setAttribute('data-confirm', 'Bật nhận đơn mới cho xe này ngay bây giờ?');
+            });
+        }
+
+        if (path.indexOf('/vehiclepartner/vehicleoperations/') === 0) {
+            var idMatch = window.location.pathname.match(/VehicleOperations\/(\d+)/i);
+            var summary = document.querySelector('.vehicle-summary');
+            if (summary) summary.remove();
+
+            var heading = document.querySelector('#overview');
+            if (heading && idMatch) {
+                var actions = heading.querySelector('.operation-heading-actions');
+                if (!actions) {
+                    actions = document.createElement('div');
+                    actions.className = 'operation-heading-actions d-flex align-items-center mt-3 mt-md-0';
+                    actions.innerHTML = '<a class="btn btn-outline-primary mr-2" href="/VehiclePartner/VehicleDetails/' + idMatch[1] + '">Xem thông tin xe</a>';
+                    var badge = heading.querySelector('.badge');
+                    if (badge) actions.appendChild(badge);
+                    heading.appendChild(actions);
+                }
+            }
+
+            document.querySelectorAll('button').forEach(function (button) {
+                if (textEquals(button, 'Đề nghị mở lại xe')) {
+                    button.textContent = 'Bật nhận đơn mới';
+                    button.setAttribute('data-confirm', 'Bật nhận đơn mới cho xe này ngay bây giờ?');
+                    var form = button.closest('form');
+                    var reason = form && form.querySelector('[name="reason"]');
+                    if (reason) {
+                        reason.removeAttribute('required');
+                        var group = reason.closest('.form-group');
+                        if (group) group.style.display = 'none';
+                    }
+                }
+            });
+        }
+    })();
+    </script>
     <style>
         .partner-body { background: #f4f7fa; }
         .partner-main { min-height: calc(100vh - 150px); padding-top: 20px; }
