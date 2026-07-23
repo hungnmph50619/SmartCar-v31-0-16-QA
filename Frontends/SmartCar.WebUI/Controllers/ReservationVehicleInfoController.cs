@@ -48,6 +48,11 @@ namespace SmartCar.WebUI.Controllers
                         ? car.BigImageUrl
                         : car.GalleryImages.FirstOrDefault() ?? string.Empty;
 
+                var isOwner = IsVehiclePartnerAccount();
+                var detailUrl = isOwner
+                    ? Url.Action("VehicleOperations", "VehiclePartner", new { id = reservationDetail.Reservation.PartnerVehicleID })
+                    : Url.Action("CarDetail", "Car", new { id = car.CarID });
+
                 return Json(new
                 {
                     carId = car.CarID,
@@ -64,7 +69,8 @@ namespace SmartCar.WebUI.Controllers
                         : car.LocationName,
                     ownerName = reservationDetail.Reservation.OwnerName,
                     ownerPhone = MaskPhone(reservationDetail.Reservation.OwnerPhone),
-                    detailUrl = Url.Action("CarDetail", "Car", new { id = car.CarID })
+                    detailUrl,
+                    isOwner
                 });
             }
             catch (HttpRequestException)
@@ -86,14 +92,27 @@ namespace SmartCar.WebUI.Controllers
             return client;
         }
 
+        private bool IsVehiclePartnerAccount()
+            => string.Equals(User.FindFirst("IsVehiclePartner")?.Value, "true", StringComparison.OrdinalIgnoreCase);
+
         private static string BuildDisplayName(string? brand, string? model, int year)
         {
             var cleanBrand = (brand ?? string.Empty).Trim();
             var cleanModel = (model ?? string.Empty).Trim();
-            var name = cleanModel.StartsWith(cleanBrand + " ", StringComparison.OrdinalIgnoreCase) ||
-                       string.Equals(cleanModel, cleanBrand, StringComparison.OrdinalIgnoreCase)
+            var rawName = cleanModel.StartsWith(cleanBrand + " ", StringComparison.OrdinalIgnoreCase) ||
+                          string.Equals(cleanModel, cleanBrand, StringComparison.OrdinalIgnoreCase)
                 ? cleanModel
                 : $"{cleanBrand} {cleanModel}".Trim();
+
+            var tokens = rawName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var normalized = new List<string>();
+            foreach (var token in tokens)
+            {
+                if (normalized.Count == 0 || !string.Equals(normalized[^1], token, StringComparison.OrdinalIgnoreCase))
+                    normalized.Add(token);
+            }
+
+            var name = string.Join(' ', normalized);
             return year > 0 ? $"{name} {year}" : name;
         }
 
