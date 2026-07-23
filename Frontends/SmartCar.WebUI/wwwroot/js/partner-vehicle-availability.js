@@ -31,10 +31,15 @@
     });
 
     document.querySelectorAll('#vehicleList form[action*="UpdateAvailability"]').forEach(function (form) {
+        var oldButton = form.querySelector('button[type="submit"]');
+        if (!oldButton) return;
+
+        var button = oldButton.cloneNode(true);
+        oldButton.replaceWith(button);
+
         form.addEventListener('submit', async function (event) {
             event.preventDefault();
-            var button = form.querySelector('button[type="submit"]');
-            if (!button || button.disabled) return;
+            if (button.disabled) return;
 
             var confirmation = button.getAttribute('data-confirm');
             if (confirmation && !window.confirm(confirmation)) return;
@@ -71,8 +76,7 @@
                 var success = documentResult.querySelector('.alert-success');
                 showMessage('success', success ? success.textContent.trim() : 'Đã cập nhật trạng thái nhận đơn của xe.');
                 window.setTimeout(function () {
-                    window.location.href = '/VehiclePartner/Dashboard#vehicles';
-                    window.location.reload();
+                    window.location.replace('/VehiclePartner/Dashboard#vehicles');
                 }, 500);
             } catch (error) {
                 showMessage('danger', 'Không kết nối được máy chủ khi cập nhật trạng thái xe.');
@@ -80,8 +84,5 @@
                 button.textContent = originalText;
             }
         });
-
-        var button = form.querySelector('button[type="submit"]');
-        if (button) button.removeAttribute('data-confirm');
     });
 })();
