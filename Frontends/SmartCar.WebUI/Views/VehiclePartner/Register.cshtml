@@ -434,8 +434,14 @@
         const pureDriver=mode==='Có tài xế';
         const section=document.getElementById('driverProfileSection');
         section?.classList.toggle('d-none',!needsDriver);
-        document.querySelectorAll('.driver-required').forEach(el=>{el.required=needsDriver;el.disabled=!needsDriver;});
-        document.querySelectorAll('.driver-file').forEach(el=>{el.required=needsDriver;el.disabled=!needsDriver;});
+        document.querySelectorAll('.driver-required,.driver-file').forEach(el=>{
+            el.required=needsDriver;
+            el.disabled=!needsDriver;
+            if(!needsDriver){
+                el.classList.remove('is-invalid');
+                el.setCustomValidity('');
+            }
+        });
 
         const raw=document.getElementById('Form_ProposedDepositAmount');
         const display=document.getElementById('ProposedDepositAmountDisplay');
@@ -508,7 +514,10 @@
         const label=input?.closest('.form-group')?.querySelector('label')?.textContent?.replace('*','').trim();
         return label||retainedFileLabels[input?.name]||'tệp';
     }
-    function fieldsForStep(n){return [...document.querySelector(`[data-panel="${n}"]`).querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden');}
+    function fieldsForStep(n){
+        const panel=document.querySelector(`[data-panel="${n}"]`);
+        return panel?[...panel.querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden'&&!x.disabled):[];
+    }
     function validateStep(n){
         let ok=true;
         const deliveryError=document.getElementById('deliveryAddressValidation');
