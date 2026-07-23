@@ -1,0 +1,1 @@
+This follow-up switches the partner vehicle availability toggle from AJAX fetch to a native POST submission so ASP.NET handles redirect and TempData reliably.
