@@ -109,6 +109,15 @@ namespace SmartCar.WebUI.Controllers
         }
 
         [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> Dismiss(int id)
+        {
+            if (id <= 0) return Json(new { success = true });
+            var success = await MarkReadInternal(id, useTempData: false);
+            return success ? Json(new { success = true }) : StatusCode(StatusCodes.Status502BadGateway, new { success = false });
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Open(int id, string? link)
         {
             var success = id <= 0 || await MarkReadInternal(id);
@@ -181,18 +190,18 @@ namespace SmartCar.WebUI.Controllers
             return result;
         }
 
-        private async Task<bool> MarkReadInternal(int id)
+        private async Task<bool> MarkReadInternal(int id, bool useTempData = true)
         {
             try
             {
                 using var request = new HttpRequestMessage(HttpMethod.Put, $"api/comprehensive-operations/notifications/{id}/read");
                 var response = await Client().SendAsync(request);
                 if (response.IsSuccessStatusCode) return true;
-                TempData["NotificationError"] = Clean(await response.Content.ReadAsStringAsync());
+                if (useTempData) TempData["NotificationError"] = Clean(await response.Content.ReadAsStringAsync());
             }
             catch (HttpRequestException)
             {
-                TempData["NotificationError"] = "Không kết nối được Web API.";
+                if (useTempData) TempData["NotificationError"] = "Không kết nối được Web API.";
             }
             return false;
         }

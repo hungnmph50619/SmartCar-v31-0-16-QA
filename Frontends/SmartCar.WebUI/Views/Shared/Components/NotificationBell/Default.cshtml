@@ -30,13 +30,15 @@
     .smart-notification-badge{position:absolute;top:0;left:18px;right:auto;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e41e3f;color:#fff!important;border:2px solid #fff;font-size:10px;font-weight:800;line-height:14px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,.22);z-index:5}
     .smart-role-navbar .smart-notification-badge{border-color:#168cf2}
     .smart-notification-bell-admin .smart-notification-badge{top:2px;left:17px;border-color:#fff}
-    .smart-action-banner{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10050;width:min(760px,calc(100% - 24px));background:#fff8db;border:1px solid #f0c64c;border-left:6px solid #f0a500;border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.2);padding:14px 16px;display:flex;align-items:center;gap:14px;color:#392d00}
+    .smart-action-banner{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10050;width:min(760px,calc(100% - 24px));background:#fff8db;border:1px solid #f0c64c;border-left:6px solid #f0a500;border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.2);padding:14px 52px 14px 16px;display:flex;align-items:center;gap:14px;color:#392d00}
     .smart-action-banner strong{display:block;font-size:16px;margin-bottom:2px}.smart-action-banner p{margin:0;font-size:14px}.smart-action-banner-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
     .smart-action-banner a,.smart-action-banner button{border:0;border-radius:7px;padding:9px 13px;font-weight:700;cursor:pointer;text-decoration:none}.smart-action-banner a{background:#168cf2;color:#fff}.smart-action-banner button{background:#fff;border:1px solid #c8a53c;color:#5a4600}
-    .smart-toast-stack{position:fixed;right:18px;top:82px;z-index:10060;width:min(390px,calc(100% - 36px));display:grid;gap:10px}.smart-toast{background:#fff;border-radius:12px;box-shadow:0 12px 35px rgba(0,0,0,.25);border-left:5px solid #168cf2;padding:14px 16px;animation:smartToastIn .25s ease}.smart-toast.action{border-left-color:#f0a500}.smart-toast-title{font-weight:800;margin-bottom:4px}.smart-toast-message{font-size:14px;color:#555}.smart-toast a{display:inline-block;margin-top:9px;color:#087be0;font-weight:700;text-decoration:none}
+    .smart-notification-close{position:absolute;right:10px;top:8px;width:32px!important;height:32px!important;padding:0!important;border:0!important;border-radius:50%!important;background:transparent!important;color:#665100!important;font-size:23px!important;line-height:30px!important;display:flex;align-items:center;justify-content:center}.smart-notification-close:hover{background:rgba(0,0,0,.08)!important}
+    .smart-toast-stack{position:fixed;right:18px;top:82px;z-index:10060;width:min(390px,calc(100% - 36px));display:grid;gap:10px}.smart-toast{position:relative;background:#fff;border-radius:12px;box-shadow:0 12px 35px rgba(0,0,0,.25);border-left:5px solid #168cf2;padding:14px 48px 14px 16px;animation:smartToastIn .25s ease}.smart-toast.action{border-left-color:#f0a500}.smart-toast-title{font-weight:800;margin-bottom:4px}.smart-toast-message{font-size:14px;color:#555}.smart-toast a{display:inline-block;margin-top:9px;color:#087be0;font-weight:700;text-decoration:none}.smart-toast .smart-notification-close{color:#666!important;top:5px}
+    .smart-post-rental-summary{border:1px solid #dce6ef;border-radius:14px;background:#fff;padding:18px 20px;margin-bottom:1.5rem;box-shadow:0 5px 18px rgba(20,60,90,.06)}.smart-post-rental-summary h4{margin:0 0 6px}.smart-post-rental-summary p{margin:0;color:#647180}.smart-post-rental-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:15px}.smart-post-rental-item{border:1px solid #e5ebf1;border-radius:10px;padding:12px;background:#f9fbfd}.smart-post-rental-item strong{display:block;margin-bottom:3px}.smart-post-rental-item span{font-size:.88rem;color:#687584}.smart-operations-group{margin-bottom:1.5rem}.smart-operations-group>summary{cursor:pointer;list-style:none;border:1px solid #dce6ef;border-radius:12px;background:#fff;padding:16px 18px;font-weight:800;box-shadow:0 5px 18px rgba(20,60,90,.05)}.smart-operations-group>summary::-webkit-details-marker{display:none}.smart-operations-group>summary:after{content:'＋';float:right}.smart-operations-group[open]>summary:after{content:'−'}.smart-operations-body{padding-top:14px}
     @@keyframes smartToastIn{from{opacity:0;transform:translateX(25px)}to{opacity:1;transform:none}}
     @@media(max-width:1199px){.smart-notification-bell-public{justify-content:flex-start!important}.smart-notification-badge{top:1px;left:23px}}
-    @@media(max-width:700px){.smart-action-banner{top:8px;align-items:flex-start;flex-wrap:wrap}.smart-action-banner-actions{margin-left:0;width:100%}.smart-toast-stack{top:72px;right:10px;width:calc(100% - 20px)}}
+    @@media(max-width:700px){.smart-action-banner{top:8px;align-items:flex-start;flex-wrap:wrap;padding-right:44px}.smart-action-banner-actions{margin-left:0;width:100%}.smart-toast-stack{top:72px;right:10px;width:calc(100% - 20px)}.smart-post-rental-grid{grid-template-columns:1fr}}
 </style>
 <script>
 (function () {
@@ -57,6 +59,49 @@
         });
     }
 
+    function reservationId(item) {
+        var source = (item.link || '') + ' ' + (item.message || '');
+        var match = source.match(/(?:Details\/|Đơn\s*#)(\d+)/i);
+        return match ? match[1] : '';
+    }
+
+    function canonicalKey(item) {
+        var id = reservationId(item);
+        if (!id) return item.key || ('notification:' + item.id);
+        var text = ((item.type || '') + ' ' + (item.title || '')).toLowerCase();
+        if (text.indexOf('owneraction') >= 0 || text.indexOf('yêu cầu thuê xe mới') >= 0 || text.indexOf('yêu cầu thuê') >= 0) return 'owner-request:' + id;
+        if (text.indexOf('paymentaction') >= 0 || text.indexOf('thanh toán') >= 0 || text.indexOf('chấp nhận yêu cầu') >= 0) return 'payment-action:' + id;
+        return 'reservation:' + id + ':' + (item.type || 'general');
+    }
+
+    function deduplicate(items) {
+        var groups = new Map();
+        items.forEach(function(item){
+            var key = canonicalKey(item);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(item);
+        });
+        return Array.from(groups.entries()).map(function(entry){
+            var key = entry[0], group = entry[1];
+            var action = group.find(function(x){ return x.isAction; });
+            var selected = action || group[0];
+            var stored = group.find(function(x){ return Number(x.id) > 0; });
+            return Object.assign({}, selected, { canonicalKey:key, readId: stored ? Number(stored.id) : 0 });
+        });
+    }
+
+    function isDismissed(item) { return localStorage.getItem('smartcar-dismissed:' + item.canonicalKey) === '1'; }
+
+    async function markDismissed(item) {
+        localStorage.setItem('smartcar-dismissed:' + item.canonicalKey, '1');
+        sessionStorage.setItem('smartcar-seen:' + item.canonicalKey, new Date().toISOString());
+        if (item.readId > 0) {
+            try {
+                await fetch('/Notifications/Dismiss?id=' + encodeURIComponent(item.readId), { method:'POST', credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'} });
+            } catch (_) { }
+        }
+    }
+
     function beep() {
         if (!userInteracted) return;
         try {
@@ -68,48 +113,97 @@
         } catch (_) { }
     }
 
+    function bindOpen(link, item) {
+        if (!link) return;
+        link.addEventListener('click', function(event){
+            event.preventDefault();
+            markDismissed(item).finally(function(){ window.location.href = link.href; });
+        });
+    }
+
+    function closeElements(item) {
+        document.querySelectorAll('[data-notification-key="' + CSS.escape(item.canonicalKey) + '"]').forEach(function(x){ x.remove(); });
+    }
+
     function showToast(item) {
         var stack = document.querySelector('.smart-toast-stack');
         if (!stack) { stack = document.createElement('div'); stack.className = 'smart-toast-stack'; document.body.appendChild(stack); }
-        var toast = document.createElement('div'); toast.className = 'smart-toast' + (item.isAction ? ' action' : '');
-        toast.innerHTML = '<div class="smart-toast-title"></div><div class="smart-toast-message"></div>' + (item.link ? '<a> Xem ngay →</a>' : '');
+        var toast = document.createElement('div'); toast.className = 'smart-toast' + (item.isAction ? ' action' : ''); toast.dataset.notificationKey = item.canonicalKey;
+        toast.innerHTML = '<button type="button" class="smart-notification-close" aria-label="Đánh dấu đã đọc và đóng">×</button><div class="smart-toast-title"></div><div class="smart-toast-message"></div>' + (item.link ? '<a>Xem ngay →</a>' : '');
         toast.querySelector('.smart-toast-title').textContent = item.title || 'SmartCar';
         toast.querySelector('.smart-toast-message').textContent = item.message || '';
-        var link = toast.querySelector('a'); if (link) link.href = item.link;
+        var link = toast.querySelector('a'); if (link) { link.href = item.link; bindOpen(link, item); }
+        toast.querySelector('.smart-notification-close').onclick = function(){ markDismissed(item).then(function(){ closeElements(item); refreshFeed(); }); };
         stack.prepend(toast); beep();
-        window.setTimeout(function(){ toast.remove(); }, item.isAction ? 15000 : 9000);
+        window.setTimeout(function(){ if (toast.isConnected && !item.isAction) toast.remove(); }, 9000);
     }
 
     function showSystemNotification(item) {
         if (!('Notification' in window) || Notification.permission !== 'granted') return;
         try {
-            var n = new Notification(item.title || 'SmartCar', { body: item.message || '', tag: item.key, renotify: true, icon: '/favicon.ico' });
-            n.onclick = function(){ window.focus(); if (item.link) window.location.href = item.link; n.close(); };
+            var n = new Notification(item.title || 'SmartCar', { body: item.message || '', tag:item.canonicalKey, renotify:false, icon:'/favicon.ico' });
+            n.onclick = function(){ window.focus(); markDismissed(item).finally(function(){ if (item.link) window.location.href = item.link; n.close(); }); };
         } catch (_) { }
     }
 
     function renderActionBanner(item) {
         var existing = document.querySelector('.smart-action-banner');
         if (!item) { if (existing) existing.remove(); return; }
+        if (existing && existing.dataset.notificationKey !== item.canonicalKey) existing.remove();
+        existing = document.querySelector('.smart-action-banner');
         if (!existing) { existing = document.createElement('div'); existing.className = 'smart-action-banner'; document.body.appendChild(existing); }
-        existing.innerHTML = '<div style="font-size:26px">🔔</div><div class="smart-action-copy"><strong></strong><p></p></div><div class="smart-action-banner-actions"><a>Thực hiện ngay</a><button type="button" data-enable-browser-notification>Bật thông báo</button></div>';
+        existing.dataset.notificationKey = item.canonicalKey;
+        existing.innerHTML = '<button type="button" class="smart-notification-close" aria-label="Đánh dấu đã đọc và đóng">×</button><div style="font-size:26px">🔔</div><div class="smart-action-copy"><strong></strong><p></p></div><div class="smart-action-banner-actions"><a>Thực hiện ngay</a><button type="button" data-enable-browser-notification>Bật thông báo</button></div>';
         existing.querySelector('strong').textContent = item.title || 'Bạn có việc cần xử lý';
         existing.querySelector('p').textContent = item.message || '';
-        existing.querySelector('a').href = item.link || '/Notifications/Index';
+        var actionLink = existing.querySelector('a'); actionLink.href = item.link || '/Notifications/Index'; bindOpen(actionLink, item);
+        existing.querySelector('.smart-notification-close').onclick = function(){ markDismissed(item).then(function(){ closeElements(item); refreshFeed(); }); };
         var enable = existing.querySelector('[data-enable-browser-notification]');
         if (!('Notification' in window) || Notification.permission === 'granted') enable.style.display = 'none';
         enable.onclick = async function(){ try { var permission = await Notification.requestPermission(); if (permission === 'granted') enable.style.display = 'none'; } catch (_) {} };
+    }
+
+    function enhanceReservationDetails() {
+        if (!/\/ReservationLookup\/Details\//i.test(window.location.pathname)) return;
+        var cards = Array.from(document.querySelectorAll('.detail-card'));
+        var findCard = function(text){ return cards.find(function(card){ var h = card.querySelector('h4'); return h && h.textContent.trim().indexOf(text) >= 0; }); };
+        var handover = document.getElementById('handover') || findCard('Biên bản giao');
+        var incident = document.getElementById('incident') || findCard('Sự cố và hỗ trợ');
+        var dispute = document.getElementById('dispute') || findCard('Khiếu nại và tranh chấp');
+        var traffic = findCard('Phạt nguội');
+        var operationCards = [handover, incident, dispute, traffic].filter(Boolean);
+        if (!operationCards.length || document.querySelector('.smart-post-rental-summary')) return;
+
+        var statusBadge = document.querySelector('#reservationSummary .badge');
+        var status = statusBadge ? statusBadge.textContent.trim().toLowerCase() : '';
+        var early = ['chờ chủ xe xác nhận','chờ thanh toán','chờ khách đặt cọc','chờ khách thanh toán giữ chỗ','chờ nhân viên xác nhận','chờ đối chiếu'].some(function(x){ return status.indexOf(x) >= 0; });
+        var anchor = operationCards[0];
+        var summary = document.createElement('div');
+        summary.className = 'smart-post-rental-summary';
+        summary.innerHTML = '<h4>Hồ sơ trong và sau chuyến thuê</h4><p>Các mục dưới đây chỉ dùng khi đến đúng giai đoạn. Bạn chưa cần thao tác nếu đơn vẫn đang chờ xác nhận hoặc thanh toán.</p><div class="smart-post-rental-grid"><div class="smart-post-rental-item"><strong>Biên bản giao – trả xe</strong><span>Ghi nhận kilomet, nhiên liệu, hình ảnh và xác nhận hai bên khi bàn giao.</span></div><div class="smart-post-rental-item"><strong>Sự cố và hỗ trợ</strong><span>Dùng khi xe hỏng, tai nạn hoặc cần SmartCar hỗ trợ trong chuyến thuê.</span></div><div class="smart-post-rental-item"><strong>Khiếu nại và tranh chấp</strong><span>Dùng khi biên bản, chi phí hoặc thông tin xử lý không chính xác.</span></div><div class="smart-post-rental-item"><strong>Phạt nguội</strong><span>Ghi nhận vi phạm giao thông phát sinh trong thời gian khách sử dụng xe.</span></div></div>';
+        anchor.parentNode.insertBefore(summary, anchor);
+
+        var details = document.createElement('details');
+        details.className = 'smart-operations-group';
+        if (!early || operationCards.some(function(card){ return card.querySelector('.action-box:not(:empty), form'); })) details.open = !early;
+        var label = document.createElement('summary');
+        label.textContent = early ? 'Xem các nghiệp vụ sẽ dùng ở giai đoạn sau' : 'Hồ sơ vận hành, sự cố và hậu kiểm';
+        var body = document.createElement('div'); body.className = 'smart-operations-body';
+        details.appendChild(label); details.appendChild(body);
+        summary.parentNode.insertBefore(details, summary.nextSibling);
+        operationCards.forEach(function(card){ body.appendChild(card); });
     }
 
     async function refreshFeed() {
         try {
             var response = await fetch('/Notifications/Feed', { credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}, cache:'no-store' });
             if (!response.ok) return;
-            var data = await response.json(); renderUnreadCount(Number(data.unreadCount));
-            var items = Array.isArray(data.items) ? data.items : [];
+            var data = await response.json();
+            var items = deduplicate(Array.isArray(data.items) ? data.items : []).filter(function(x){ return !isDismissed(x); });
+            renderUnreadCount(items.length);
             var action = items.find(function(x){ return x.isAction; }); renderActionBanner(action || null);
             items.forEach(function(item){
-                var storageKey = 'smartcar-seen:' + item.key;
+                var storageKey = 'smartcar-seen:' + item.canonicalKey;
                 if (sessionStorage.getItem(storageKey)) return;
                 sessionStorage.setItem(storageKey, new Date().toISOString()); showToast(item); showSystemNotification(item);
             });
@@ -117,6 +211,7 @@
     }
 
     window.smartCarRefreshNotificationCount = refreshFeed;
+    enhanceReservationDetails();
     refreshFeed();
     window.setInterval(refreshFeed, 10000);
     document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshFeed(); });
