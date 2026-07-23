@@ -1,0 +1,163 @@
+@model AdminVehiclePartnerDetailViewModel
+@{
+    ViewData["Title"] = "Chi tiết hồ sơ xe";
+    Layout = "~/Views/AdminLayout/Index.cshtml";
+    var item = Model.Application;
+    var images = new[] {
+        new { Label = "Ảnh tổng thể", Url = item.VehicleImageUrl },
+        new { Label = "Đầu xe", Url = item.FrontImageUrl },
+        new { Label = "Đuôi xe", Url = item.RearImageUrl },
+        new { Label = "Bên trái", Url = item.LeftImageUrl },
+        new { Label = "Bên phải", Url = item.RightImageUrl },
+        new { Label = "Nội thất", Url = item.InteriorImageUrl },
+        new { Label = "Đồng hồ kilomet", Url = item.DashboardImageUrl }
+    };
+    var isDriverVehicle = item.RentalMode is "Có tài xế" or "Tự lái hoặc có tài xế";
+}
+<style>
+    .detail-section{background:#fff;border:1px solid #e5e9ef;border-radius:12px;padding:20px;margin-bottom:16px}
+    .detail-section h4{font-size:1.05rem;margin-bottom:16px}
+    .detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 22px}
+    .detail-field{padding-bottom:9px;border-bottom:1px dashed #edf0f3}.detail-field span{display:block;color:#6a7684;font-size:.78rem;text-transform:uppercase;margin-bottom:3px}
+    .image-card{border:1px solid #e7ebef;border-radius:10px;overflow:hidden;background:#fff;height:100%}.image-card img{height:180px;width:100%;object-fit:cover;cursor:zoom-in}.image-card div{padding:9px 11px;font-weight:600}
+    .review-panel{position:sticky;top:86px}.document-card{border:1px solid #e7ebef;border-radius:10px;padding:14px;height:100%}
+    .check-item{display:block;padding:7px 0;border-bottom:1px solid #eef1f4}.check-item:last-child{border-bottom:0}
+    @@media(max-width:991px){.review-panel{position:static}.detail-grid{grid-template-columns:1fr}}
+</style>
+<div class="page-content"><div class="container-fluid">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+        <div><h3 class="mb-1">@item.BrandName @item.Model @item.VehicleVersion</h3><p class="text-muted mb-0">@item.LicensePlate · Hồ sơ #@item.VehiclePartnerApplicationID · Gửi @item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</p></div>
+        <a asp-area="Admin" asp-controller="AdminVehiclePartner" asp-action="Index" class="btn btn-outline-secondary">← Quay lại danh sách</a>
+    </div>
+    @if(TempData["MarketplaceSuccess"]!=null){<div class="alert alert-success">@TempData["MarketplaceSuccess"]</div>}
+    @if(TempData["MarketplaceError"]!=null){<div class="alert alert-danger">@TempData["MarketplaceError"]</div>}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="detail-section">
+                <h4>Thông tin xe</h4>
+                <div class="detail-grid">
+                    <div class="detail-field"><span>Hãng xe</span>@item.BrandName</div>
+                    <div class="detail-field"><span>Dòng xe / phiên bản</span>@item.Model @item.VehicleVersion</div>
+                    <div class="detail-field"><span>Năm sản xuất</span>@item.ManufactureYear</div>
+                    <div class="detail-field"><span>Biển số</span>@item.LicensePlate</div>
+                    <div class="detail-field"><span>Màu xe</span>@item.Color</div>
+                    <div class="detail-field"><span>Số chỗ</span>@item.Seat</div>
+                    <div class="detail-field"><span>Hộp số</span>@item.Transmission</div>
+                    <div class="detail-field"><span>Nhiên liệu</span>@item.Fuel</div>
+                    <div class="detail-field"><span>Số kilomet</span>@item.Km.ToString("#,0") km</div>
+                    <div class="detail-field"><span>Hình thức thuê</span>@item.RentalMode</div>
+                    <div class="detail-field"><span>Số khung</span>@item.ChassisNumber</div>
+                    <div class="detail-field"><span>Số máy</span>@item.EngineNumber</div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Địa điểm, giao nhận và giá</h4>
+                <div class="detail-grid">
+                    <div class="detail-field"><span>Điểm giao xe</span>@item.LocationName</div>
+                    <div class="detail-field"><span>Hình thức giao nhận</span>@item.DeliveryMethod</div>
+                    <div class="detail-field"><span>Khu vực / hướng dẫn</span>@(string.IsNullOrWhiteSpace(item.DeliveryAddress)?"Không có ghi chú":item.DeliveryAddress)</div>
+                    <div class="detail-field"><span>Giá đề xuất</span>@item.ProposedDailyPrice.ToString("#,0") VNĐ/ngày</div>
+                    <div class="detail-field"><span>Tiền cọc đề xuất</span>@item.ProposedDepositAmount.ToString("#,0") VNĐ</div>
+                    <div class="detail-field"><span>Giới hạn kilomet</span>@item.KmLimitPerDay.ToString("#,0") km/ngày</div>
+                    <div class="detail-field"><span>Phí vượt kilomet</span>@item.ExtraKmFee.ToString("#,0") VNĐ/km</div>
+                    <div class="detail-field"><span>Phí giao xe</span>@item.DeliveryFee.ToString("#,0") VNĐ</div>
+                </div>
+            </div>
+
+            @if(isDriverVehicle){
+                <div class="detail-section">
+                    <h4>Hồ sơ tài xế</h4>
+                    <div class="detail-grid">
+                        <div class="detail-field"><span>Họ tên</span>@item.DriverFullName</div>
+                        <div class="detail-field"><span>Số điện thoại</span>@item.DriverPhone</div>
+                        <div class="detail-field"><span>CCCD</span>@item.DriverCitizenIdentityNumber</div>
+                        <div class="detail-field"><span>Số GPLX</span>@item.DriverLicenseNumber</div>
+                        <div class="detail-field"><span>Hạng GPLX</span>@item.DriverLicenseClass</div>
+                        <div class="detail-field"><span>Ngày hết hạn</span>@item.DriverLicenseExpiryDate?.ToString("dd/MM/yyyy")</div>
+                    </div>
+                    @if(!string.IsNullOrWhiteSpace(item.DriverLicenseImageUrl)){<a class="btn btn-sm btn-outline-primary mt-3" href="@item.DriverLicenseImageUrl" target="_blank" rel="noopener noreferrer">Xem GPLX tài xế</a>}
+                </div>
+            }
+
+            <div class="detail-section">
+                <h4>Giấy tờ xe</h4>
+                <div class="row">
+                    @foreach(var doc in new[]{new{Label="Đăng ký xe",Url=item.RegistrationImageUrl},new{Label="Đăng kiểm",Url=item.InspectionImageUrl},new{Label="Bảo hiểm",Url=item.InsuranceImageUrl}}){
+                        <div class="col-md-4 mb-3"><div class="document-card"><strong>@doc.Label</strong><br/>@if(string.IsNullOrWhiteSpace(doc.Url)){<span class="text-danger">Chưa có tệp</span>}else{<span class="text-success">Đã tải lên</span><br/><a href="@doc.Url" target="_blank" rel="noopener noreferrer">Mở tài liệu</a>}</div></div>
+                    }
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Hình ảnh xe (@images.Count(x=>!string.IsNullOrWhiteSpace(x.Url))/7)</h4>
+                <div class="row">
+                    @foreach(var image in images){
+                        <div class="col-md-6 mb-3"><div class="image-card">@if(string.IsNullOrWhiteSpace(image.Url)){<div class="d-flex align-items-center justify-content-center text-danger" style="height:180px">Chưa có ảnh</div>}else{<a href="@image.Url" target="_blank" rel="noopener noreferrer"><img src="@image.Url" alt="@image.Label"/></a>}<div>@image.Label</div></div></div>
+                    }
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Tiện ích, phụ kiện và điều khoản</h4>
+                <div class="detail-field mb-3"><span>Tiện ích</span>@(string.IsNullOrWhiteSpace(item.Amenities)?"Không khai báo":item.Amenities)</div>
+                <div class="detail-field mb-3"><span>Phụ kiện bàn giao</span>@(string.IsNullOrWhiteSpace(item.Accessories)?"Không khai báo":item.Accessories)</div>
+                <div class="detail-field mb-3"><span>Điều kiện thuê</span>@(string.IsNullOrWhiteSpace(item.RentalConditions)?"Không có":item.RentalConditions)</div>
+                <div class="detail-field"><span>Chính sách hủy</span>@(string.IsNullOrWhiteSpace(item.CancellationPolicy)?"Không có":item.CancellationPolicy)</div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Chủ xe và lịch sử hồ sơ</h4>
+                <div class="detail-grid">
+                    <div class="detail-field"><span>Chủ xe</span>@item.OwnerFullName</div>
+                    <div class="detail-field"><span>Liên hệ</span>@item.Phone · @item.Email</div>
+                    <div class="detail-field"><span>Địa chỉ hồ sơ</span>@item.Address</div>
+                    <div class="detail-field"><span>CCCD</span>@item.CitizenIdentityNumber</div>
+                    <div class="detail-field"><span>Ngân hàng</span>@item.BankName</div>
+                    <div class="detail-field"><span>Tài khoản</span>@item.BankAccountNumber · @item.BankAccountHolder</div>
+                    <div class="detail-field"><span>Ngày gửi</span>@item.CreatedDate.ToString("dd/MM/yyyy HH:mm")</div>
+                    <div class="detail-field"><span>Ngày xử lý</span>@(item.ReviewedDate?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa xử lý")</div>
+                </div>
+                @if(!string.IsNullOrWhiteSpace(item.AdminNote)){<div class="alert alert-light border mt-3 mb-0"><strong>Ghi chú lần xử lý gần nhất:</strong> @item.AdminNote</div>}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="detail-section review-panel">
+                <h4>Xử lý hồ sơ</h4>
+                <div class="alert alert-light border"><strong>Trạng thái hiện tại:</strong> @item.Status<br/><small>Giá và tiền cọc bên dưới lấy đúng từ hồ sơ đề xuất. Hãy đối chiếu trước khi duyệt.</small></div>
+                @if(item.Status=="Đã duyệt"){
+                    <div class="alert alert-success mb-0">Hồ sơ đã được duyệt và xe đã được đưa lên hệ thống.</div>
+                }else{
+                    <form method="post" action="/Admin/AdminVehiclePartner/Review" id="vehicleReviewForm">@Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@item.VehiclePartnerApplicationID"/>
+                        <input type="hidden" name="returnToDetails" value="true"/>
+                        <div class="form-group"><label>Kết quả</label><select name="status" id="reviewStatus" class="form-control" required><option value="" selected disabled>-- Chọn kết quả xử lý --</option><option value="Đã duyệt">Phê duyệt</option><option value="Yêu cầu bổ sung">Yêu cầu bổ sung</option><option value="Từ chối">Từ chối</option></select></div>
+                        <div id="approvalFields" class="d-none">
+                            <div class="form-group"><label>Giá/ngày được duyệt</label><input id="approvedDailyPriceRaw" name="approvedDailyPrice" type="hidden" value="@item.ProposedDailyPrice.ToString("0")"/><input type="text" inputmode="numeric" class="form-control money-display" data-target="approvedDailyPriceRaw" value="@item.ProposedDailyPrice.ToString("#,0")"/></div>
+                            <div class="form-group"><label>Tiền đặt cọc được duyệt</label><input id="approvedDepositRaw" name="approvedDepositAmount" type="hidden" value="@(item.RentalMode=="Có tài xế"?"0":item.ProposedDepositAmount.ToString("0"))"/><input type="text" inputmode="numeric" class="form-control money-display @(item.RentalMode=="Có tài xế"?"bg-light":"")" data-target="approvedDepositRaw" value="@(item.RentalMode=="Có tài xế"?"0":item.ProposedDepositAmount.ToString("#,0"))" readonly="@(item.RentalMode=="Có tài xế")"/></div>
+                            <div class="form-group"><label>Hoa hồng riêng (%)</label><input name="commissionRateOverride" type="number" min="0" max="100" step="0.1" class="form-control" placeholder="Để trống dùng mức chung @Model.GlobalCommissionRate.ToString("0.##")%"/></div>
+                            <div class="mb-3"><strong>Checklist trước khi duyệt</strong>
+                                @foreach(var label in new[]{"Chủ xe đã được xác minh","Biển số khớp đăng ký xe","Số khung và số máy đã đối chiếu","Đăng kiểm và bảo hiểm hợp lệ","Đã kiểm tra đủ 7 ảnh xe","Giá và tiền cọc hợp lý"}){<label class="check-item"><input type="checkbox" class="approval-check mr-2"/>@label</label>}
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Lý do/ghi chú <span id="reasonRequired" class="text-danger d-none">*</span></label><textarea name="adminNote" id="adminNote" class="form-control" rows="4" maxlength="1000" placeholder="Ghi rõ nội dung cần bổ sung hoặc lý do từ chối"></textarea></div>
+                        <button class="btn btn-success btn-block" type="submit">Lưu kết quả duyệt</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div></div>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    document.querySelectorAll('.money-display').forEach(function(display){display.addEventListener('input',function(){const digits=display.value.replace(/[^0-9]/g,'');const raw=document.getElementById(display.dataset.target);if(raw)raw.value=digits||'0';display.value=new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(digits||0))})});
+    const form=document.getElementById('vehicleReviewForm');if(!form)return;
+    const status=document.getElementById('reviewStatus'),note=document.getElementById('adminNote'),requiredMark=document.getElementById('reasonRequired'),approvalFields=document.getElementById('approvalFields');
+    function sync(){const approving=status.value==='Đã duyệt';const needsReason=status.value==='Yêu cầu bổ sung'||status.value==='Từ chối';approvalFields.classList.toggle('d-none',!approving);note.required=needsReason;requiredMark.classList.toggle('d-none',!needsReason)}
+    status.addEventListener('change',sync);
+    form.addEventListener('submit',function(event){sync();if(status.value==='Đã duyệt'&&[...document.querySelectorAll('.approval-check')].some(x=>!x.checked)){event.preventDefault();alert('Vui lòng hoàn thành toàn bộ checklist trước khi duyệt hồ sơ xe.');return}if(!form.checkValidity()){event.preventDefault();form.reportValidity();return}const label=status.options[status.selectedIndex].text;const price=document.getElementById('approvedDailyPriceRaw')?.value||'0';const deposit=document.getElementById('approvedDepositRaw')?.value||'0';const message=status.value==='Đã duyệt'?`Xác nhận PHÊ DUYỆT hồ sơ với giá ${Number(price).toLocaleString('vi-VN')} VNĐ/ngày và cọc ${Number(deposit).toLocaleString('vi-VN')} VNĐ?`:`Xác nhận kết quả: ${label}?`;if(!confirm(message))event.preventDefault()});
+    sync();
+});
+</script>
