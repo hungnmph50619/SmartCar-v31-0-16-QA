@@ -21,8 +21,7 @@
         <span class="smart-notification-text">Thông báo</span>
     }
     <span class="smart-notification-badge @(Model.UnreadCount > 0 ? string.Empty : "d-none")"
-          data-notification-badge
-          aria-hidden="true">@Model.DisplayCount</span>
+          data-notification-badge aria-hidden="true">@Model.DisplayCount</span>
 </a>
 <style>
     .smart-notification-bell{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;overflow:visible!important}
@@ -31,48 +30,95 @@
     .smart-notification-badge{position:absolute;top:0;left:18px;right:auto;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:#e41e3f;color:#fff!important;border:2px solid #fff;font-size:10px;font-weight:800;line-height:14px;text-align:center;box-shadow:0 2px 5px rgba(0,0,0,.22);z-index:5}
     .smart-role-navbar .smart-notification-badge{border-color:#168cf2}
     .smart-notification-bell-admin .smart-notification-badge{top:2px;left:17px;border-color:#fff}
+    .smart-action-banner{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10050;width:min(760px,calc(100% - 24px));background:#fff8db;border:1px solid #f0c64c;border-left:6px solid #f0a500;border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.2);padding:14px 16px;display:flex;align-items:center;gap:14px;color:#392d00}
+    .smart-action-banner strong{display:block;font-size:16px;margin-bottom:2px}.smart-action-banner p{margin:0;font-size:14px}.smart-action-banner-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+    .smart-action-banner a,.smart-action-banner button{border:0;border-radius:7px;padding:9px 13px;font-weight:700;cursor:pointer;text-decoration:none}.smart-action-banner a{background:#168cf2;color:#fff}.smart-action-banner button{background:#fff;border:1px solid #c8a53c;color:#5a4600}
+    .smart-toast-stack{position:fixed;right:18px;top:82px;z-index:10060;width:min(390px,calc(100% - 36px));display:grid;gap:10px}.smart-toast{background:#fff;border-radius:12px;box-shadow:0 12px 35px rgba(0,0,0,.25);border-left:5px solid #168cf2;padding:14px 16px;animation:smartToastIn .25s ease}.smart-toast.action{border-left-color:#f0a500}.smart-toast-title{font-weight:800;margin-bottom:4px}.smart-toast-message{font-size:14px;color:#555}.smart-toast a{display:inline-block;margin-top:9px;color:#087be0;font-weight:700;text-decoration:none}
+    @@keyframes smartToastIn{from{opacity:0;transform:translateX(25px)}to{opacity:1;transform:none}}
     @@media(max-width:1199px){.smart-notification-bell-public{justify-content:flex-start!important}.smart-notification-badge{top:1px;left:23px}}
+    @@media(max-width:700px){.smart-action-banner{top:8px;align-items:flex-start;flex-wrap:wrap}.smart-action-banner-actions{margin-left:0;width:100%}.smart-toast-stack{top:72px;right:10px;width:calc(100% - 20px)}}
 </style>
 <script>
 (function () {
-    if (window.smartCarNotificationPollingStarted) return;
-    window.smartCarNotificationPollingStarted = true;
+    if (window.smartCarNotificationExperienceStarted) return;
+    window.smartCarNotificationExperienceStarted = true;
+    var userInteracted = false;
+    document.addEventListener('click', function(){ userInteracted = true; }, { once: true });
 
     function renderUnreadCount(count) {
         var safeCount = Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
         var display = safeCount > 99 ? '99+' : String(safeCount);
-        var label = safeCount > 0
-            ? 'Thông báo, có ' + safeCount + ' thông báo chưa đọc'
-            : 'Thông báo, không có thông báo chưa đọc';
-
+        var label = safeCount > 0 ? 'Thông báo, có ' + safeCount + ' thông báo chưa đọc' : 'Thông báo, không có thông báo chưa đọc';
         document.querySelectorAll('[data-notification-bell]').forEach(function (bell) {
-            bell.setAttribute('aria-label', label);
-            bell.setAttribute('title', label);
+            bell.setAttribute('aria-label', label); bell.setAttribute('title', label);
             var badge = bell.querySelector('[data-notification-badge]');
             if (!badge) return;
-            badge.textContent = display;
-            badge.classList.toggle('d-none', safeCount === 0);
+            badge.textContent = display; badge.classList.toggle('d-none', safeCount === 0);
         });
     }
 
-    async function refreshUnreadCount() {
+    function beep() {
+        if (!userInteracted) return;
         try {
-            var response = await fetch('/Notifications/UnreadCount', {
-                method: 'GET',
-                credentials: 'same-origin',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                cache: 'no-store'
-            });
-            if (!response.ok) return;
-            var data = await response.json();
-            renderUnreadCount(Number(data.unreadCount));
-        } catch (_) {
-            // Giữ số đếm hiện tại nếu mạng hoặc Web API tạm thời gián đoạn.
-        }
+            var AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            var ctx = new AudioContext(); var oscillator = ctx.createOscillator(); var gain = ctx.createGain();
+            oscillator.frequency.value = 880; gain.gain.value = .07; oscillator.connect(gain); gain.connect(ctx.destination);
+            oscillator.start(); oscillator.stop(ctx.currentTime + .14);
+        } catch (_) { }
     }
 
-    window.smartCarRefreshNotificationCount = refreshUnreadCount;
-    refreshUnreadCount();
-    window.setInterval(refreshUnreadCount, 45000);
+    function showToast(item) {
+        var stack = document.querySelector('.smart-toast-stack');
+        if (!stack) { stack = document.createElement('div'); stack.className = 'smart-toast-stack'; document.body.appendChild(stack); }
+        var toast = document.createElement('div'); toast.className = 'smart-toast' + (item.isAction ? ' action' : '');
+        toast.innerHTML = '<div class="smart-toast-title"></div><div class="smart-toast-message"></div>' + (item.link ? '<a> Xem ngay →</a>' : '');
+        toast.querySelector('.smart-toast-title').textContent = item.title || 'SmartCar';
+        toast.querySelector('.smart-toast-message').textContent = item.message || '';
+        var link = toast.querySelector('a'); if (link) link.href = item.link;
+        stack.prepend(toast); beep();
+        window.setTimeout(function(){ toast.remove(); }, item.isAction ? 15000 : 9000);
+    }
+
+    function showSystemNotification(item) {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        try {
+            var n = new Notification(item.title || 'SmartCar', { body: item.message || '', tag: item.key, renotify: true, icon: '/favicon.ico' });
+            n.onclick = function(){ window.focus(); if (item.link) window.location.href = item.link; n.close(); };
+        } catch (_) { }
+    }
+
+    function renderActionBanner(item) {
+        var existing = document.querySelector('.smart-action-banner');
+        if (!item) { if (existing) existing.remove(); return; }
+        if (!existing) { existing = document.createElement('div'); existing.className = 'smart-action-banner'; document.body.appendChild(existing); }
+        existing.innerHTML = '<div style="font-size:26px">🔔</div><div class="smart-action-copy"><strong></strong><p></p></div><div class="smart-action-banner-actions"><a>Thực hiện ngay</a><button type="button" data-enable-browser-notification>Bật thông báo</button></div>';
+        existing.querySelector('strong').textContent = item.title || 'Bạn có việc cần xử lý';
+        existing.querySelector('p').textContent = item.message || '';
+        existing.querySelector('a').href = item.link || '/Notifications/Index';
+        var enable = existing.querySelector('[data-enable-browser-notification]');
+        if (!('Notification' in window) || Notification.permission === 'granted') enable.style.display = 'none';
+        enable.onclick = async function(){ try { var permission = await Notification.requestPermission(); if (permission === 'granted') enable.style.display = 'none'; } catch (_) {} };
+    }
+
+    async function refreshFeed() {
+        try {
+            var response = await fetch('/Notifications/Feed', { credentials:'same-origin', headers:{'X-Requested-With':'XMLHttpRequest'}, cache:'no-store' });
+            if (!response.ok) return;
+            var data = await response.json(); renderUnreadCount(Number(data.unreadCount));
+            var items = Array.isArray(data.items) ? data.items : [];
+            var action = items.find(function(x){ return x.isAction; }); renderActionBanner(action || null);
+            items.forEach(function(item){
+                var storageKey = 'smartcar-seen:' + item.key;
+                if (sessionStorage.getItem(storageKey)) return;
+                sessionStorage.setItem(storageKey, new Date().toISOString()); showToast(item); showSystemNotification(item);
+            });
+        } catch (_) { }
+    }
+
+    window.smartCarRefreshNotificationCount = refreshFeed;
+    refreshFeed();
+    window.setInterval(refreshFeed, 10000);
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshFeed(); });
 })();
 </script>

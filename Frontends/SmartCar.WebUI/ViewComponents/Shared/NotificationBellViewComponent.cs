@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SmartCar.WebUI.Models;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace SmartCar.WebUI.ViewComponents.Shared
@@ -26,6 +27,10 @@ namespace SmartCar.WebUI.ViewComponents.Shared
             try
             {
                 var client = _httpClientFactory.CreateClient();
+                var token = HttpContext.User.FindFirst("carbooktoken")?.Value;
+                if (!string.IsNullOrWhiteSpace(token))
+                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
                 using var response = await client.GetAsync("api/comprehensive-operations/notifications/unread-count");
                 if (response.IsSuccessStatusCode)
                     model.UnreadCount = await response.Content.ReadFromJsonAsync<int>();
