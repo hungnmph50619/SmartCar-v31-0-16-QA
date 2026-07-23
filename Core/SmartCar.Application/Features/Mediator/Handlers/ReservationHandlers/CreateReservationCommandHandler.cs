@@ -1,22 +1,25 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 using SmartCar.Application.Features.Mediator.Commands.ReservationCommands;
 using SmartCar.Application.Interfaces;
 using SmartCar.Domain.BusinessRules;
 using SmartCar.Domain.Entities;
-using SmartCar.Persistence.Context;
 
 namespace SmartCar.Application.Features.Mediator.Handlers.ReservationHandlers
 {
     public class CreateReservationCommandHandler : IRequestHandler<CreateReservationCommand, int>
     {
         private readonly IRepository<Reservation> _repository;
-        private readonly CarBookContext _context;
+        private readonly IRepository<PartnerVehicle> _partnerVehicleRepository;
+        private readonly IRepository<Notification> _notificationRepository;
 
-        public CreateReservationCommandHandler(IRepository<Reservation> repository, CarBookContext context)
+        public CreateReservationCommandHandler(
+            IRepository<Reservation> repository,
+            IRepository<PartnerVehicle> partnerVehicleRepository,
+            IRepository<Notification> notificationRepository)
         {
             _repository = repository;
-            _context = context;
+            _partnerVehicleRepository = partnerVehicleRepository;
+            _notificationRepository = notificationRepository;
         }
 
         public async Task<int> Handle(CreateReservationCommand request, CancellationToken cancellationToken)
@@ -66,22 +69,18 @@ namespace SmartCar.Application.Features.Mediator.Handlers.ReservationHandlers
 
             await _repository.CreateAsync(reservation);
 
-            var ownerUserId = await _context.PartnerVehicles
-                .AsNoTracking()
-                .Where(x => x.PartnerVehicleID == request.PartnerVehicleID)
-                .Select(x => x.OwnerAppUserID)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (ownerUserId > 0)
+            var partnerVehicle = await _partnerVehicleRepository.GetByFilterAsync(
+                x => x.PartnerVehicleID == request.PartnerVehicleID);
+            if (partnerVehicle?.OwnerAppUserID > 0)
             {
-                _context.Notifications.Add(new Notification
+                await _notificationRepository.CreateAsync(new Notification
                 {
-                    AppUserID = ownerUserId,
+                    AppUserID = partnerVehicle.OwnerAppUserID,
                     Title = "Có yêu cầu thuê xe mới",
                     Message = $"Đơn #{reservation.ReservationID} đang chờ bạn phản hồi. Thời gian nhận xe: {request.PickUpDate:dd/MM/yyyy} {request.PickUpTime:hh\\:mm}.",
-                    Type = "Reservation"
+                    Type = "Reservation",
+                    Link = $"/ReservationLookup/Details/{reservation.ReservationID}"
                 });
-                await _context.SaveChangesAsync(cancellationToken);
             }
 
             return reservation.ReservationID;
