@@ -39,6 +39,17 @@
                 <input asp-for="Form.BankName" type="hidden" />
                 <input asp-for="Form.BankAccountNumber" type="hidden" />
                 <input asp-for="Form.BankAccountHolder" type="hidden" />
+                <input asp-for="Form.VehicleImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.FrontImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.RearImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.LeftImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.RightImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.InteriorImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.DashboardImageUrl" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.RegistrationFileId" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.InspectionFileId" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.InsuranceFileId" type="hidden" class="draft-field retained-file" />
+                <input asp-for="Form.DriverLicenseFileId" type="hidden" class="draft-field retained-file" />
 
                 <section class="wizard-panel active" data-panel="1">
                     <h4>Thông tin cơ bản của xe</h4>
@@ -276,9 +287,9 @@
                     <h4>Giấy tờ xe</h4>
                     <p class="file-note">Ảnh JPG, PNG hoặc WEBP; tối đa 6 MB/ảnh. Thông tin, biển số và ngày hết hạn phải đọc được.</p>
                     <div class="form-row">
-                        <div class="form-group col-md-4"><label class="required">Đăng ký xe</label><input asp-for="RegistrationImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" required /><span asp-validation-for="RegistrationImage" class="text-danger"></span></div>
-                        <div class="form-group col-md-4"><label class="required">Đăng kiểm còn hiệu lực</label><input asp-for="InspectionImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" required /><span asp-validation-for="InspectionImage" class="text-danger"></span></div>
-                        <div class="form-group col-md-4"><label class="required">Bảo hiểm xe</label><input asp-for="InsuranceImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" required /><span asp-validation-for="InsuranceImage" class="text-danger"></span></div>
+                        <div class="form-group col-md-4"><label class="required">Đăng ký xe</label><input asp-for="RegistrationImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" /><span asp-validation-for="RegistrationImage" class="text-danger"></span></div>
+                        <div class="form-group col-md-4"><label class="required">Đăng kiểm còn hiệu lực</label><input asp-for="InspectionImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" /><span asp-validation-for="InspectionImage" class="text-danger"></span></div>
+                        <div class="form-group col-md-4"><label class="required">Bảo hiểm xe</label><input asp-for="InsuranceImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file" /><span asp-validation-for="InsuranceImage" class="text-danger"></span></div>
                     </div>
                     <div class="alert alert-warning">Nhân viên chỉ xem và duyệt; không sửa trực tiếp thông tin giấy tờ. Hồ sơ sai sẽ được trả lại kèm lý do.</div>
                 </section>
@@ -287,13 +298,13 @@
                     <h4>Ảnh ngoại thất và nội thất</h4>
                     <p class="file-note">Chụp cùng thời điểm, đủ sáng, không dùng ảnh mạng. Các ảnh này là căn cứ khi giao nhận và xử lý tranh chấp.</p>
                     <div class="form-row">
-                        <div class="form-group col-md-4"><label class="required">Ảnh tổng thể</label><input asp-for="VehicleImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvOverview" required /><img id="pvOverview" class="preview-image mt-2" alt="Xem trước ảnh tổng thể" /></div>
-                        <div class="form-group col-md-4"><label class="required">Đầu xe</label><input asp-for="FrontImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvFront" required /><img id="pvFront" class="preview-image mt-2" alt="Xem trước đầu xe" /></div>
-                        <div class="form-group col-md-4"><label class="required">Đuôi xe</label><input asp-for="RearImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvRear" required /><img id="pvRear" class="preview-image mt-2" alt="Xem trước đuôi xe" /></div>
-                        <div class="form-group col-md-4"><label class="required">Bên trái</label><input asp-for="LeftImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvLeft" required /><img id="pvLeft" class="preview-image mt-2" alt="Xem trước bên trái" /></div>
-                        <div class="form-group col-md-4"><label class="required">Bên phải</label><input asp-for="RightImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvRight" required /><img id="pvRight" class="preview-image mt-2" alt="Xem trước bên phải" /></div>
-                        <div class="form-group col-md-4"><label class="required">Nội thất</label><input asp-for="InteriorImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvInterior" required /><img id="pvInterior" class="preview-image mt-2" alt="Xem trước nội thất" /></div>
-                        <div class="form-group col-md-4"><label class="required">Đồng hồ kilomet</label><input asp-for="DashboardImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvDashboard" required /><img id="pvDashboard" class="preview-image mt-2" alt="Xem trước đồng hồ" /></div>
+                        <div class="form-group col-md-4"><label class="required">Ảnh tổng thể</label><input asp-for="VehicleImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvOverview" /><img id="pvOverview" class="preview-image mt-2" alt="Xem trước ảnh tổng thể" /></div>
+                        <div class="form-group col-md-4"><label class="required">Đầu xe</label><input asp-for="FrontImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvFront" /><img id="pvFront" class="preview-image mt-2" alt="Xem trước đầu xe" /></div>
+                        <div class="form-group col-md-4"><label class="required">Đuôi xe</label><input asp-for="RearImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvRear" /><img id="pvRear" class="preview-image mt-2" alt="Xem trước đuôi xe" /></div>
+                        <div class="form-group col-md-4"><label class="required">Bên trái</label><input asp-for="LeftImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvLeft" /><img id="pvLeft" class="preview-image mt-2" alt="Xem trước bên trái" /></div>
+                        <div class="form-group col-md-4"><label class="required">Bên phải</label><input asp-for="RightImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvRight" /><img id="pvRight" class="preview-image mt-2" alt="Xem trước bên phải" /></div>
+                        <div class="form-group col-md-4"><label class="required">Nội thất</label><input asp-for="InteriorImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvInterior" /><img id="pvInterior" class="preview-image mt-2" alt="Xem trước nội thất" /></div>
+                        <div class="form-group col-md-4"><label class="required">Đồng hồ kilomet</label><input asp-for="DashboardImage" type="file" accept="image/jpeg,image/png,image/webp" class="form-control-file required-file preview-input" data-preview="pvDashboard" /><img id="pvDashboard" class="preview-image mt-2" alt="Xem trước đồng hồ" /></div>
                     </div>
                 </section>
 
@@ -366,7 +377,7 @@
     const prev=document.getElementById('prevStep'), next=document.getElementById('nextStep'), submit=document.getElementById('submitApplication');
     const draftKey='smartcar.partnerVehicleDraft.v3';
     const hasServerErrors=@((!ViewData.ModelState.IsValid).ToString().ToLowerInvariant());
-    const serverPostedModel=document.getElementById('modelSelect')?.value||'';
+    const serverPostedModel=@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Form.Model ?? string.Empty));
     let step=1;
     const money=v=>new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(Number(v||0))+' đồng';
     const moneyDigits=v=>String(v??'').replace(/[^0-9]/g,'');
@@ -462,6 +473,41 @@
         model.innerHTML='<option value="">Chọn dòng xe</option>'+values.map(v=>`<option value="${v}">${v}</option>`).join('');
         if(current&&values.includes(current)) model.value=current;
     }
+    const retainedFileMap={
+        VehicleImage:'Form.VehicleImageUrl',
+        FrontImage:'Form.FrontImageUrl',
+        RearImage:'Form.RearImageUrl',
+        LeftImage:'Form.LeftImageUrl',
+        RightImage:'Form.RightImageUrl',
+        InteriorImage:'Form.InteriorImageUrl',
+        DashboardImage:'Form.DashboardImageUrl',
+        RegistrationImage:'Form.RegistrationFileId',
+        InspectionImage:'Form.InspectionFileId',
+        InsuranceImage:'Form.InsuranceFileId',
+        DriverLicenseImage:'Form.DriverLicenseFileId'
+    };
+    const retainedFileLabels={
+        VehicleImage:'ảnh tổng thể xe',
+        FrontImage:'ảnh đầu xe',
+        RearImage:'ảnh đuôi xe',
+        LeftImage:'ảnh bên trái xe',
+        RightImage:'ảnh bên phải xe',
+        InteriorImage:'ảnh nội thất xe',
+        DashboardImage:'ảnh đồng hồ kilomet',
+        RegistrationImage:'đăng ký xe',
+        InspectionImage:'đăng kiểm',
+        InsuranceImage:'bảo hiểm xe',
+        DriverLicenseImage:'giấy phép lái xe của tài xế'
+    };
+    function retainedValueFor(input){
+        const retainedName=retainedFileMap[input?.name];
+        return retainedName?document.querySelector(`[name="${retainedName}"]`)?.value||'':'';
+    }
+    function isFileSatisfied(input){return Boolean(input?.files?.length||retainedValueFor(input));}
+    function fileLabel(input){
+        const label=input?.closest('.form-group')?.querySelector('label')?.textContent?.replace('*','').trim();
+        return label||retainedFileLabels[input?.name]||'tệp';
+    }
     function fieldsForStep(n){return [...document.querySelector(`[data-panel="${n}"]`).querySelectorAll('input,select,textarea')].filter(x=>x.type!=='hidden');}
     function validateStep(n){
         let ok=true;
@@ -472,7 +518,9 @@
                 el.setCustomValidity(needsArea?'Vui lòng nhập khu vực bạn hỗ trợ giao xe tận nơi.':'');
                 if(deliveryError)deliveryError.textContent=needsArea?'Vui lòng nhập khu vực bạn hỗ trợ giao xe tận nơi.':'';
             }
-            if(!el.checkValidity()){el.classList.add('is-invalid');ok=false}else el.classList.remove('is-invalid');
+            const valid=el.type==='file'?isFileSatisfied(el):el.checkValidity();
+            if(el.type==='file')el.setCustomValidity(valid?'':`Vui lòng tải ${fileLabel(el)}.`);
+            if(!valid){el.classList.add('is-invalid');ok=false}else{el.classList.remove('is-invalid');el.setCustomValidity('');}
         });
         if(!ok){const first=document.querySelector(`[data-panel="${n}"] .is-invalid`); first?.focus(); first?.reportValidity();}
         return ok;
@@ -529,10 +577,26 @@
     document.getElementById('licensePlateInput')?.addEventListener('blur',e=>{e.target.value=(e.target.value||'').toUpperCase().replace(/[^A-Z0-9]/g,'');saveDraft();});
     document.getElementById('clearDraft').addEventListener('click',()=>{if(confirm('Bạn có chắc muốn xóa toàn bộ bản nháp xe này? Dữ liệu văn bản đã lưu trên trình duyệt sẽ không thể khôi phục.')){localStorage.removeItem(draftKey);location.reload()}});
     document.getElementById('saveAndExit').addEventListener('click',()=>{saveDraft();window.location.href='/VehiclePartner/Dashboard';});
-    document.querySelectorAll('.preview-input').forEach(input=>input.addEventListener('change',()=>{const file=input.files?.[0],img=document.getElementById(input.dataset.preview);if(file&&img){img.src=URL.createObjectURL(file)}}));
+    function refreshRetainedPreviews(){
+        document.querySelectorAll('.preview-input').forEach(input=>{
+            const img=document.getElementById(input.dataset.preview);
+            const retained=retainedValueFor(input);
+            if(!input.files?.length&&retained&&img)img.src=retained;
+        });
+    }
+    document.querySelectorAll('.preview-input').forEach(input=>input.addEventListener('change',()=>{
+        const file=input.files?.[0],img=document.getElementById(input.dataset.preview);
+        if(file&&img)img.src=URL.createObjectURL(file);
+        input.setCustomValidity('');
+        scheduleSave();
+        buildSummary();
+    }));
     function updateEstimate(){const price=Number(document.querySelector('[name="Form.ProposedDailyPrice"]')?.value||0);const fee=@Model.CurrentCommissionRate.ToString(System.Globalization.CultureInfo.InvariantCulture);document.getElementById('ownerEstimate').textContent=money(price*(100-fee)/100)+'/ngày';}
     function value(name){return document.querySelector(`[name="${name}"]`)?.value||'Chưa nhập'}
-    function fileName(name){return document.querySelector(`[name="${name}"]`)?.files?.[0]?.name||'Chưa chọn tệp'}
+    function fileName(name){
+        const input=document.querySelector(`[name="${name}"]`);
+        return input?.files?.[0]?.name||(retainedValueFor(input)?'Đã tải trước':'Chưa chọn tệp');
+    }
     function syncOptionTarget(targetId){
         const target=document.getElementById(targetId); if(!target)return;
         const checked=[...document.querySelectorAll(`[data-option-target="${targetId}"] .option-checkbox:checked`)].map(x=>x.value);
@@ -563,20 +627,26 @@
     function buildSummary(){
         // Ô xác nhận cuối cùng được kiểm tra riêng khi gửi, không phải dữ liệu hồ sơ còn thiếu.
         const required=[...document.querySelectorAll('[data-panel] [required]')]
-            .filter(el=>el.type!=='hidden'&&!el.disabled&&el.id!=='confirmTruth');
-        const missing=required.filter(el=>el.type==='file'?!el.files?.length:el.type==='checkbox'?!el.checked:!String(el.value||'').trim());
+            .filter(el=>el.type!=='hidden'&&!el.disabled&&el.type!=='file'&&el.id!=='confirmTruth');
+        const fileInputs=[...document.querySelectorAll('[data-panel] .required-file,[data-panel] .driver-file')].filter(el=>!el.disabled);
+        const missing=[
+            ...required.filter(el=>el.type==='checkbox'?!el.checked:!String(el.value||'').trim()),
+            ...fileInputs.filter(el=>!isFileSatisfied(el))
+        ];
         const stepTitles={1:'Thông tin xe',2:'Giao nhận',3:'Giá và cọc',4:'Giấy tờ xe',5:'Hình ảnh',6:'Tiện ích và điều khoản'};
         const missingDetails=missing.map(el=>{
             const stepNumber=Number(el.closest('[data-panel]')?.dataset.panel||1);
             const label=document.querySelector(`label[for="${el.id}"]`)?.textContent?.replace('*','').trim()
+                || el.closest('.form-group')?.querySelector('label')?.textContent?.replace('*','').trim()
                 || el.getAttribute('aria-label') || el.name || 'Trường bắt buộc';
             return {stepNumber,label};
         });
         const imageInputs=[...document.querySelectorAll('.preview-input')];
-        const chosenImages=imageInputs.filter(x=>x.files?.length);
+        const chosenImages=imageInputs.filter(x=>isFileSatisfied(x));
         const thumbnails=chosenImages.map(input=>{
             const image=document.getElementById(input.dataset.preview);
-            return image?.src?`<img class="review-thumbnail" src="${image.src}" alt="Ảnh xe đã chọn" />`:'';
+            const src=image?.src||retainedValueFor(input);
+            return src?`<img class="review-thumbnail" src="${escapeHtml(src)}" alt="Ảnh xe đã chọn" />`:'';
         }).join('');
         const deliveryNote=value('Form.DeliveryAddress');
         const version=value('Form.VehicleVersion')==='Chưa nhập'?'':` ${escapeHtml(value('Form.VehicleVersion'))}`;
@@ -641,7 +711,8 @@
         }
         document.getElementById('confirmTruthBox')?.classList.remove('is-invalid');
         document.getElementById('confirmTruthError')?.classList.remove('show');
-        localStorage.removeItem(draftKey); submit.disabled=true; submit.textContent='Đang gửi hồ sơ...';
+        // Keep the browser draft until the server confirms success; failed retries must not erase text or file references.
+        saveDraft(); submit.disabled=true; submit.textContent='Đang gửi hồ sơ...';
     });
     document.getElementById('confirmTruth')?.addEventListener('change',e=>{
         document.getElementById('confirmTruthBox')?.classList.toggle('is-invalid',!e.target.checked);
@@ -649,7 +720,7 @@
     });
     document.querySelectorAll('.option-checkbox').forEach(el=>el.addEventListener('change',()=>syncOptionTarget(el.closest('[data-option-target]').dataset.optionTarget)));
     document.querySelectorAll('.option-other').forEach(el=>el.addEventListener('input',()=>syncOptionTarget(el.dataset.optionTarget)));
-    loadDraft(); restoreOptionTargets(); applyDeliveryFeeRule(); applyRentalModeRule();
+    loadDraft(); refreshRetainedPreviews(); restoreOptionTargets(); applyDeliveryFeeRule(); applyRentalModeRule();
     showStep(document.getElementById('deliveryAddressValidation')?.textContent.trim()?2:1);
 })();
 </script>

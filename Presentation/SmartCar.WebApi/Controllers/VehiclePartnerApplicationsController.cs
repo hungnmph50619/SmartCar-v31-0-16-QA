@@ -257,7 +257,9 @@ namespace SmartCar.WebApi.Controllers
 
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
-                    message = "Web API không lưu được hồ sơ xe vào cơ sở dữ liệu. Vui lòng kiểm tra cấu trúc CSDL và nhật ký Web API."
+                    message = "Web API không lưu được hồ sơ xe vào cơ sở dữ liệu. Vui lòng kiểm tra cấu trúc CSDL và nhật ký Web API.",
+                    errorCode = "SC-VEHICLE-DB",
+                    traceId = HttpContext.TraceIdentifier
                 });
             }
             catch (InvalidOperationException ex)
@@ -265,7 +267,19 @@ namespace SmartCar.WebApi.Controllers
                 _logger.LogError(ex, "Transaction gửi hồ sơ xe thất bại cho đối tác {UserId}.", userId);
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new
                 {
-                    message = "Web API chưa thể hoàn tất giao dịch lưu hồ sơ. Vui lòng thử lại; nếu lỗi lặp lại, kiểm tra cấu hình SQL retry."
+                    message = "Web API chưa thể hoàn tất giao dịch lưu hồ sơ. Vui lòng thử lại; nếu lỗi lặp lại, kiểm tra cấu hình SQL retry.",
+                    errorCode = "SC-VEHICLE-TRANSACTION",
+                    traceId = HttpContext.TraceIdentifier
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi không xác định khi gửi hồ sơ xe của đối tác {UserId}, biển số {LicensePlate}.", userId, normalizedPlate);
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    message = "Web API gặp lỗi khi lưu hồ sơ xe. Vui lòng thử lại; nếu lỗi lặp lại, cung cấp mã theo dõi cho quản trị viên.",
+                    errorCode = "SC-VEHICLE-500",
+                    traceId = HttpContext.TraceIdentifier
                 });
             }
 
@@ -436,21 +450,19 @@ namespace SmartCar.WebApi.Controllers
             if (urls.Distinct(StringComparer.OrdinalIgnoreCase).Count() != urls.Length)
                 return (false, "Mỗi vị trí ảnh xe phải dùng một tệp riêng.");
 
+            // Ảnh được upload bởi WebUI. Web API chạy tiến trình/không gian web riêng nên
+            // không được kiểm tra File.Exists trong WebRootPath của API (đây là nguyên nhân
+            // khiến hồ sơ hợp lệ bị báo lỗi "ảnh không còn tồn tại"). API chỉ xác thực
+            // URL thuộc đúng chủ tài khoản và đúng định dạng; WebUI đã kiểm tra tệp trước khi lưu.
             var prefix = $"/uploads/vehicle-images/{ownerId}/";
-            var webRoot = Path.GetFullPath(_environment.WebRootPath);
             foreach (var url in urls)
             {
                 if (!url.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || url.Contains('?') || url.Contains('#'))
                     return (false, "Ảnh xe không thuộc tài khoản đang đăng nhập.");
-                var relative = url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-                var physicalPath = Path.GetFullPath(Path.Combine(webRoot, relative));
-                if (!physicalPath.StartsWith(webRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-                    return (false, "Đường dẫn ảnh xe không hợp lệ.");
-                var extension = Path.GetExtension(physicalPath);
+
+                var extension = Path.GetExtension(url);
                 if (!new[] { ".jpg", ".jpeg", ".png", ".webp" }.Contains(extension, StringComparer.OrdinalIgnoreCase))
                     return (false, "Ảnh xe phải là JPG, PNG hoặc WEBP.");
-                if (!System.IO.File.Exists(physicalPath))
-                    return (false, "Một hoặc nhiều ảnh xe không còn tồn tại trên máy chủ.");
             }
 
             var used = await _context.VehiclePartnerApplications.AsNoTracking().AnyAsync(x =>
