@@ -10,6 +10,12 @@ namespace SmartCar.WebUI.Models
         public decimal GlobalCommissionRate { get; set; } = 20m;
     }
 
+    public class AdminVehiclePartnerDetailViewModel
+    {
+        public ResultVehiclePartnerApplicationDto Application { get; set; } = new();
+        public decimal GlobalCommissionRate { get; set; } = 20m;
+    }
+
     public class AdminMarketplaceViewModel
     {
         public PlatformFeeSettingDto Settings { get; set; } = new();
