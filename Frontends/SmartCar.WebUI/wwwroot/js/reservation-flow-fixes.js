@@ -25,6 +25,13 @@
         select.dataset.smartcar24h = 'true';
         select.className = input.className;
 
+        // Ghi đè màu kế thừa từ giao diện nền xanh. Nếu không có phần này,
+        // Opera/Windows có thể hiển thị option trắng trên nền trắng.
+        select.style.color = '#212529';
+        select.style.backgroundColor = '#ffffff';
+        select.style.webkitTextFillColor = '#212529';
+        select.style.opacity = '1';
+
         for (var hour = 0; hour < 24; hour++) {
             for (var minute = 0; minute < 60; minute += 30) {
                 var value = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
@@ -32,6 +39,8 @@
                 option.value = value;
                 option.textContent = value;
                 option.selected = value === selectedValue;
+                option.style.color = '#212529';
+                option.style.backgroundColor = '#ffffff';
                 select.appendChild(option);
             }
         }
