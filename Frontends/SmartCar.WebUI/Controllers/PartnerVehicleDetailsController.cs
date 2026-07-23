@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -20,12 +19,12 @@ namespace SmartCar.WebUI.Controllers
         [HttpGet("VehiclePartner/VehicleDetails/{id:int}")]
         public async Task<IActionResult> Index(int id)
         {
-            if (id <= 0) return RedirectToAction("Dashboard", "VehiclePartner", new { fragment = "vehicles" });
+            if (id <= 0) return Redirect("/VehiclePartner/Dashboard#vehicles");
 
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                var token = await HttpContext.GetTokenAsync("access_token");
+                var token = User.FindFirst("carbooktoken")?.Value;
                 if (!string.IsNullOrWhiteSpace(token))
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
