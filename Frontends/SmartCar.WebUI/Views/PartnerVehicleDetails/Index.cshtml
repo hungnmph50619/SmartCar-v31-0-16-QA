@@ -1,0 +1,84 @@
+@model ResultVehiclePartnerApplicationDto
+@{
+    ViewData["Title"] = $"Chi tiết {Model.BrandName} {Model.Model}";
+    Layout = "~/Views/UILayout/Partner.cshtml";
+    var images = new[]
+    {
+        ("Ảnh tổng thể", Model.VehicleImageUrl),
+        ("Đầu xe", Model.FrontImageUrl),
+        ("Đuôi xe", Model.RearImageUrl),
+        ("Bên trái", Model.LeftImageUrl),
+        ("Bên phải", Model.RightImageUrl),
+        ("Nội thất", Model.InteriorImageUrl),
+        ("Đồng hồ kilomet", Model.DashboardImageUrl)
+    }.Where(x => !string.IsNullOrWhiteSpace(x.Item2)).ToList();
+}
+<section class="ftco-section bg-light py-5">
+<div class="container" style="max-width:1220px">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <div>
+            <a href="/VehiclePartner/Dashboard#vehicles">← Xe của tôi</a>
+            <h1 class="h2 mt-2 mb-1">@Model.BrandName @Model.Model @Model.VehicleVersion</h1>
+            <p class="text-muted mb-0">@Model.LicensePlate · @Model.LocationName</p>
+        </div>
+        <div class="mt-3 mt-md-0">
+            <span class="badge badge-info p-2 mr-2">@ViewBag.OperationalStatus</span>
+            <a href="/VehiclePartner/VehicleOperations/@ViewBag.PartnerVehicleID" class="btn btn-primary">Quản lý vận hành</a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4"><div class="card-body p-4">
+        <h2 class="h4 mb-3">Bộ ảnh xe</h2>
+        <div class="vehicle-gallery">
+            @foreach (var image in images)
+            {
+                <figure class="gallery-item">
+                    <img src="@image.Item2" alt="@image.Item1 của @Model.BrandName @Model.Model" loading="lazy" />
+                    <figcaption>@image.Item1</figcaption>
+                </figure>
+            }
+        </div>
+    </div></div>
+
+    <div class="row">
+        <div class="col-lg-7 mb-4">
+            <div class="card border-0 shadow-sm h-100"><div class="card-body p-4">
+                <h2 class="h4">Thông tin xe</h2>
+                <div class="row">
+                    <div class="col-md-6"><div class="detail-line"><span>Hãng xe</span><strong>@Model.BrandName</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Dòng xe</span><strong>@Model.Model</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Phiên bản</span><strong>@(Model.VehicleVersion ?? "—")</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Năm sản xuất</span><strong>@Model.ManufactureYear</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Màu xe</span><strong>@Model.Color</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Số chỗ</span><strong>@Model.Seat chỗ</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Hộp số</span><strong>@Model.Transmission</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Nhiên liệu</span><strong>@Model.Fuel</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Odometer</span><strong>@Model.Km.ToString("#,0") km</strong></div></div>
+                    <div class="col-md-6"><div class="detail-line"><span>Biển số</span><strong>@Model.LicensePlate</strong></div></div>
+                </div>
+            </div></div>
+        </div>
+        <div class="col-lg-5 mb-4">
+            <div class="card border-0 shadow-sm h-100"><div class="card-body p-4">
+                <h2 class="h4">Giá và khai thác</h2>
+                <div class="detail-line"><span>Giá thuê</span><strong>@(((decimal)ViewBag.DailyPrice).ToString("#,0")) đ/ngày</strong></div>
+                <div class="detail-line"><span>Tiền cọc</span><strong>@(((decimal)ViewBag.DepositAmount).ToString("#,0")) đ</strong></div>
+                <div class="detail-line"><span>Hình thức thuê</span><strong>@Model.RentalMode</strong></div>
+                <div class="detail-line"><span>Giao nhận</span><strong>@Model.DeliveryMethod</strong></div>
+                <div class="detail-line"><span>Giới hạn</span><strong>@Model.KmLimitPerDay km/ngày</strong></div>
+                <div class="detail-line"><span>Phí vượt</span><strong>@Model.ExtraKmFee.ToString("#,0") đ/km</strong></div>
+                @if(!string.IsNullOrWhiteSpace(Model.DeliveryAddress)){<div class="mt-3"><strong>Địa chỉ giao xe</strong><p class="mb-0">@Model.DeliveryAddress</p></div>}
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4"><div class="card border-0 shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Tiện ích và phụ kiện</h2><h3 class="h6">Tiện ích</h3><p>@(string.IsNullOrWhiteSpace(Model.Amenities) ? "Chưa cập nhật." : Model.Amenities)</p><h3 class="h6">Phụ kiện</h3><p class="mb-0">@(string.IsNullOrWhiteSpace(Model.Accessories) ? "Chưa cập nhật." : Model.Accessories)</p></div></div></div>
+        <div class="col-md-6 mb-4"><div class="card border-0 shadow-sm h-100"><div class="card-body p-4"><h2 class="h4">Điều kiện cho thuê</h2><h3 class="h6">Điều kiện thuê</h3><p>@(string.IsNullOrWhiteSpace(Model.RentalConditions) ? "Chưa cập nhật." : Model.RentalConditions)</p><h3 class="h6">Chính sách hủy</h3><p class="mb-0">@(string.IsNullOrWhiteSpace(Model.CancellationPolicy) ? "Chưa cập nhật." : Model.CancellationPolicy)</p></div></div></div>
+    </div>
+</div>
+</section>
+<style>
+.vehicle-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.gallery-item{margin:0;border:1px solid #e5ebf0;border-radius:12px;overflow:hidden;background:#fff}.gallery-item img{display:block;width:100%;height:210px;object-fit:cover}.gallery-item figcaption{padding:10px 12px;font-weight:600}.detail-line{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px dashed #dce4eb}.detail-line span{color:#718096}.detail-line strong{text-align:right}
+@@media(max-width:991px){.vehicle-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}@@media(max-width:575px){.vehicle-gallery{grid-template-columns:1fr}.gallery-item img{height:230px}.detail-line{display:block}.detail-line strong{display:block;text-align:left;margin-top:4px}}
+</style>
