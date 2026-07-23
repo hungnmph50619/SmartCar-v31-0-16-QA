@@ -58,15 +58,55 @@
         field.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
+    function build24HourOptions(selectedValue, stepMinutes) {
+        var fragment = document.createDocumentFragment();
+        var normalizedSelected = normalizeTime(selectedValue) || '09:00';
+        var step = Math.max(1, stepMinutes || 30);
+
+        for (var totalMinutes = 0; totalMinutes < 24 * 60; totalMinutes += step) {
+            var hours = Math.floor(totalMinutes / 60);
+            var minutes = totalMinutes % 60;
+            var value = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0');
+            var option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            option.selected = value === normalizedSelected;
+            fragment.appendChild(option);
+        }
+
+        return fragment;
+    }
+
+    function replaceNativeTimeInput(input) {
+        if (!input || input.dataset.smartcar24Hour === 'true') return input;
+
+        var stepSeconds = parseInt(input.getAttribute('step') || '1800', 10);
+        var stepMinutes = Number.isFinite(stepSeconds) && stepSeconds > 0 ? Math.max(1, Math.round(stepSeconds / 60)) : 30;
+        var select = document.createElement('select');
+
+        Array.from(input.attributes).forEach(function (attribute) {
+            if (attribute.name === 'type' || attribute.name === 'value' || attribute.name === 'step') return;
+            select.setAttribute(attribute.name, attribute.value);
+        });
+
+        select.className = input.className;
+        select.dataset.smartcar24Hour = 'true';
+        select.setAttribute('aria-label', input.getAttribute('aria-label') || 'Chọn giờ theo định dạng 24 giờ');
+        select.appendChild(build24HourOptions(input.value, stepMinutes));
+        input.replaceWith(select);
+        return select;
+    }
+
     function enforce24HourControls() {
         document.documentElement.lang = 'vi';
+
         document.querySelectorAll('input[type="time"]').forEach(function (input) {
-            input.lang = 'vi';
-            input.step = input.step && input.step !== 'any' ? input.step : '1800';
-            if (input.value) input.value = normalizeTime(input.value);
+            replaceNativeTimeInput(input);
         });
+
         document.querySelectorAll('select').forEach(function (select) {
             if (!/time|giờ/i.test((select.name || '') + ' ' + (select.id || ''))) return;
+            if (select.dataset.smartcar24Hour === 'true') return;
             Array.from(select.options).forEach(function (option) {
                 var normalized = normalizeTime(option.value || option.textContent);
                 if (normalized) {
@@ -74,6 +114,7 @@
                     option.textContent = normalized;
                 }
             });
+            select.dataset.smartcar24Hour = 'true';
         });
     }
 
