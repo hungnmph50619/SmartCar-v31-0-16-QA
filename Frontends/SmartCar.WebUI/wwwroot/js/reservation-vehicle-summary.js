@@ -58,20 +58,19 @@
         var heading = summary.querySelector('h2');
         if (heading) heading.textContent = data.displayName;
 
-        document.querySelectorAll('.next-action-card a').forEach(function (link) {
-            if (link.textContent.trim() === 'Xem thông tin' || link.getAttribute('href') === '#reservationSummary') {
-                link.textContent = 'Xem chi tiết xe';
-                link.href = data.detailUrl || ('/Car/CarDetail/' + data.carId);
-            }
-        });
-
-        var nextTitle = document.querySelector('.next-action-card h3');
-        var nextDescription = document.querySelector('.next-action-card p');
+        var nextCard = document.querySelector('.next-action-card');
+        var nextTitle = nextCard ? nextCard.querySelector('h3') : null;
+        var nextDescription = nextCard ? nextCard.querySelector('p') : null;
+        var nextLink = nextCard ? nextCard.querySelector('a') : null;
+        if (nextLink && nextLink.textContent.trim() === 'Xem thông tin') {
+            nextLink.textContent = 'Xem chi tiết xe';
+            nextLink.href = data.detailUrl || ('/Car/CarDetail/' + data.carId);
+        }
         if (nextTitle && nextTitle.textContent.trim() === 'Theo dõi đơn thuê') {
             nextTitle.textContent = 'Đang chờ chủ xe xác nhận';
-        }
-        if (nextDescription && nextDescription.textContent.indexOf('timeline') >= 0) {
-            nextDescription.textContent = 'Chủ xe có tối đa 120 phút để phản hồi. Bạn chưa cần thanh toán ở bước này.';
+            if (nextDescription) {
+                nextDescription.textContent = 'Chủ xe có tối đa 120 phút để phản hồi. Bạn chưa cần thanh toán ở bước này.';
+            }
         }
     }
 
