@@ -60,8 +60,11 @@ namespace SmartCar.WebApi.Services
 
         public async Task<CancellationPreviewResult> CancelAsync(int reservationId, int actorUserId, bool privileged, string reason, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(reason))
-                return Denied(400, "Phải nhập lý do hủy đơn.");
+            var normalizedReason = (reason ?? string.Empty).Trim();
+            if (normalizedReason.Length < 10)
+                return Denied(400, "Vui lòng nhập lý do hủy đơn ít nhất 10 ký tự.");
+            if (normalizedReason.Length > 500)
+                return Denied(400, "Lý do hủy đơn không được vượt quá 500 ký tự.");
 
             await using var transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
             try
@@ -89,7 +92,7 @@ namespace SmartCar.WebApi.Services
 
                 reservation.Status = "Đã hủy";
                 reservation.CancellationPolicyVersion = ReservationCancellationPolicy.Version;
-                reservation.CancellationReason = reason.Trim();
+                reservation.CancellationReason = normalizedReason;
                 reservation.CancellationFeeAmount = preview.CancellationFee;
                 reservation.CancelledByAppUserID = actorUserId;
                 reservation.CancelledDate = now;
@@ -123,7 +126,7 @@ namespace SmartCar.WebApi.Services
                     }
                 }
 
-                var note = $"{reason.Trim()}. Đã thu {paidAmount.ToString("#,0", CultureInfo.InvariantCulture)} đồng; " +
+                var note = $"{normalizedReason}. Đã thu {paidAmount.ToString("#,0", CultureInfo.InvariantCulture)} đồng; " +
                            $"phí hủy {preview.FeeRate:0}% = {preview.CancellationFee.ToString("#,0", CultureInfo.InvariantCulture)} đồng; " +
                            $"dự kiến hoàn {preview.RefundAmount.ToString("#,0", CultureInfo.InvariantCulture)} đồng.";
 
@@ -143,7 +146,7 @@ namespace SmartCar.WebApi.Services
                     Action = "Cancel",
                     OldDataJson = oldStatus,
                     NewDataJson = "Đã hủy",
-                    Reason = reason.Trim(),
+                    Reason = normalizedReason,
                     ChangedByAppUserID = actorUserId,
                     ChangedAt = now
                 });
