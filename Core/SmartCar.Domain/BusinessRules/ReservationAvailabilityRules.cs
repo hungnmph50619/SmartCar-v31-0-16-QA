@@ -2,7 +2,7 @@ namespace SmartCar.Domain.BusinessRules
 {
     public static class ReservationAvailabilityRules
     {
-        public const int PaymentHoldMinutes = 15;
+        public const int PaymentHoldMinutes = 10;
         public const int OwnerResponseMinutes = 120;
         public const int SelfDriveBufferMinutes = 120;
         public const int WithDriverBufferMinutes = 60;

@@ -1,0 +1,1 @@
+Sao chép ảnh QR dùng cho demo vào thư mục này và đổi tên thành agribank-qr.local.jpg.

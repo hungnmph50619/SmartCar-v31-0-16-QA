@@ -113,7 +113,20 @@ namespace SmartCar.WebUI.Controllers
         [Authorize(Roles = "Customer")]
         [HttpPost]
         public async Task<IActionResult> Cancel(int id, string? reason)
-            => await ExecuteAndReturn(HttpMethod.Put, $"api/Reservations/{id}/cancel", new { Reason = string.IsNullOrWhiteSpace(reason) ? "Khách hàng chủ động hủy đơn." : reason.Trim() }, id, "Đã hủy đơn thuê.");
+        {
+            var normalizedReason = (reason ?? string.Empty).Trim();
+            if (normalizedReason.Length < 10)
+            {
+                TempData["OperationError"] = "Vui lòng nhập lý do hủy đơn ít nhất 10 ký tự.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            if (normalizedReason.Length > 500)
+            {
+                TempData["OperationError"] = "Lý do hủy đơn không được vượt quá 500 ký tự.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            return await ExecuteAndReturn(HttpMethod.Put, $"api/Reservations/{id}/cancel", new { Reason = normalizedReason }, id, "Đã hủy đơn thuê.");
+        }
 
         [Authorize(Roles = "Customer")]
         [HttpPost]
@@ -128,7 +141,7 @@ namespace SmartCar.WebUI.Controllers
         [Authorize(Roles = "VehiclePartner")]
         [HttpPost]
         public async Task<IActionResult> OwnerDecision(int id, string decision, string? note)
-            => await ExecuteAndReturn(HttpMethod.Put, $"api/PartnerVehicles/reservations/{id}/decision", new { Decision = decision, Note = note }, id, decision == "Chấp nhận" ? "Đã chấp nhận. Xe được giữ 15 phút để khách đặt cọc." : "Đã từ chối yêu cầu.");
+            => await ExecuteAndReturn(HttpMethod.Put, $"api/PartnerVehicles/reservations/{id}/decision", new { Decision = decision, Note = note }, id, decision == "Chấp nhận" ? "Đã chấp nhận. Xe được giữ 10 phút để khách thanh toán." : "Đã từ chối yêu cầu.");
 
         [HttpPost]
         public async Task<IActionResult> CreateHandover(int id, string reportType, int odometerKm, int fuelPercent, string? existingDamage, string? accessories, string? locationText, List<IFormFile>? photos)
@@ -279,104 +292,85 @@ namespace SmartCar.WebUI.Controllers
 
         [Authorize(Roles = "Admin,Staff")]
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReviewPayment(int id, int paymentId, string decision, string note)
-            => await ExecuteAndReturn(HttpMethod.Post, $"api/marketplace-operations/reservations/{id}/payments/review", new { PaymentID = paymentId, Decision = decision, Note = note }, id, "Đã lưu kết quả đối chiếu và thông báo cho khách.");
+            => await ExecuteAndReturn(HttpMethod.Post, $"api/marketplace-operations/reservations/{id}/payments/review", new { PaymentID = paymentId, Decision = decision, Note = note }, id, "Đã lưu kết quả đối chiếu thanh toán.");
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<IActionResult> SimulatePayment(int id)
-            => await ExecuteAndReturn(HttpMethod.Post, $"api/marketplace-operations/reservations/{id}/payments/simulate", null, id, "Đã giả lập thanh toán thành công; không phát sinh tiền thật.");
+            => await ExecuteAndReturn(HttpMethod.Post, $"api/marketplace-operations/reservations/{id}/payments/simulate", null, id, "Đã tạo giao dịch giả lập thành công.");
 
         [Authorize(Roles = "Admin,Staff")]
         [HttpPost]
-        public async Task<IActionResult> CreateSettlement(int id)
-            => await ExecuteAndReturn(HttpMethod.Post, $"api/comprehensive-operations/reservations/{id}/settlement", new { }, id, "Đã lập đối soát tự động từ các giao dịch đã xác nhận. Người lập không được tự phê duyệt chi trả.");
-
-        [Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task<IActionResult> PaySettlement(int id, int settlementId, string transactionCode)
-            => await ExecuteAndReturn(HttpMethod.Put, $"api/comprehensive-operations/settlements/{settlementId}/pay", new { TransactionCode = transactionCode }, id, "Đã phê duyệt, ghi nhận mã chuyển khoản và đóng đối soát.");
+        public async Task<IActionResult> ResolveIncident(int id, int incidentId, decimal customerLiability, string note, bool openDispute)
+            => await ExecuteAndReturn(HttpMethod.Put, $"api/comprehensive-operations/incidents/{incidentId}/resolve", new { CustomerLiability = customerLiability, Note = note, OpenDispute = openDispute }, id, "Đã cập nhật kết quả xử lý sự cố.");
 
         [Authorize(Roles = "Admin,Staff")]
         [HttpPost]
         public async Task<IActionResult> ResolveDispute(int id, int disputeId, string resolution, decimal compensationAmount)
-            => await ExecuteAndReturn(HttpMethod.Put, $"api/marketplace-operations/disputes/{disputeId}/resolve", new { Resolution = resolution, CompensationAmount = compensationAmount }, id, "Đã lưu kết luận tranh chấp vào lịch sử.");
+            => await ExecuteAndReturn(HttpMethod.Put, $"api/marketplace-operations/disputes/{disputeId}/resolve", new { Resolution = resolution, CompensationAmount = compensationAmount }, id, "Đã lưu kết luận tranh chấp.");
 
         [Authorize(Roles = "Admin,Staff")]
         [HttpPost]
-        public async Task<IActionResult> ResolveIncident(int id, int incidentId, decimal customerLiability, bool openDispute, string? note)
-            => await ExecuteAndReturn(HttpMethod.Put, $"api/comprehensive-operations/incidents/{incidentId}/resolve", new { CustomerLiability = customerLiability, OpenDispute = openDispute, Note = note }, id, "Đã cập nhật kết quả xử lý sự cố.");
+        public async Task<IActionResult> CreateSettlement(int id)
+            => await ExecuteAndReturn(HttpMethod.Post, $"api/marketplace-operations/reservations/{id}/settlement", null, id, "Đã tạo đề xuất đối soát.");
 
-        private async Task<IActionResult> ExecuteAndReturn(HttpMethod method, string url, object? payload, int reservationId, string success, IReadOnlyCollection<Guid>? uploadedFileIds = null)
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<IActionResult> PaySettlement(int id, int settlementId, string transactionCode)
+            => await ExecuteAndReturn(HttpMethod.Put, $"api/marketplace-operations/settlements/{settlementId}/pay", new { TransactionCode = transactionCode }, id, "Đã ghi nhận chi trả cho chủ xe.");
+
+        private async Task<IActionResult> ExecuteAndReturn(HttpMethod method, string url, object? payload, int id, string success, IReadOnlyCollection<Guid>? uploadedFileIds = null)
         {
             try
             {
                 using var request = new HttpRequestMessage(method, url);
-                if (payload is not null) request.Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+                if (payload is not null) request.Content = JsonContent(payload);
                 var response = await Client().SendAsync(request);
                 if (response.IsSuccessStatusCode)
                 {
                     TempData["OperationSuccess"] = success;
-                    if (User.IsInRole("Staff")) TempData["StaffSuccess"] = success;
+                    return RedirectToAction(nameof(Details), new { id });
                 }
-                else
-                {
-                    await DeleteUploadedFilesAsync(uploadedFileIds);
-                    var error = Clean(await response.Content.ReadAsStringAsync());
-                    TempData["OperationError"] = error;
-                    if (User.IsInRole("Staff")) TempData["StaffError"] = error;
-                }
+                await DeleteUploadedFilesAsync(uploadedFileIds);
+                TempData["OperationError"] = Clean(await response.Content.ReadAsStringAsync());
             }
             catch (HttpRequestException)
             {
                 await DeleteUploadedFilesAsync(uploadedFileIds);
                 TempData["OperationError"] = "Không kết nối được Web API.";
-                if (User.IsInRole("Staff")) TempData["StaffError"] = "Không kết nối được Web API.";
             }
-            return RedirectToAction(nameof(Details), new { id = reservationId });
+            return RedirectToAction(nameof(Details), new { id });
         }
 
-        private async Task<IReadOnlyList<Guid>> SaveEvidenceAsync(int reservationId, List<IFormFile>? files, string category)
+        private async Task<List<Guid>> SaveEvidenceAsync(int reservationId, List<IFormFile>? files, string category)
         {
-            if (files is null || files.Count == 0) return Array.Empty<Guid>();
-            var valid = files.Where(x => x.Length > 0 && x.Length <= 30 * 1024 * 1024 && AllowedEvidenceExtensions.Contains(Path.GetExtension(x.FileName))).Take(10).ToList();
-            if (valid.Count == 0) return Array.Empty<Guid>();
-            var secureCategory = category switch
+            var saved = new List<Guid>();
+            if (files is null || files.Count == 0) return saved;
+            if (files.Count > 10) throw new InvalidOperationException("Chỉ được tải tối đa 10 tệp mỗi lần.");
+            foreach (var file in files)
             {
-                "handover" => "HandoverEvidence",
-                "incident" => "IncidentEvidence",
-                "dispute" or "dispute-message" => "DisputeEvidence",
-                "traffic-fine" => "TrafficFineEvidence",
-                "charge" => "AdditionalChargeEvidence",
-                _ => throw new InvalidOperationException("Loại bằng chứng không hợp lệ.")
-            };
-            var ids = new List<Guid>();
-            try
-            {
-                foreach (var file in valid)
+                if (file.Length <= 0 || file.Length > 10 * 1024 * 1024) throw new InvalidOperationException("Mỗi tệp phải nhỏ hơn 10 MB.");
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (!AllowedEvidenceExtensions.Contains(extension)) throw new InvalidOperationException("Chỉ chấp nhận JPG, PNG, WEBP, MP4 hoặc MOV.");
+                using var content = new MultipartFormDataContent();
+                await using var stream = file.OpenReadStream();
+                var fileContent = new StreamContent(stream);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType ?? "application/octet-stream");
+                content.Add(fileContent, "file", file.FileName);
+                content.Add(new StringContent($"reservation-{category}"), "category");
+                content.Add(new StringContent($"Reservation:{reservationId}"), "ownerReference");
+                var response = await Client().PostAsync("api/secure-files", content);
+                if (!response.IsSuccessStatusCode)
                 {
-                    using var form = new MultipartFormDataContent();
-                    await using var stream = file.OpenReadStream();
-                    using var content = new StreamContent(stream);
-                    content.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
-                    form.Add(content, "file", Path.GetFileName(file.FileName));
-                    form.Add(new StringContent(secureCategory), "category");
-                    form.Add(new StringContent(reservationId.ToString()), "reservationId");
-                    var response = await Client().PostAsync("api/secure-files/upload", form);
-                    var raw = await response.Content.ReadAsStringAsync();
-                    if (!response.IsSuccessStatusCode) throw new IOException(Clean(raw));
-                    var result = JsonConvert.DeserializeObject<SecureFileUploadResultDto>(raw) ?? throw new IOException("API không trả về FileId.");
-                    ids.Add(result.PrivateFileId);
+                    await DeleteUploadedFilesAsync(saved);
+                    throw new InvalidOperationException(Clean(await response.Content.ReadAsStringAsync()));
                 }
-                return ids;
+                var raw = await response.Content.ReadAsStringAsync();
+                var json = JObject.Parse(raw);
+                saved.Add(Guid.Parse(json["fileId"]!.ToString()));
             }
-            catch
-            {
-                await DeleteUploadedFilesAsync(ids);
-                throw;
-            }
+            return saved;
         }
 
         private async Task DeleteUploadedFilesAsync(IReadOnlyCollection<Guid>? fileIds)
