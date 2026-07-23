@@ -4,6 +4,7 @@
 <!DOCTYPE html>
 <html lang="vi">
 @await Component.InvokeAsync("_HeadUILayoutComponentPartial")
+<link rel="stylesheet" href="~/css/reservation-vehicle-summary.css" asp-append-version="true" />
 <body class="partner-body">
     @await Component.InvokeAsync("_NavbarUILayoutComponentPartial")
     <main class="partner-main">@RenderBody()</main>
@@ -14,6 +15,7 @@
         </div>
     </footer>
     @await Component.InvokeAsync("_ScriptUILayoutComponentPartial")
+    <script src="~/js/reservation-vehicle-summary.js" asp-append-version="true"></script>
     <style>
         .partner-body { background: #f4f7fa; }
         .partner-main { min-height: calc(100vh - 150px); padding-top: 20px; }
