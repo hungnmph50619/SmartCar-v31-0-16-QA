@@ -9,8 +9,18 @@ namespace SmartCar.Application.Features.Mediator.Handlers.ReservationHandlers
     public class CreateReservationCommandHandler : IRequestHandler<CreateReservationCommand, int>
     {
         private readonly IRepository<Reservation> _repository;
+        private readonly IRepository<PartnerVehicle> _partnerVehicleRepository;
+        private readonly IRepository<Notification> _notificationRepository;
 
-        public CreateReservationCommandHandler(IRepository<Reservation> repository) => _repository = repository;
+        public CreateReservationCommandHandler(
+            IRepository<Reservation> repository,
+            IRepository<PartnerVehicle> partnerVehicleRepository,
+            IRepository<Notification> notificationRepository)
+        {
+            _repository = repository;
+            _partnerVehicleRepository = partnerVehicleRepository;
+            _notificationRepository = notificationRepository;
+        }
 
         public async Task<int> Handle(CreateReservationCommand request, CancellationToken cancellationToken)
         {
@@ -58,6 +68,21 @@ namespace SmartCar.Application.Features.Mediator.Handlers.ReservationHandlers
             };
 
             await _repository.CreateAsync(reservation);
+
+            var partnerVehicle = await _partnerVehicleRepository.GetByFilterAsync(
+                x => x.PartnerVehicleID == request.PartnerVehicleID);
+            if (partnerVehicle?.OwnerAppUserID > 0)
+            {
+                await _notificationRepository.CreateAsync(new Notification
+                {
+                    AppUserID = partnerVehicle.OwnerAppUserID,
+                    Title = "Có yêu cầu thuê xe mới",
+                    Message = $"Đơn #{reservation.ReservationID} đang chờ bạn phản hồi. Thời gian nhận xe: {request.PickUpDate:dd/MM/yyyy} {request.PickUpTime:hh\\:mm}.",
+                    Type = "Reservation",
+                    Link = $"/ReservationLookup/Details/{reservation.ReservationID}"
+                });
+            }
+
             return reservation.ReservationID;
         }
     }
