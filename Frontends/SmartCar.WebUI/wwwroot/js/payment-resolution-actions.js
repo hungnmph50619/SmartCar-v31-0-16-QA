@@ -13,6 +13,60 @@
         return document.querySelector('form[action*="ConfirmPayment"]');
     }
 
+    function formatInteger(value) {
+        var digits = String(value == null ? '' : value).replace(/\D/g, '');
+        if (!digits) return '';
+        return Number(digits).toLocaleString('en-US');
+    }
+
+    function enhanceAmountInput(confirmForm) {
+        if (!confirmForm || confirmForm.dataset.scAmountFormatted === 'true') return;
+
+        var rawInput = confirmForm.querySelector('input[name="amount"]');
+        if (!rawInput) return;
+
+        confirmForm.dataset.scAmountFormatted = 'true';
+
+        var displayInput = document.createElement('input');
+        displayInput.type = 'text';
+        displayInput.className = rawInput.className || 'form-control';
+        displayInput.inputMode = 'numeric';
+        displayInput.autocomplete = 'off';
+        displayInput.required = rawInput.required;
+        displayInput.setAttribute('aria-label', 'Số tiền thực nhận');
+        displayInput.placeholder = 'Ví dụ: 45,000';
+
+        var initialAmount = String(rawInput.value || '').split('.')[0].replace(/\D/g, '');
+        rawInput.value = initialAmount;
+        displayInput.value = formatInteger(initialAmount);
+
+        rawInput.type = 'hidden';
+        rawInput.required = false;
+        rawInput.insertAdjacentElement('beforebegin', displayInput);
+
+        function syncAmount() {
+            var digits = displayInput.value.replace(/\D/g, '');
+            displayInput.value = formatInteger(digits);
+            rawInput.value = digits;
+            rawInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        displayInput.addEventListener('input', syncAmount);
+        displayInput.addEventListener('blur', syncAmount);
+
+        confirmForm.addEventListener('submit', function (event) {
+            syncAmount();
+            if (!rawInput.value || Number(rawInput.value) <= 0) {
+                event.preventDefault();
+                displayInput.setCustomValidity('Vui lòng nhập số tiền thực nhận hợp lệ.');
+                displayInput.reportValidity();
+                displayInput.focus();
+                return;
+            }
+            displayInput.setCustomValidity('');
+        });
+    }
+
     function openReviewForm(reviewForm, preferredDecision) {
         if (!reviewForm) return;
 
@@ -35,6 +89,12 @@
         if (note) window.setTimeout(function () { note.focus(); }, 350);
     }
 
+    function removeRedundantProblemToggle() {
+        document.querySelectorAll('.sc-payment-problem-toggle').forEach(function (button) {
+            button.remove();
+        });
+    }
+
     function addActionButtons() {
         var confirmForm = findConfirmForm();
         var reviewForm = findReviewForm();
@@ -46,8 +106,8 @@
         var actions = document.createElement('div');
         actions.className = 'sc-payment-resolution-actions';
         actions.innerHTML =
-            '<button type="button" class="btn btn-warning btn-lg sc-request-retry">Yêu cầu khách xử lý lại</button>' +
-            '<button type="button" class="btn btn-outline-danger btn-lg sc-reject-payment">Từ chối xác nhận</button>';
+            '<button type="button" class="btn btn-warning btn-lg sc-request-retry">Yêu cầu khách bổ sung/chuyển lại</button>' +
+            '<button type="button" class="btn btn-outline-danger btn-lg sc-reject-payment">Từ chối giao dịch và giải phóng xe</button>';
 
         submit.insertAdjacentElement('afterend', actions);
 
@@ -73,7 +133,10 @@
 
     function init() {
         addStyles();
+        var confirmForm = findConfirmForm();
+        enhanceAmountInput(confirmForm);
         addActionButtons();
+        removeRedundantProblemToggle();
     }
 
     if (document.readyState === 'loading') {
